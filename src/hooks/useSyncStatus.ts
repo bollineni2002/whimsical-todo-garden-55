@@ -5,7 +5,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { dbManager } from '@/lib/db';
 import { Transaction } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
-import { CustomDatabase } from '@/types/supabase-types';
+
+// Define a type for transactions in Supabase
+type SupabaseTransaction = Transaction & { user_id: string };
 
 export const useSyncStatus = () => {
   const [isSyncing, setIsSyncing] = useState(false);
@@ -92,7 +94,7 @@ export const useSyncStatus = () => {
         }
         
         // Prepare transaction for upload (add user_id)
-        const transactionToUpload = {
+        const transactionToUpload: SupabaseTransaction = {
           ...transaction,
           user_id: user.id,
           syncedAt: new Date().toISOString(),
@@ -100,7 +102,7 @@ export const useSyncStatus = () => {
         
         // Check if transaction already exists in Supabase
         const { data: existingTransaction } = await supabase
-          .from<'transactions', any>('transactions')
+          .from('transactions')
           .select('id')
           .eq('id', transaction.id)
           .eq('user_id', user.id)
@@ -109,14 +111,14 @@ export const useSyncStatus = () => {
         if (existingTransaction) {
           // Update existing transaction
           await supabase
-            .from<'transactions', any>('transactions')
+            .from('transactions')
             .update(transactionToUpload)
             .eq('id', transaction.id)
             .eq('user_id', user.id);
         } else {
           // Insert new transaction
           await supabase
-            .from<'transactions', any>('transactions')
+            .from('transactions')
             .insert(transactionToUpload);
         }
         
@@ -129,18 +131,20 @@ export const useSyncStatus = () => {
       
       // Download transactions from Supabase that aren't in local DB
       const { data: cloudTransactions } = await supabase
-        .from<'transactions', any>('transactions')
+        .from('transactions')
         .select('*')
         .eq('user_id', user.id);
       
       if (cloudTransactions) {
         // Find cloud transactions not in local DB
         const localIds = new Set(localTransactions.map(t => t.id));
-        const newCloudTransactions = cloudTransactions.filter(t => !localIds.has(t.id));
+        const newCloudTransactions = cloudTransactions.filter(t => t && 'id' in t && !localIds.has(t.id as string));
         
         // Add new cloud transactions to local DB
         for (const transaction of newCloudTransactions) {
-          await dbManager.addTransaction(transaction as unknown as Transaction);
+          if (transaction) {
+            await dbManager.addTransaction(transaction as unknown as Transaction);
+          }
         }
       }
       
