@@ -5,6 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { dbManager } from '@/lib/db';
 import { Transaction } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
+import { CustomDatabase } from '@/types/supabase-types';
 
 // Define a type for transactions in Supabase
 type SupabaseTransaction = Transaction & { user_id: string };

@@ -7,9 +7,9 @@ export interface CustomDatabase {
   public: {
     Tables: {
       transactions: {
-        Row: Transaction;
-        Insert: Transaction;
-        Update: Partial<Transaction>;
+        Row: Transaction & { user_id: string };
+        Insert: Transaction & { user_id: string };
+        Update: Partial<Transaction & { user_id: string }>;
       };
     };
   };
