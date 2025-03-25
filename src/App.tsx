@@ -11,6 +11,7 @@ import TransactionDetail from "./pages/TransactionDetail";
 import NotFound from "./pages/NotFound";
 import NewTransaction from "./pages/NewTransaction";
 import Auth from "./pages/Auth";
+import Profile from "./pages/Profile";
 import { useAuth } from "./context/AuthContext";
 
 // Create a client
@@ -69,6 +70,11 @@ const App = () => (
               <Route path="/new-transaction" element={
                 <ProtectedRoute>
                   <NewTransaction />
+                </ProtectedRoute>
+              } />
+              <Route path="/profile" element={
+                <ProtectedRoute>
+                  <Profile />
                 </ProtectedRoute>
               } />
               <Route path="*" element={<NotFound />} />

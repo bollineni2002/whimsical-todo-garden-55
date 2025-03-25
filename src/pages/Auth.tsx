@@ -8,16 +8,33 @@ import { Label } from '@/components/ui/label';
 import { useAuth } from '@/context/AuthContext';
 import { motion } from 'framer-motion';
 import ThemeToggle from '@/components/ThemeToggle';
+import { useToast } from '@/hooks/use-toast';
 
 const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
+  const [isForgotPassword, setIsForgotPassword] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const { signIn, signUp, isLoading } = useAuth();
+  const { signIn, signUp, resetPassword, isLoading } = useAuth();
   const navigate = useNavigate();
+  const { toast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (isForgotPassword) {
+      try {
+        await resetPassword(email);
+        toast({
+          title: "Reset email sent",
+          description: "Check your email for password reset instructions.",
+        });
+      } catch (error) {
+        console.error('Password reset error:', error);
+      }
+      return;
+    }
+    
     if (isLogin) {
       await signIn(email, password);
       navigate('/');
@@ -25,6 +42,10 @@ const Auth = () => {
       await signUp(email, password);
       // Stay on the page after signup to allow login
     }
+  };
+
+  const toggleForgotPassword = () => {
+    setIsForgotPassword(!isForgotPassword);
   };
 
   return (
@@ -59,11 +80,17 @@ const Auth = () => {
         
         <Card>
           <CardHeader>
-            <CardTitle>{isLogin ? 'Sign In' : 'Create Account'}</CardTitle>
+            <CardTitle>
+              {isForgotPassword 
+                ? 'Reset Password' 
+                : isLogin ? 'Sign In' : 'Create Account'}
+            </CardTitle>
             <CardDescription>
-              {isLogin 
-                ? 'Enter your credentials to access your account' 
-                : 'Sign up for a new account to manage your transactions'}
+              {isForgotPassword 
+                ? 'Enter your email to receive a password reset link' 
+                : isLogin 
+                  ? 'Enter your credentials to access your account' 
+                  : 'Sign up for a new account to manage your transactions'}
             </CardDescription>
           </CardHeader>
           <form onSubmit={handleSubmit}>
@@ -79,33 +106,52 @@ const Auth = () => {
                   required 
                 />
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
-                <Input 
-                  id="password" 
-                  type="password" 
-                  value={password} 
-                  onChange={(e) => setPassword(e.target.value)} 
-                  placeholder="********" 
-                  required 
-                />
-              </div>
+              
+              {!isForgotPassword && (
+                <div className="space-y-2">
+                  <Label htmlFor="password">Password</Label>
+                  <Input 
+                    id="password" 
+                    type="password" 
+                    value={password} 
+                    onChange={(e) => setPassword(e.target.value)} 
+                    placeholder="********" 
+                    required 
+                  />
+                </div>
+              )}
             </CardContent>
             <CardFooter className="flex flex-col space-y-4">
               <Button type="submit" className="w-full" disabled={isLoading}>
                 {isLoading 
                   ? 'Processing...' 
-                  : isLogin ? 'Sign In' : 'Create Account'}
+                  : isForgotPassword 
+                    ? 'Send Reset Link'
+                    : isLogin ? 'Sign In' : 'Create Account'}
               </Button>
+              
+              {!isForgotPassword && (
+                <Button 
+                  type="button" 
+                  variant="ghost" 
+                  className="w-full"
+                  onClick={() => setIsLogin(!isLogin)}
+                >
+                  {isLogin 
+                    ? "Don't have an account? Sign up" 
+                    : "Already have an account? Sign in"}
+                </Button>
+              )}
+              
               <Button 
                 type="button" 
-                variant="ghost" 
+                variant="link" 
                 className="w-full"
-                onClick={() => setIsLogin(!isLogin)}
+                onClick={toggleForgotPassword}
               >
-                {isLogin 
-                  ? "Don't have an account? Sign up" 
-                  : "Already have an account? Sign in"}
+                {isForgotPassword
+                  ? "Back to sign in"
+                  : "Forgot password?"}
               </Button>
             </CardFooter>
           </form>
