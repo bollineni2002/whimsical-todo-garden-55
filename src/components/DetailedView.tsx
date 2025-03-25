@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogC
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { Trash2 } from 'lucide-react';
+import { useAuth } from '@/context/AuthContext';
 
 interface DetailedViewProps {
   transaction: Transaction;
@@ -21,6 +22,7 @@ const DetailedView = ({ transaction, refreshTransaction: externalRefresh }: Deta
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { user } = useAuth();
 
   const internalRefreshTransaction = useCallback(async () => {
     try {
@@ -52,7 +54,8 @@ const DetailedView = ({ transaction, refreshTransaction: externalRefresh }: Deta
         ) {
           const updatedTransaction = {
             ...currentTransaction,
-            status: 'completed' as const
+            status: 'completed' as const,
+            updatedAt: new Date().toISOString(),
           };
           
           await dbManager.updateTransaction(updatedTransaction);
@@ -87,25 +90,35 @@ const DetailedView = ({ transaction, refreshTransaction: externalRefresh }: Deta
     }
   };
 
+  // Determine which tabs should be shown based on the transaction data
+  const shouldShowTab = (tabKey: TabKey) => {
+    switch(tabKey) {
+      case 'loadBuy':
+        return !!currentTransaction.loadBuy;
+      case 'transportation':
+        return !!currentTransaction.transportation;
+      case 'loadSold':
+        return !!currentTransaction.loadSold;
+      default:
+        return true; // Always show payments, notes, attachments
+    }
+  };
+
   return (
     <div className="flex flex-col h-full w-full overflow-hidden">
-      <div className="flex flex-col md:flex-row flex-1 overflow-hidden">
-        <div className="w-full md:w-1/4 min-w-[240px] flex-shrink-0 border-b md:border-b-0 border-border">
-          <TabNavigation activeTab={activeTab} onTabChange={setActiveTab} />
-        </div>
+      {/* Transaction action header */}
+      <div className="p-4 border-b flex justify-between items-center">
+        <h2 className="text-lg font-medium">
+          {currentTransaction.name}
+          <span className={`ml-2 text-sm px-2 py-0.5 rounded-full ${
+            currentTransaction.status === 'completed' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100' :
+            currentTransaction.status === 'cancelled' ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100' :
+            'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-100'
+          }`}>
+            {currentTransaction.status.charAt(0).toUpperCase() + currentTransaction.status.slice(1)}
+          </span>
+        </h2>
         
-        <div className="flex-1 overflow-auto">
-          <TabContent 
-            transaction={currentTransaction} 
-            activeTab={activeTab} 
-            refreshTransaction={refreshTransaction} 
-          />
-        </div>
-      </div>
-
-      {/* Transaction deletion section - now separate at the bottom */}
-      <div className="mt-6 border-t pt-4 px-6 pb-6">
-        <h3 className="text-lg font-medium mb-4">Transaction Management</h3>
         <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
           <DialogTrigger asChild>
             <Button variant="destructive" size="sm">
@@ -128,6 +141,24 @@ const DetailedView = ({ transaction, refreshTransaction: externalRefresh }: Deta
             </DialogFooter>
           </DialogContent>
         </Dialog>
+      </div>
+      
+      <div className="flex flex-col md:flex-row flex-1 overflow-hidden">
+        <div className="w-full md:w-1/4 min-w-[240px] flex-shrink-0 border-b md:border-b-0 border-border">
+          <TabNavigation 
+            activeTab={activeTab} 
+            onTabChange={setActiveTab}
+            disabledTabs={Object.values(TabKey).filter(tab => !shouldShowTab(tab as TabKey)) as TabKey[]}
+          />
+        </div>
+        
+        <div className="flex-1 overflow-auto">
+          <TabContent 
+            transaction={currentTransaction} 
+            activeTab={activeTab} 
+            refreshTransaction={refreshTransaction} 
+          />
+        </div>
       </div>
     </div>
   );

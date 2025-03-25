@@ -12,6 +12,9 @@ export interface Transaction {
   notes: Note[];
   attachments: Attachment[];
   businessName?: string;
+  syncedAt?: string; // Timestamp of last sync
+  updatedAt?: string; // Timestamp of last update
+  user_id?: string; // User ID for cloud storage
 }
 
 export interface LoadBuy {
@@ -82,3 +85,8 @@ export interface Attachment {
 }
 
 export type TabKey = 'loadBuy' | 'transportation' | 'loadSold' | 'payments' | 'notes' | 'attachments';
+
+export interface SyncStatus {
+  lastSyncTime: number | null;
+  isAllSynced: boolean;
+}

@@ -110,6 +110,7 @@ const exportAsCSV = (transactions: Transaction[]): Promise<void> => {
 const exportAsPDF = (transactions: Transaction[]): Promise<void> => {
   return new Promise((resolve) => {
     try {
+      // Create a new jsPDF instance
       const doc = new jsPDF();
       
       // Add title
@@ -130,9 +131,8 @@ const exportAsPDF = (transactions: Transaction[]): Promise<void> => {
         t.loadBuy?.goodsName || 'N/A'
       ]);
       
-      // Add table
-      // @ts-ignore - doc.autoTable is added by the jspdf-autotable import
-      doc.autoTable({
+      // Add table with autoTable
+      (doc as any).autoTable({
         head: [['ID', 'Name', 'Date', 'Amount', 'Status', 'Goods']],
         body: tableData,
         startY: 40,
