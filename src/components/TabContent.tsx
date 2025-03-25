@@ -1,12 +1,6 @@
 
-import { useState } from 'react';
 import { TabKey, Transaction } from '@/lib/types';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose, DialogTrigger } from '@/components/ui/dialog';
-import { useNavigate } from 'react-router-dom';
-import { useToast } from '@/hooks/use-toast';
-import { dbManager } from '@/lib/db';
 import TransportationContent from './TransportationComponent';
 import LoadBuyContent from './tab-contents/LoadBuyContent';
 import LoadSoldContent from './tab-contents/LoadSoldContent';
@@ -21,9 +15,6 @@ interface TabContentProps {
 }
 
 const TabContent: React.FC<TabContentProps> = ({ activeTab, transaction, refreshTransaction }) => {
-  const navigate = useNavigate();
-  const { toast } = useToast();
-
   return (
     <div className="mt-6">
       <AnimatePresence mode="wait">
@@ -35,7 +26,7 @@ const TabContent: React.FC<TabContentProps> = ({ activeTab, transaction, refresh
           transition={{ duration: 0.2 }}
           className="bg-card rounded-lg p-6 shadow-sm border"
         >
-          {activeTab === 'loadBuy' && (
+          {activeTab === TabKey.LOAD_BUY && (
             <LoadBuyContent 
               data={transaction.loadBuy} 
               transaction={transaction} 
@@ -43,7 +34,7 @@ const TabContent: React.FC<TabContentProps> = ({ activeTab, transaction, refresh
             />
           )}
           
-          {activeTab === 'transportation' && (
+          {activeTab === TabKey.TRANSPORTATION && (
             <TransportationContent 
               data={transaction.transportation} 
               transaction={transaction} 
@@ -51,7 +42,7 @@ const TabContent: React.FC<TabContentProps> = ({ activeTab, transaction, refresh
             />
           )}
           
-          {activeTab === 'loadSold' && (
+          {activeTab === TabKey.LOAD_SOLD && (
             <LoadSoldContent 
               data={transaction.loadSold} 
               transaction={transaction} 
@@ -59,7 +50,7 @@ const TabContent: React.FC<TabContentProps> = ({ activeTab, transaction, refresh
             />
           )}
           
-          {activeTab === 'payments' && (
+          {activeTab === TabKey.PAYMENTS && (
             <PaymentsContent 
               payments={transaction.payments} 
               transaction={transaction} 
@@ -67,7 +58,7 @@ const TabContent: React.FC<TabContentProps> = ({ activeTab, transaction, refresh
             />
           )}
           
-          {activeTab === 'notes' && (
+          {activeTab === TabKey.NOTES && (
             <NotesContent 
               notes={transaction.notes} 
               transaction={transaction} 
@@ -75,7 +66,7 @@ const TabContent: React.FC<TabContentProps> = ({ activeTab, transaction, refresh
             />
           )}
           
-          {activeTab === 'attachments' && (
+          {activeTab === TabKey.ATTACHMENTS && (
             <AttachmentsContent 
               attachments={transaction.attachments} 
               transaction={transaction} 

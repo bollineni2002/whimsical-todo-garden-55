@@ -17,7 +17,7 @@ interface DetailedViewProps {
 }
 
 const DetailedView = ({ transaction, refreshTransaction: externalRefresh }: DetailedViewProps) => {
-  const [activeTab, setActiveTab] = useState<TabKey>('loadBuy');
+  const [activeTab, setActiveTab] = useState<TabKey>(TabKey.LOAD_BUY);
   const [currentTransaction, setCurrentTransaction] = useState<Transaction>(transaction);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const navigate = useNavigate();
@@ -93,11 +93,11 @@ const DetailedView = ({ transaction, refreshTransaction: externalRefresh }: Deta
   // Determine which tabs should be shown based on the transaction data
   const shouldShowTab = (tabKey: TabKey) => {
     switch(tabKey) {
-      case 'loadBuy':
+      case TabKey.LOAD_BUY:
         return !!currentTransaction.loadBuy;
-      case 'transportation':
+      case TabKey.TRANSPORTATION:
         return !!currentTransaction.transportation;
-      case 'loadSold':
+      case TabKey.LOAD_SOLD:
         return !!currentTransaction.loadSold;
       default:
         return true; // Always show payments, notes, attachments
@@ -148,7 +148,7 @@ const DetailedView = ({ transaction, refreshTransaction: externalRefresh }: Deta
           <TabNavigation 
             activeTab={activeTab} 
             onTabChange={setActiveTab}
-            disabledTabs={Object.values(TabKey).filter(tab => !shouldShowTab(tab as TabKey)) as TabKey[]}
+            disabledTabs={Object.values(TabKey).filter(tab => !shouldShowTab(tab)) as TabKey[]}
           />
         </div>
         

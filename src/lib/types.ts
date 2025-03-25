@@ -84,7 +84,15 @@ export interface Attachment {
   date: string;
 }
 
-export type TabKey = 'loadBuy' | 'transportation' | 'loadSold' | 'payments' | 'notes' | 'attachments';
+// Convert TabKey from a type to an enum so it can be used as a value
+export enum TabKey {
+  LOAD_BUY = 'loadBuy',
+  TRANSPORTATION = 'transportation',
+  LOAD_SOLD = 'loadSold',
+  PAYMENTS = 'payments',
+  NOTES = 'notes',
+  ATTACHMENTS = 'attachments'
+}
 
 export interface SyncStatus {
   lastSyncTime: number | null;

@@ -2,15 +2,11 @@
 import { TabKey } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
-
-interface TabNavigationProps {
-  activeTab: TabKey;
-  onTabChange: (tab: TabKey) => void;
-}
+import { TabNavigationProps } from '@/types/component-types';
 
 const tabs: Array<{ key: TabKey; label: string; icon: React.ReactNode }> = [
   {
-    key: 'loadBuy',
+    key: TabKey.LOAD_BUY,
     label: 'Load Buy',
     icon: (
       <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -21,7 +17,7 @@ const tabs: Array<{ key: TabKey; label: string; icon: React.ReactNode }> = [
     )
   },
   {
-    key: 'transportation',
+    key: TabKey.TRANSPORTATION,
     label: 'Transportation',
     icon: (
       <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -33,7 +29,7 @@ const tabs: Array<{ key: TabKey; label: string; icon: React.ReactNode }> = [
     )
   },
   {
-    key: 'loadSold',
+    key: TabKey.LOAD_SOLD,
     label: 'Load Sold',
     icon: (
       <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -43,7 +39,7 @@ const tabs: Array<{ key: TabKey; label: string; icon: React.ReactNode }> = [
     )
   },
   {
-    key: 'payments',
+    key: TabKey.PAYMENTS,
     label: 'Payments',
     icon: (
       <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -53,7 +49,7 @@ const tabs: Array<{ key: TabKey; label: string; icon: React.ReactNode }> = [
     )
   },
   {
-    key: 'notes',
+    key: TabKey.NOTES,
     label: 'Notes',
     icon: (
       <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -63,7 +59,7 @@ const tabs: Array<{ key: TabKey; label: string; icon: React.ReactNode }> = [
     )
   },
   {
-    key: 'attachments',
+    key: TabKey.ATTACHMENTS,
     label: 'Attachments',
     icon: (
       <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -73,7 +69,7 @@ const tabs: Array<{ key: TabKey; label: string; icon: React.ReactNode }> = [
   }
 ];
 
-const TabNavigation = ({ activeTab, onTabChange }: TabNavigationProps) => {
+const TabNavigation = ({ activeTab, onTabChange, disabledTabs = [] }: TabNavigationProps) => {
   return (
     <div className="flex flex-col w-full h-full bg-background border-r border-border">
       <div className="px-4 py-6">
@@ -92,6 +88,7 @@ const TabNavigation = ({ activeTab, onTabChange }: TabNavigationProps) => {
                 ? "bg-primary/10 text-primary"
                 : "text-muted-foreground hover:text-foreground hover:bg-accent"
             )}
+            disabled={disabledTabs.includes(tab.key)}
           >
             {activeTab === tab.key && (
               <motion.div

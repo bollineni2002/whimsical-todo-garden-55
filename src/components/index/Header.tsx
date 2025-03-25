@@ -3,9 +3,10 @@ import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import ThemeToggle from '@/components/ThemeToggle';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Download, ChevronDown, Edit } from 'lucide-react';
+import { Download, ChevronDown } from 'lucide-react';
 import { ExportFormat } from '@/lib/exportUtils';
 import AuthHeader from '../AuthHeader';
+import { AuthHeaderProps } from '@/types/component-types';
 
 interface HeaderProps {
   onExport: (format: ExportFormat) => Promise<void>;
@@ -14,8 +15,14 @@ interface HeaderProps {
 }
 
 const Header = ({ onExport, businessName = 'TransactLy', onEditName }: HeaderProps) => {
+  const handleEditName = onEditName ? onEditName : () => {};
+  
   return (
-    <AuthHeader businessName={businessName} onEditName={onEditName}>
+    <AuthHeader 
+      businessName={businessName} 
+      onEditName={handleEditName}
+      onExport={onExport}
+    >
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant="outline" size="sm" className="hidden md:flex">
