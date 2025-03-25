@@ -52,7 +52,10 @@ const Profile = () => {
   
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      <AuthHeader businessName="TransactLy" />
+      <AuthHeader 
+        businessName="TransactLy" 
+        onEditName={() => {}} 
+      />
       
       <div className="container max-w-4xl mx-auto flex-1 p-4">
         <motion.div
