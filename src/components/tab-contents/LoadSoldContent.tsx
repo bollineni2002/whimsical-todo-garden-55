@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Transaction, LoadSold } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Edit, Save, X } from 'lucide-react';
@@ -27,34 +26,19 @@ const LoadSoldContent: React.FC<LoadSoldContentProps> = ({ data, transaction, re
   });
   const { toast } = useToast();
 
-  if (!data && !isEditing) {
-    return (
-      <div className="space-y-6">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-semibold">Load Sale Details</h2>
-          <Button 
-            variant="default" 
-            size="sm"
-            onClick={() => setIsEditing(true)}
-          >
-            <Edit className="h-4 w-4 mr-1" />
-            Add Details
-          </Button>
-        </div>
-        <div className="text-muted-foreground text-center py-8">No load sale information available</div>
-      </div>
-    );
-  }
+  useEffect(() => {
+    if (!data) {
+      setIsEditing(true);
+    }
+  }, [data]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     let newValue: string | number = value;
     
-    // Convert numeric fields to numbers
     if (['quantitySold', 'saleRate', 'totalSaleAmount', 'amountReceived', 'pendingBalance'].includes(name)) {
       newValue = parseFloat(value) || 0;
       
-      // Auto-calculate totalSaleAmount when quantitySold or saleRate changes
       if (name === 'quantitySold' || name === 'saleRate') {
         const quantitySold = name === 'quantitySold' ? parseFloat(value) || 0 : formData.quantitySold;
         const saleRate = name === 'saleRate' ? parseFloat(value) || 0 : formData.saleRate;
@@ -69,7 +53,6 @@ const LoadSoldContent: React.FC<LoadSoldContentProps> = ({ data, transaction, re
         return;
       }
       
-      // Auto-calculate pendingBalance when amountReceived changes
       if (name === 'amountReceived') {
         const amountReceivedValue = parseFloat(value) || 0;
         const pendingBalance = formData.totalSaleAmount - amountReceivedValue;
@@ -87,13 +70,11 @@ const LoadSoldContent: React.FC<LoadSoldContentProps> = ({ data, transaction, re
 
   const handleSave = async () => {
     try {
-      // Create a new transaction object with updated loadSold data
       const updatedTransaction = {
         ...transaction,
         loadSold: formData,
       };
       
-      // Check if we should update status to completed
       if (transaction.loadBuy && formData.amountReceived >= formData.totalSaleAmount && 
           transaction.loadBuy.amountPaid >= transaction.loadBuy.totalCost) {
         updatedTransaction.status = 'completed';
@@ -134,16 +115,18 @@ const LoadSoldContent: React.FC<LoadSoldContentProps> = ({ data, transaction, re
     return (
       <div className="space-y-6">
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-semibold">Edit Load Sale Details</h2>
+          <h2 className="text-xl font-semibold">{data ? "Edit Load Sale Details" : "Add Load Sale Details"}</h2>
           <div className="flex space-x-2">
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={handleCancel}
-            >
-              <X className="h-4 w-4 mr-1" />
-              Cancel
-            </Button>
+            {data && (
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={handleCancel}
+              >
+                <X className="h-4 w-4 mr-1" />
+                Cancel
+              </Button>
+            )}
             <Button 
               variant="default" 
               size="sm"
@@ -245,7 +228,6 @@ const LoadSoldContent: React.FC<LoadSoldContentProps> = ({ data, transaction, re
           </div>
         </div>
 
-        {/* Optional Payment Schedule Fields */}
         <div className="border-t pt-6">
           <h3 className="text-lg font-medium mb-4">Payment Schedule (Optional)</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -277,6 +259,25 @@ const LoadSoldContent: React.FC<LoadSoldContentProps> = ({ data, transaction, re
             </div>
           </div>
         </div>
+      </div>
+    );
+  }
+
+  if (!data) {
+    return (
+      <div className="space-y-6">
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-xl font-semibold">Load Sale Details</h2>
+          <Button 
+            variant="default" 
+            size="sm"
+            onClick={() => setIsEditing(true)}
+          >
+            <Edit className="h-4 w-4 mr-1" />
+            Add Details
+          </Button>
+        </div>
+        <div className="text-muted-foreground text-center py-8">No load sale information available. Click 'Add Details' to add information.</div>
       </div>
     );
   }

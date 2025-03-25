@@ -27,6 +27,7 @@ const TabContent: React.FC<TabContentProps> = ({ activeTab, transaction, refresh
         );
         
       case TabKey.TRANSPORTATION:
+        // Pass data, even if undefined
         return (
           <TransportationContent 
             data={transaction.transportation} 
@@ -36,6 +37,7 @@ const TabContent: React.FC<TabContentProps> = ({ activeTab, transaction, refresh
         );
         
       case TabKey.LOAD_SOLD:
+        // Pass data, even if undefined
         return (
           <LoadSoldContent 
             data={transaction.loadSold} 

@@ -1,4 +1,3 @@
-
 import { useState, useCallback, useEffect } from 'react';
 import { TabKey, Transaction } from '@/lib/types';
 import TabNavigation from './TabNavigation';
@@ -90,18 +89,11 @@ const DetailedView = ({ transaction, refreshTransaction: externalRefresh }: Deta
     }
   };
 
-  // Determine which tabs should be shown based on the transaction data
+  // All tabs should always be navigatable, we'll handle the empty state in each component
   const shouldShowTab = (tabKey: TabKey) => {
-    switch(tabKey) {
-      case TabKey.LOAD_BUY:
-        return currentTransaction.loadBuy !== undefined;
-      case TabKey.TRANSPORTATION:
-        return currentTransaction.transportation !== undefined;
-      case TabKey.LOAD_SOLD:
-        return currentTransaction.loadSold !== undefined;
-      default:
-        return true; // Always show payments, notes, attachments
-    }
+    // For new transactions, we need to ensure all sections can be opened
+    // Even if they're undefined, the components will handle the empty state
+    return true;
   };
 
   return (
@@ -148,7 +140,7 @@ const DetailedView = ({ transaction, refreshTransaction: externalRefresh }: Deta
           <TabNavigation 
             activeTab={activeTab} 
             onTabChange={setActiveTab}
-            disabledTabs={Object.values(TabKey).filter(tab => !shouldShowTab(tab)) as TabKey[]}
+            disabledTabs={[]} // No disabled tabs, allow access to all tabs
           />
         </div>
         
