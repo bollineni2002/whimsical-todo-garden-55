@@ -13,7 +13,7 @@ import { useAuth } from '@/context/AuthContext';
 
 interface DetailedViewProps {
   transaction: Transaction;
-  refreshTransaction?: () => Promise<void>; // Added refreshTransaction as an optional prop
+  refreshTransaction?: () => Promise<void>;
 }
 
 const DetailedView = ({ transaction, refreshTransaction: externalRefresh }: DetailedViewProps) => {
@@ -94,11 +94,11 @@ const DetailedView = ({ transaction, refreshTransaction: externalRefresh }: Deta
   const shouldShowTab = (tabKey: TabKey) => {
     switch(tabKey) {
       case TabKey.LOAD_BUY:
-        return !!currentTransaction.loadBuy;
+        return currentTransaction.loadBuy !== undefined;
       case TabKey.TRANSPORTATION:
-        return !!currentTransaction.transportation;
+        return currentTransaction.transportation !== undefined;
       case TabKey.LOAD_SOLD:
-        return !!currentTransaction.loadSold;
+        return currentTransaction.loadSold !== undefined;
       default:
         return true; // Always show payments, notes, attachments
     }

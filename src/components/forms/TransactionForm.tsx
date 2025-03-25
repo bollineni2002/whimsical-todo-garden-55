@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
@@ -78,7 +77,7 @@ const TransactionForm = () => {
         };
       }
       
-      // Add loadSold section if included (empty placeholder for now)
+      // Add loadSold section if included - initialize with empty values but proper structure
       if (includeSold) {
         newTransaction.loadSold = {
           buyerName: '',
@@ -89,7 +88,6 @@ const TransactionForm = () => {
           amountReceived: 0,
           pendingBalance: 0,
         };
-        totalSaleAmount = 0;
       }
       
       // Add transportation section if included
