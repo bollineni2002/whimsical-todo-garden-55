@@ -5,6 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { dbManager } from '@/lib/db';
 import { Transaction } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
+import { CustomDatabase } from '@/types/supabase-types';
 
 export const useSyncStatus = () => {
   const [isSyncing, setIsSyncing] = useState(false);
@@ -135,11 +136,11 @@ export const useSyncStatus = () => {
       if (cloudTransactions) {
         // Find cloud transactions not in local DB
         const localIds = new Set(localTransactions.map(t => t.id));
-        const newCloudTransactions = cloudTransactions.filter(t => !localIds.has(t.id));
+        const newCloudTransactions = cloudTransactions.filter(t => t && 'id' in t && !localIds.has(t.id as string));
         
         // Add new cloud transactions to local DB
         for (const transaction of newCloudTransactions) {
-          await dbManager.addTransaction(transaction);
+          await dbManager.addTransaction(transaction as unknown as Transaction);
         }
       }
       
