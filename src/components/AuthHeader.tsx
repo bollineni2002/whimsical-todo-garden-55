@@ -15,13 +15,9 @@ import {
 import { RefreshCw, LogOut, User } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { useSyncStatus } from '@/hooks/useSyncStatus';
+import { AuthHeaderProps } from '@/types/component-types';
 
-interface AuthHeaderProps {
-  businessName?: string;
-  onEditName?: () => void;
-}
-
-const AuthHeader = ({ businessName = 'TransactLy', onEditName }: AuthHeaderProps) => {
+const AuthHeader = ({ businessName = 'TransactLy', onEditName, children, onExport }: AuthHeaderProps) => {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
   const { isSyncing, isAllSynced, sync, lastSyncTime } = useSyncStatus();
@@ -59,6 +55,9 @@ const AuthHeader = ({ businessName = 'TransactLy', onEditName }: AuthHeaderProps
         </div>
         
         <div className="flex items-center gap-3">
+          {/* Add the children prop here */}
+          {children}
+          
           {/* Sync button */}
           <Button 
             variant={isAllSynced ? "outline" : "default"}
