@@ -12,7 +12,8 @@ import { ArrowLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 const Profile = () => {
-  const [password, setPassword] = useState('');
+  const [oldPassword, setOldPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { user, updatePassword } = useAuth();
@@ -22,7 +23,7 @@ const Profile = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (password !== confirmPassword) {
+    if (newPassword !== confirmPassword) {
       toast({
         title: "Passwords do not match",
         description: "Please make sure your passwords match.",
@@ -31,7 +32,7 @@ const Profile = () => {
       return;
     }
     
-    if (password.length < 6) {
+    if (newPassword.length < 6) {
       toast({
         title: "Password too short",
         description: "Password must be at least 6 characters long.",
@@ -42,9 +43,22 @@ const Profile = () => {
     
     setIsSubmitting(true);
     try {
-      await updatePassword(password);
-      setPassword('');
-      setConfirmPassword('');
+      const { error } = await updatePassword(oldPassword, newPassword);
+      if (error) {
+        toast({
+          title: "Password update failed",
+          description: error.message || "Could not update password.",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Password updated",
+          description: "Your password has been updated successfully.",
+        });
+        setOldPassword('');
+        setNewPassword('');
+        setConfirmPassword('');
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -89,12 +103,23 @@ const Profile = () => {
                 <h3 className="text-lg font-medium">Change Password</h3>
                 <form onSubmit={handleSubmit} className="space-y-4">
                   <div className="space-y-2">
+                    <Label htmlFor="old-password">Current Password</Label>
+                    <Input
+                      id="old-password"
+                      type="password"
+                      value={oldPassword}
+                      onChange={(e) => setOldPassword(e.target.value)}
+                      placeholder="Enter current password"
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
                     <Label htmlFor="new-password">New Password</Label>
                     <Input
                       id="new-password"
                       type="password"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
                       placeholder="Enter new password"
                       required
                     />

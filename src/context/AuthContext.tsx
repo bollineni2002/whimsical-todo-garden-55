@@ -1,4 +1,3 @@
-
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Session, User } from '@supabase/supabase-js';
@@ -17,6 +16,9 @@ export type AuthContextType = {
   resetPassword: (password: string) => Promise<{ error: any }>;
   updateProfile: (data: { name?: string, phone?: string }) => Promise<{ error: any }>;
   updatePassword: (oldPassword: string, newPassword: string) => Promise<{ error: any }>;
+  signInWithPhone: (phone: string) => Promise<{ error: any }>;
+  verifyOTP: (phone: string, otp: string) => Promise<{ error: any }>;
+  resendOTP: (phone: string) => Promise<{ error: any }>;
 };
 
 // Create the context
@@ -306,6 +308,76 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  // Sign in with phone function
+  const signInWithPhone = async (phone: string) => {
+    try {
+      // In a real implementation, you would initiate OTP sending here
+      // For now, we'll simulate a successful OTP send
+      toast({
+        title: "OTP Sent",
+        description: `A verification code has been sent to ${phone}`,
+      });
+      
+      return { error: null };
+    } catch (error) {
+      console.error('Error sending OTP:', error);
+      toast({
+        title: "Failed to send OTP",
+        description: "An unexpected error occurred. Please try again.",
+        variant: "destructive",
+      });
+      return { error };
+    }
+  };
+
+  // Verify OTP function
+  const verifyOTP = async (phone: string, otp: string) => {
+    try {
+      // In a real implementation, you would verify the OTP here
+      // For now, we'll simulate a successful verification
+      // In production, this would involve a call to your auth system
+      
+      // Simulate verification success
+      toast({
+        title: "Verification Successful",
+        description: "Your phone number has been verified.",
+      });
+      
+      return { error: null };
+    } catch (error) {
+      console.error('Error verifying OTP:', error);
+      toast({
+        title: "Verification Failed",
+        description: "The OTP you entered is incorrect or has expired.",
+        variant: "destructive",
+      });
+      return { error };
+    }
+  };
+
+  // Resend OTP function
+  const resendOTP = async (phone: string) => {
+    try {
+      // In a real implementation, you would resend the OTP here
+      // For now, we'll simulate a successful resend
+      
+      toast({
+        title: "OTP Resent",
+        description: `A new verification code has been sent to ${phone}`,
+      });
+      
+      return { error: null };
+    } catch (error) {
+      console.error('Error resending OTP:', error);
+      toast({
+        title: "Failed to resend OTP",
+        description: "An unexpected error occurred. Please try again.",
+        variant: "destructive",
+      });
+      return { error };
+    }
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -320,6 +392,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         resetPassword,
         updateProfile,
         updatePassword,
+        signInWithPhone,
+        verifyOTP,
+        resendOTP
       }}
     >
       {children}

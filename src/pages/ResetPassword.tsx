@@ -85,7 +85,10 @@ const ResetPassword = () => {
 
   return (
     <div className="flex flex-col min-h-screen bg-background">
-      <AuthHeader />
+      <AuthHeader 
+        businessName="TransactLy" 
+        onEditName={() => {}}
+      />
       
       <main className="flex-1 flex items-center justify-center p-4">
         <Card className="w-full max-w-md">
