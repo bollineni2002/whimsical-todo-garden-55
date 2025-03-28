@@ -8,6 +8,7 @@ import { motion } from 'framer-motion';
 import ThemeToggle from '@/components/ThemeToggle';
 import { useToast } from '@/hooks/use-toast';
 import { ArrowRight } from 'lucide-react';
+import { useLanguage } from '@/lib/languages';
 import { 
   InputOTP, 
   InputOTPGroup, 
@@ -23,6 +24,7 @@ const VerifyOTP = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
+  const { t } = useLanguage();
   
   // Get phone number from location state
   const phone = location.state?.phone || '';
@@ -134,10 +136,10 @@ const VerifyOTP = () => {
         
         <Card>
           <CardHeader>
-            <CardTitle>Verify Your Phone</CardTitle>
+            <CardTitle>{t('verify_otp')}</CardTitle>
             <CardDescription>
-              We've sent a 6-digit code to {phone}. 
-              Enter the code below to verify your phone number.
+              {`We've sent a 6-digit code to ${phone}. 
+              Enter the code below to verify your phone number.`}
             </CardDescription>
           </CardHeader>
           
@@ -166,7 +168,7 @@ const VerifyOTP = () => {
               className="w-full" 
               disabled={isLoading || otp.length !== 6}
             >
-              {isLoading ? 'Verifying...' : 'Verify OTP'}
+              {isLoading ? 'Verifying...' : t('verify_otp')}
               <ArrowRight className="ml-2 h-4 w-4" />
             </Button>
             
@@ -177,8 +179,8 @@ const VerifyOTP = () => {
                 disabled={resendDisabled}
               >
                 {resendDisabled 
-                  ? `Resend OTP in ${countdown}s` 
-                  : "Didn't receive the code? Resend"}
+                  ? `${t('resend_otp')} in ${countdown}s` 
+                  : `${t('resend_otp')}`}
               </Button>
             </div>
             
@@ -187,7 +189,7 @@ const VerifyOTP = () => {
               className="w-full"
               onClick={() => navigate('/auth')}
             >
-              Back to login
+              {t('sign_in')}
             </Button>
           </CardFooter>
         </Card>
