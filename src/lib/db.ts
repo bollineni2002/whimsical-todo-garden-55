@@ -1,4 +1,5 @@
-import { openDB, DBSchema } from 'idb';
+
+import { openDB, DBSchema, IDBPDatabase } from 'idb';
 import { Transaction } from './types';
 
 interface MyDatabase extends DBSchema {
@@ -11,7 +12,7 @@ interface MyDatabase extends DBSchema {
 const DB_NAME = 'transactly-db';
 const DB_VERSION = 1;
 
-const openDatabase = async () => {
+const openDatabase = async (): Promise<IDBPDatabase<MyDatabase>> => {
   return openDB<MyDatabase>(DB_NAME, DB_VERSION, {
     upgrade(db) {
       if (!db.objectStoreNames.contains('transactions')) {
@@ -21,51 +22,51 @@ const openDatabase = async () => {
   });
 };
 
-// Generic function to add an item to a store
-const addItem = async <T>(storeName: string, item: T & { id: string }) => {
+// Add transaction to the store
+const addTransaction = async (transaction: Transaction): Promise<void> => {
   const db = await openDatabase();
-  const tx = db.transaction(storeName, 'readwrite');
-  const store = tx.objectStore(storeName);
-  await store.add(item);
+  const tx = db.transaction('transactions', 'readwrite');
+  const store = tx.objectStore('transactions');
+  await store.add(transaction);
   await tx.done;
   db.close();
 };
 
-// Generic function to get an item from a store
-const getItem = async <T>(storeName: string, id: string): Promise<T | null> => {
+// Get transaction from the store
+const getTransaction = async (id: string): Promise<Transaction | null> => {
   const db = await openDatabase();
-  const tx = db.transaction(storeName, 'readonly');
-  const store = tx.objectStore(storeName);
-  const item = await store.get(id);
+  const tx = db.transaction('transactions', 'readonly');
+  const store = tx.objectStore('transactions');
+  const transaction = await store.get(id);
   db.close();
-  return item || null;
+  return transaction || null;
 };
 
-// Generic function to get all items from a store
-const getAllItems = async <T>(storeName: string): Promise<T[]> => {
+// Get all transactions from the store
+const getAllTransactions = async (): Promise<Transaction[]> => {
   const db = await openDatabase();
-  const tx = db.transaction(storeName, 'readonly');
-  const store = tx.objectStore(storeName);
-  const items = await store.getAll();
+  const tx = db.transaction('transactions', 'readonly');
+  const store = tx.objectStore('transactions');
+  const transactions = await store.getAll();
   db.close();
-  return items;
+  return transactions;
 };
 
-// Generic function to update an item in a store
-const updateItem = async <T>(storeName: string, item: T & { id: string }) => {
+// Update transaction in the store
+const updateTransaction = async (transaction: Transaction): Promise<void> => {
   const db = await openDatabase();
-  const tx = db.transaction(storeName, 'readwrite');
-  const store = tx.objectStore(storeName);
-  await store.put(item);
+  const tx = db.transaction('transactions', 'readwrite');
+  const store = tx.objectStore('transactions');
+  await store.put(transaction);
   await tx.done;
   db.close();
 };
 
-// Generic function to delete an item from a store
-const deleteItem = async (storeName: string, id: string) => {
+// Delete transaction from the store
+const deleteTransaction = async (id: string): Promise<void> => {
   const db = await openDatabase();
-  const tx = db.transaction(storeName, 'readwrite');
-  const store = tx.objectStore(storeName);
+  const tx = db.transaction('transactions', 'readwrite');
+  const store = tx.objectStore('transactions');
   await store.delete(id);
   await tx.done;
   db.close();
@@ -75,7 +76,7 @@ export const dbManager = {
   // Get all transactions for a specific user
   getAllTransactions: async (userId?: string | null): Promise<Transaction[]> => {
     try {
-      const transactions = await getAllItems<Transaction>('transactions');
+      const transactions = await getAllTransactions();
       
       // Filter by user_id if it's provided
       if (userId) {
@@ -94,7 +95,7 @@ export const dbManager = {
   // Get a specific transaction
   getTransaction: async (id: string): Promise<Transaction | null> => {
     try {
-      const transaction = await getItem<Transaction>('transactions', id);
+      const transaction = await getTransaction(id);
       return transaction;
     } catch (error) {
       console.error('Error getting transaction:', error);
@@ -114,7 +115,7 @@ export const dbManager = {
         updatedAt: new Date().toISOString()
       };
       
-      await addItem('transactions', enhancedTransaction);
+      await addTransaction(enhancedTransaction);
     } catch (error) {
       console.error('Error adding transaction:', error);
       throw error;
@@ -133,7 +134,7 @@ export const dbManager = {
         updatedAt: new Date().toISOString()
       };
       
-      await updateItem('transactions', enhancedTransaction);
+      await updateTransaction(enhancedTransaction);
     } catch (error) {
       console.error('Error updating transaction:', error);
       throw error;
@@ -143,7 +144,7 @@ export const dbManager = {
   // Delete a transaction
   deleteTransaction: async (id: string): Promise<void> => {
     try {
-      await deleteItem('transactions', id);
+      await deleteTransaction(id);
     } catch (error) {
       console.error('Error deleting transaction:', error);
       throw error;

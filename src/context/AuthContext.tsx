@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -26,7 +25,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     const initializeAuth = async () => {
       try {
-        // Check for active session
         const { data: { session: activeSession }, error } = await supabase.auth.getSession();
         
         if (error) {
@@ -36,7 +34,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setUser(activeSession?.user || null);
         }
         
-        // Set up auth state listener
         const { data: { subscription } } = supabase.auth.onAuthStateChange(
           async (_event, newSession) => {
             setSession(newSession);
@@ -71,12 +68,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         description: "You have successfully signed in.",
       });
     } catch (error: any) {
+      console.error('Sign in error:', error);
       toast({
         title: "Sign in failed",
         description: error.message || "Could not sign in. Please try again.",
         variant: "destructive",
       });
-      console.error('Sign in error:', error);
     } finally {
       setIsLoading(false);
     }
@@ -96,12 +93,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         description: "Please check your email to confirm your account.",
       });
     } catch (error: any) {
+      console.error('Sign up error:', error);
       toast({
         title: "Sign up failed",
         description: error.message || "Could not create account. Please try again.",
         variant: "destructive",
       });
-      console.error('Sign up error:', error);
     } finally {
       setIsLoading(false);
     }
@@ -116,12 +113,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         description: "You have been successfully signed out.",
       });
     } catch (error: any) {
+      console.error('Sign out error:', error);
       toast({
         title: "Sign out failed",
         description: error.message || "Could not sign out. Please try again.",
         variant: "destructive",
       });
-      console.error('Sign out error:', error);
     } finally {
       setIsLoading(false);
     }
@@ -143,12 +140,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         description: "Check your inbox for a password reset link.",
       });
     } catch (error: any) {
+      console.error('Password reset error:', error);
       toast({
         title: "Password reset failed",
         description: error.message || "Could not send reset email. Please try again.",
         variant: "destructive",
       });
-      console.error('Password reset error:', error);
     } finally {
       setIsLoading(false);
     }
@@ -168,12 +165,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         description: "Your password has been successfully updated.",
       });
     } catch (error: any) {
+      console.error('Password update error:', error);
       toast({
         title: "Password update failed",
         description: error.message || "Could not update password. Please try again.",
         variant: "destructive",
       });
-      console.error('Password update error:', error);
     } finally {
       setIsLoading(false);
     }
