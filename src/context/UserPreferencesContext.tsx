@@ -1,4 +1,3 @@
-
 import React, { createContext, useState, useContext, ReactNode, useEffect } from 'react';
 import { LanguageCode } from '@/lib/languages';
 import { useAuth } from './AuthContext';
