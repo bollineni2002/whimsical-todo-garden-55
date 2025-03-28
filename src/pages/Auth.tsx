@@ -1,350 +1,396 @@
 
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from '@/context/AuthContext';
-import { motion } from 'framer-motion';
-import ThemeToggle from '@/components/ThemeToggle';
-import { useToast } from '@/hooks/use-toast';
-import { Mail, Phone, User, Lock, ArrowRight } from 'lucide-react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { At, PhoneCall, Eye, EyeOff, ArrowRight } from 'lucide-react';
 import { useLanguage } from '@/lib/languages';
+import { useToast } from '@/hooks/use-toast';
+import { motion } from 'framer-motion';
+import AuthHeader from '@/components/AuthHeader';
+
+// Helper function to validate email format
+const isValidEmail = (email: string) => {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+};
+
+// Helper function to validate phone number format
+const isValidPhone = (phone: string) => {
+  return /^\+?[0-9]{10,15}$/.test(phone);
+};
 
 const Auth = () => {
-  const [authMethod, setAuthMethod] = useState<'email' | 'phone'>('email');
-  const [isLogin, setIsLogin] = useState(true);
-  const [isForgotPassword, setIsForgotPassword] = useState(false);
-  
-  // Form fields
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [phone, setPhone] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  
-  const { signIn, signUp, resetPassword, signInWithPhone, isLoading } = useAuth();
   const navigate = useNavigate();
-  const { toast } = useToast();
+  const { user, signIn, signUp, signInWithPhone } = useAuth();
   const { t } = useLanguage();
-
+  const { toast } = useToast();
+  
+  // State for form fields
+  const [activeTab, setActiveTab] = useState<string>("signin");
+  const [identifier, setIdentifier] = useState("");
+  const [identifierType, setIdentifierType] = useState<"email" | "phone" | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [name, setName] = useState("");
+  const [loading, setLoading] = useState(false);
+  
+  // Determine identifier type whenever it changes
   useEffect(() => {
-    // Reset form when switching between login/signup
-    setPassword('');
-    setConfirmPassword('');
-  }, [isLogin]);
-
-  useEffect(() => {
-    // Reset form fields when switching auth methods
-    if (isLogin) {
-      setEmail('');
-      setPhone('');
-      setPassword('');
+    if (isValidEmail(identifier)) {
+      setIdentifierType("email");
+    } else if (isValidPhone(identifier)) {
+      setIdentifierType("phone");
+    } else {
+      setIdentifierType(null);
     }
-  }, [authMethod, isLogin]);
-
-  const handleSubmit = async (e: React.FormEvent) => {
+  }, [identifier]);
+  
+  // Redirect if already logged in
+  useEffect(() => {
+    if (user) {
+      navigate("/");
+    }
+  }, [user, navigate]);
+  
+  const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (isForgotPassword) {
-      try {
-        await resetPassword(email);
-        toast({
-          title: "Reset email sent",
-          description: "Check your email for password reset instructions.",
-        });
-      } catch (error) {
-        console.error('Password reset error:', error);
-      }
-      return;
-    }
-
-    // Validate form
-    if (!isLogin && password !== confirmPassword) {
-      toast({
-        title: "Passwords don't match",
-        description: "Please make sure your passwords match.",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    // For signup, validate that both email and phone are provided
-    if (!isLogin) {
-      if (!email) {
-        toast({
-          title: "Email required",
-          description: "Please provide your email address.",
-          variant: "destructive",
-        });
-        return;
-      }
-      
-      if (!phone) {
-        toast({
-          title: "Phone number required",
-          description: "Please provide your phone number.",
-          variant: "destructive",
-        });
-        return;
-      }
-    }
+    setLoading(true);
     
     try {
-      if (isLogin) {
-        if (authMethod === 'email') {
-          await signIn(email, password);
-          navigate('/');
-        } else {
-          // Navigate to OTP verification
-          await signInWithPhone(phone);
-          navigate('/verify-otp', { state: { phone } });
+      if (!identifier) {
+        throw new Error("Please enter an email or phone number");
+      }
+      
+      if (identifierType === "email") {
+        if (!password) {
+          throw new Error("Please enter your password");
         }
+        await signIn(identifier, password);
+        // Navigate on success happens automatically via the auth effect
+      } else if (identifierType === "phone") {
+        await signInWithPhone(identifier);
+        // Store phone number for OTP verification
+        sessionStorage.setItem("verifyPhone", identifier);
+        navigate("/verify-otp");
       } else {
-        // Sign up with both email and phone
-        await signUp(email, password, name, phone);
-        if (authMethod === 'phone') {
-          // Navigate to OTP verification if signing up with phone
-          navigate('/verify-otp', { state: { phone } });
-        }
+        throw new Error("Please enter a valid email or phone number");
       }
     } catch (error: any) {
       toast({
-        title: isLogin ? "Login failed" : "Signup failed",
-        description: error.message || "Authentication error",
+        title: "Sign In Failed",
+        description: error.message || "An error occurred during sign in.",
         variant: "destructive",
       });
+    } finally {
+      setLoading(false);
     }
   };
-
-  const toggleForgotPassword = () => {
-    setIsForgotPassword(!isForgotPassword);
-  };
-
-  return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      className="min-h-screen flex flex-col items-center justify-center p-4 bg-background"
-    >
-      <div className="absolute top-4 right-4">
-        <ThemeToggle />
-      </div>
+  
+  const handleSignUp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    
+    try {
+      if (!name) {
+        throw new Error("Please enter your name");
+      }
       
-      <div className="w-full max-w-md">
-        <div className="flex justify-center mb-6">
-          <div className="w-12 h-12 rounded-lg bg-primary flex items-center justify-center">
-            <svg 
-              xmlns="http://www.w3.org/2000/svg" 
-              className="h-6 w-6 text-primary-foreground" 
-              viewBox="0 0 24 24" 
-              fill="none" 
-              stroke="currentColor" 
-              strokeWidth="2" 
-              strokeLinecap="round" 
-              strokeLinejoin="round"
-            >
-              <path d="M20 12V8H6a2 2 0 0 1-2-2c0-1.1.9-2 2-2h12v4" />
-              <path d="M4 6v12c0 1.1.9 2 2 2h14v-4" />
-              <path d="M18 12a2 2 0 0 0-2 2c0 1.1.9 2 2 2h4v-4h-4z" />
-            </svg>
-          </div>
-        </div>
+      if (!identifier) {
+        throw new Error("Please enter an email and phone number");
+      }
+      
+      if (!identifierType) {
+        throw new Error("Please enter a valid email or phone number");
+      }
+      
+      if (identifierType === "email") {
+        if (!password) {
+          throw new Error("Please enter a password");
+        }
         
-        <Card>
-          <CardHeader>
-            <CardTitle>
-              {isForgotPassword 
-                ? 'Reset Password' 
-                : isLogin ? t('sign_in') : t('sign_up')}
-            </CardTitle>
-            <CardDescription>
-              {isForgotPassword 
-                ? 'Enter your email to receive a password reset link' 
-                : isLogin 
-                  ? 'Enter your credentials to access your account' 
-                  : 'Sign up for a new account to manage your transactions'}
-            </CardDescription>
-          </CardHeader>
-          
-          <form onSubmit={handleSubmit}>
-            {!isForgotPassword && (
-              <CardContent className="space-y-4">
-                {!isLogin && (
-                  <div className="space-y-2">
-                    <Label htmlFor="name">{t('name')}</Label>
-                    <div className="relative">
-                      <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                      <Input 
-                        id="name" 
-                        type="text" 
-                        value={name} 
-                        onChange={(e) => setName(e.target.value)} 
-                        placeholder="John Doe" 
-                        required 
-                        className="pl-10"
-                      />
-                    </div>
-                  </div>
-                )}
-
-                {/* Email field - always visible for signup */}
-                {(!isLogin || authMethod === 'email') && (
-                  <div className="space-y-2">
-                    <Label htmlFor="email">{t('email')}</Label>
-                    <div className="relative">
-                      <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                      <Input 
-                        id="email" 
-                        type="email" 
-                        value={email} 
-                        onChange={(e) => setEmail(e.target.value)} 
-                        placeholder="your@email.com" 
-                        required={!isLogin || authMethod === 'email'}
-                        className="pl-10"
-                      />
-                    </div>
-                  </div>
-                )}
-
-                {/* Phone field - always visible for signup */}
-                {(!isLogin || authMethod === 'phone') && (
-                  <div className="space-y-2">
-                    <Label htmlFor="phone">{t('phone')}</Label>
-                    <div className="relative">
-                      <Phone className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                      <Input 
-                        id="phone" 
-                        type="tel" 
-                        value={phone} 
-                        onChange={(e) => setPhone(e.target.value)} 
-                        placeholder="+1234567890" 
-                        required={!isLogin || authMethod === 'phone'}
-                        className="pl-10"
-                      />
-                    </div>
-                  </div>
-                )}
-
-                {/* Login tabs - only for login flow */}
-                {isLogin && (
-                  <Tabs defaultValue={authMethod} onValueChange={(value) => setAuthMethod(value as 'email' | 'phone')}>
-                    <TabsList className="grid w-full grid-cols-2 mb-4">
-                      <TabsTrigger value="email">Email</TabsTrigger>
-                      <TabsTrigger value="phone">Phone</TabsTrigger>
-                    </TabsList>
-                  </Tabs>
-                )}
-                
-                <div className="space-y-2">
-                  <Label htmlFor="password">{t('password')}</Label>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                    <Input 
-                      id="password" 
-                      type="password" 
-                      value={password} 
-                      onChange={(e) => setPassword(e.target.value)} 
-                      placeholder="********" 
-                      required 
-                      className="pl-10"
-                    />
-                  </div>
-                </div>
-                
-                {!isLogin && (
-                  <div className="space-y-2">
-                    <Label htmlFor="confirmPassword">{t('confirm_password')}</Label>
-                    <div className="relative">
-                      <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                      <Input 
-                        id="confirmPassword" 
-                        type="password" 
-                        value={confirmPassword} 
-                        onChange={(e) => setConfirmPassword(e.target.value)} 
-                        placeholder="********" 
-                        required 
-                        className="pl-10"
-                      />
-                    </div>
-                  </div>
-                )}
-              </CardContent>
-            )}
+        if (password.length < 6) {
+          throw new Error("Password must be at least 6 characters");
+        }
+        
+        if (password !== confirmPassword) {
+          throw new Error("Passwords do not match");
+        }
+        
+        await signUp(identifier, password, name);
+        setActiveTab("signin");
+        toast({
+          title: "Account Created",
+          description: "Your account has been created successfully. Please sign in.",
+        });
+      } else if (identifierType === "phone") {
+        // For phone signup, we'll need to collect an email as well
+        toast({
+          title: "Email Required",
+          description: "Please provide an email address for account creation.",
+          variant: "destructive",
+        });
+        return;
+      }
+    } catch (error: any) {
+      toast({
+        title: "Sign Up Failed",
+        description: error.message || "An error occurred during registration.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  const handleForgotPassword = () => {
+    if (!identifier || identifierType !== "email") {
+      toast({
+        title: "Email Required",
+        description: "Please enter a valid email address to reset your password.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    navigate("/reset-password", { state: { email: identifier } });
+  };
+  
+  return (
+    <div className="min-h-screen bg-background flex flex-col">
+      <AuthHeader businessName="TransactLy" />
+      
+      <div className="flex-1 flex items-center justify-center p-4">
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3 }}
+          className="w-full max-w-md"
+        >
+          <Card className="border shadow-lg">
+            <CardHeader className="space-y-1">
+              <CardTitle className="text-2xl text-center">
+                {activeTab === "signin" ? t('sign_in') : t('sign_up')}
+              </CardTitle>
+              <CardDescription className="text-center">
+                {activeTab === "signin" 
+                  ? "Enter your email/phone to sign in to your account"
+                  : "Create a new account to get started"}
+              </CardDescription>
+            </CardHeader>
             
-            {isForgotPassword && (
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="reset-email">Email</Label>
-                  <div className="relative">
-                    <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                    <Input 
-                      id="reset-email" 
-                      type="email" 
-                      value={email} 
-                      onChange={(e) => setEmail(e.target.value)} 
-                      placeholder="your@email.com" 
-                      required 
-                      className="pl-10"
-                    />
-                  </div>
-                </div>
-              </CardContent>
-            )}
+            <CardContent>
+              <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+                <TabsList className="grid w-full grid-cols-2 mb-6">
+                  <TabsTrigger value="signin">{t('sign_in')}</TabsTrigger>
+                  <TabsTrigger value="signup">{t('sign_up')}</TabsTrigger>
+                </TabsList>
+                
+                <TabsContent value="signin">
+                  <form onSubmit={handleSignIn} className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="identifier">Email or Phone Number</Label>
+                      <div className="relative">
+                        <Input
+                          id="identifier"
+                          type="text"
+                          placeholder="Enter email or phone number"
+                          value={identifier}
+                          onChange={(e) => setIdentifier(e.target.value)}
+                          className="pl-10"
+                          required
+                        />
+                        <div className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
+                          {identifierType === "email" ? (
+                            <At size={16} />
+                          ) : identifierType === "phone" ? (
+                            <PhoneCall size={16} />
+                          ) : (
+                            <At size={16} />
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {identifierType === "email" && (
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <Label htmlFor="signin-password">{t('password')}</Label>
+                          <Button 
+                            type="button" 
+                            variant="link" 
+                            className="px-0 text-xs" 
+                            onClick={handleForgotPassword}
+                          >
+                            {t('forgot_password')}
+                          </Button>
+                        </div>
+                        <div className="relative">
+                          <Input
+                            id="signin-password"
+                            type={showPassword ? "text" : "password"}
+                            placeholder="Enter your password"
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            className="pr-10"
+                          />
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                            onClick={() => setShowPassword(!showPassword)}
+                          >
+                            {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+                    
+                    <Button type="submit" className="w-full" disabled={loading}>
+                      {loading ? (
+                        <span className="flex items-center">
+                          <span className="animate-spin mr-2">⏳</span> Processing...
+                        </span>
+                      ) : (
+                        <>
+                          {identifierType === "phone" ? "Continue with OTP" : t('sign_in')}
+                          <ArrowRight className="ml-2 h-4 w-4" />
+                        </>
+                      )}
+                    </Button>
+                  </form>
+                </TabsContent>
+                
+                <TabsContent value="signup">
+                  <form onSubmit={handleSignUp} className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="name">{t('name')}</Label>
+                      <Input
+                        id="name"
+                        placeholder="Enter your full name"
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
+                        required
+                      />
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="signup-identifier">Email or Phone Number</Label>
+                      <div className="relative">
+                        <Input
+                          id="signup-identifier"
+                          type="text"
+                          placeholder="Enter email or phone number"
+                          value={identifier}
+                          onChange={(e) => setIdentifier(e.target.value)}
+                          className="pl-10"
+                          required
+                        />
+                        <div className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
+                          {identifierType === "email" ? (
+                            <At size={16} />
+                          ) : identifierType === "phone" ? (
+                            <PhoneCall size={16} />
+                          ) : (
+                            <At size={16} />
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {identifierType === "email" && (
+                      <>
+                        <div className="space-y-2">
+                          <Label htmlFor="signup-password">{t('password')}</Label>
+                          <div className="relative">
+                            <Input
+                              id="signup-password"
+                              type={showPassword ? "text" : "password"}
+                              placeholder="Create a password"
+                              value={password}
+                              onChange={(e) => setPassword(e.target.value)}
+                              className="pr-10"
+                              required
+                            />
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                              onClick={() => setShowPassword(!showPassword)}
+                            >
+                              {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                            </Button>
+                          </div>
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <Label htmlFor="confirm-password">{t('confirm_password')}</Label>
+                          <Input
+                            id="confirm-password"
+                            type={showPassword ? "text" : "password"}
+                            placeholder="Confirm your password"
+                            value={confirmPassword}
+                            onChange={(e) => setConfirmPassword(e.target.value)}
+                            required
+                          />
+                        </div>
+                      </>
+                    )}
+                    
+                    <Button type="submit" className="w-full" disabled={loading}>
+                      {loading ? (
+                        <span className="flex items-center">
+                          <span className="animate-spin mr-2">⏳</span> Processing...
+                        </span>
+                      ) : (
+                        <>
+                          {t('sign_up')}
+                          <ArrowRight className="ml-2 h-4 w-4" />
+                        </>
+                      )}
+                    </Button>
+                  </form>
+                </TabsContent>
+              </Tabs>
+            </CardContent>
             
-            <CardFooter className="flex flex-col space-y-4">
-              <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading 
-                  ? 'Processing...' 
-                  : isForgotPassword 
-                    ? 'Send Reset Link'
-                    : isLogin
-                      ? (authMethod === 'email' ? t('sign_in') : 'Continue to OTP')
-                      : t('sign_up')}
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
-              
-              {!isForgotPassword && (
-                <Button 
-                  type="button" 
-                  variant="ghost" 
-                  className="w-full"
-                  onClick={() => setIsLogin(!isLogin)}
-                >
-                  {isLogin 
-                    ? t('dont_have_account')
-                    : t('already_have_account')}
-                </Button>
-              )}
-              
-              {(isLogin && !isForgotPassword && authMethod === 'email') && (
-                <Button 
-                  type="button" 
-                  variant="link" 
-                  className="w-full"
-                  onClick={toggleForgotPassword}
-                >
-                  {t('forgot_password')}
-                </Button>
-              )}
-              
-              {isForgotPassword && (
-                <Button 
-                  type="button" 
-                  variant="link" 
-                  className="w-full"
-                  onClick={toggleForgotPassword}
-                >
-                  Back to sign in
-                </Button>
-              )}
+            <CardFooter className="flex flex-col space-y-4 mt-4">
+              <div className="text-sm text-center text-muted-foreground w-full">
+                {activeTab === "signin" ? (
+                  <span>
+                    {t('dont_have_account')}{' '}
+                    <Button 
+                      variant="link" 
+                      className="p-0" 
+                      onClick={() => setActiveTab("signup")}
+                    >
+                      {t('sign_up')}
+                    </Button>
+                  </span>
+                ) : (
+                  <span>
+                    {t('already_have_account')}{' '}
+                    <Button 
+                      variant="link" 
+                      className="p-0" 
+                      onClick={() => setActiveTab("signin")}
+                    >
+                      {t('sign_in')}
+                    </Button>
+                  </span>
+                )}
+              </div>
             </CardFooter>
-          </form>
-        </Card>
+          </Card>
+        </motion.div>
       </div>
-    </motion.div>
+    </div>
   );
 };
 

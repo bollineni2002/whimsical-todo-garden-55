@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -8,19 +8,26 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { useLanguage } from '@/lib/languages';
-import { ArrowLeft, Save, User, Lock, Globe, DollarSign, Calendar, LayoutDashboard, Palette, Type } from 'lucide-react';
+import { useTheme } from '@/context/ThemeContext';
 import { languages } from '@/lib/languages';
 import AuthHeader from '@/components/AuthHeader';
+import { 
+  ArrowLeft, Save, User, Lock, Globe, DollarSign, 
+  Calendar, LayoutDashboard, LayoutList, Sun, Moon, 
+  Settings as SettingsIcon, Type
+} from 'lucide-react';
 import { motion } from 'framer-motion';
 
 const Settings = () => {
-  const { user, updatePassword } = useAuth();
+  const { user, updatePassword, updateProfile } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
   const { t, language, setLanguage } = useLanguage();
+  const { theme, setTheme, fontSize, setFontSize } = useTheme();
 
   // Password change state
   const [oldPassword, setOldPassword] = useState('');
@@ -35,11 +42,26 @@ const Settings = () => {
   const [isProfileUpdating, setIsProfileUpdating] = useState(false);
 
   // Preferences state
-  const [selectedCurrency, setSelectedCurrency] = useState('USD');
-  const [selectedDateFormat, setSelectedDateFormat] = useState('MM/DD/YYYY');
-  const [defaultView, setDefaultView] = useState('dashboard');
-  const [isDarkMode, setIsDarkMode] = useState(false);
-  const [fontSize, setFontSize] = useState('medium');
+  const [selectedCurrency, setSelectedCurrency] = useState(() => {
+    return localStorage.getItem('currency') || 'USD';
+  });
+  
+  const [selectedDateFormat, setSelectedDateFormat] = useState(() => {
+    return localStorage.getItem('dateFormat') || 'MM/DD/YYYY';
+  });
+  
+  const [defaultView, setDefaultView] = useState(() => {
+    return localStorage.getItem('defaultView') || 'dashboard';
+  });
+
+  // Load user data when component mounts
+  useEffect(() => {
+    if (user) {
+      setName(user.user_metadata?.full_name || '');
+      setEmail(user.email || '');
+      setPhone(user.user_metadata?.phone || '');
+    }
+  }, [user]);
 
   const handlePasswordChange = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -90,10 +112,22 @@ const Settings = () => {
   const handleProfileUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    if (!name.trim()) {
+      toast({
+        title: "Name is required",
+        description: "Please enter your name.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     setIsProfileUpdating(true);
     try {
-      // This would be implemented in AuthContext
-      // await updateProfile({ name, email, phone });
+      await updateProfile({ 
+        name, 
+        email,
+        phone
+      });
       
       toast({
         title: "Profile updated",
@@ -112,12 +146,10 @@ const Settings = () => {
 
   const handlePreferencesUpdate = async () => {
     try {
-      // Save preferences to localStorage or backend
+      // Save preferences to localStorage
       localStorage.setItem('currency', selectedCurrency);
       localStorage.setItem('dateFormat', selectedDateFormat);
       localStorage.setItem('defaultView', defaultView);
-      localStorage.setItem('darkMode', isDarkMode.toString());
-      localStorage.setItem('fontSize', fontSize);
       
       toast({
         title: "Preferences saved",
@@ -161,21 +193,25 @@ const Settings = () => {
           </div>
           
           <Tabs defaultValue="profile" className="w-full">
-            <TabsList className="grid grid-cols-4 md:grid-cols-8 mb-6">
-              <TabsTrigger value="profile" className="flex items-center">
-                <User className="h-4 w-4 mr-2" />
+            <TabsList className="grid grid-cols-5 mb-6">
+              <TabsTrigger value="profile" className="flex items-center gap-2">
+                <User className="h-4 w-4" />
                 <span className="hidden md:inline">{t('profile')}</span>
               </TabsTrigger>
-              <TabsTrigger value="password" className="flex items-center">
-                <Lock className="h-4 w-4 mr-2" />
+              <TabsTrigger value="password" className="flex items-center gap-2">
+                <Lock className="h-4 w-4" />
                 <span className="hidden md:inline">{t('change_password')}</span>
               </TabsTrigger>
-              <TabsTrigger value="language" className="flex items-center">
-                <Globe className="h-4 w-4 mr-2" />
+              <TabsTrigger value="language" className="flex items-center gap-2">
+                <Globe className="h-4 w-4" />
                 <span className="hidden md:inline">{t('language')}</span>
               </TabsTrigger>
-              <TabsTrigger value="preferences" className="flex items-center">
-                <Palette className="h-4 w-4 mr-2" />
+              <TabsTrigger value="appearance" className="flex items-center gap-2">
+                <SettingsIcon className="h-4 w-4" />
+                <span className="hidden md:inline">Appearance</span>
+              </TabsTrigger>
+              <TabsTrigger value="preferences" className="flex items-center gap-2">
+                <DollarSign className="h-4 w-4" />
                 <span className="hidden md:inline">Preferences</span>
               </TabsTrigger>
             </TabsList>
@@ -276,7 +312,7 @@ const Settings = () => {
                     <Button 
                       type="submit" 
                       className="w-full mt-4"
-                      disabled={isPasswordChanging}
+                      disabled={isPasswordChanging || !oldPassword || !newPassword || !confirmPassword}
                     >
                       {isPasswordChanging ? 'Updating...' : 'Update Password'}
                     </Button>
@@ -324,6 +360,66 @@ const Settings = () => {
                 </CardContent>
               </Card>
             </TabsContent>
+
+            {/* Appearance Tab */}
+            <TabsContent value="appearance">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Appearance</CardTitle>
+                  <CardDescription>
+                    Customize how the application looks
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-6">
+                    {/* Theme Selection */}
+                    <div className="space-y-2">
+                      <Label>{t('theme')}</Label>
+                      <ToggleGroup type="single" value={theme} onValueChange={(value) => value && setTheme(value as 'light' | 'dark' | 'system')}>
+                        <ToggleGroupItem value="light" className="flex items-center gap-2 flex-1 justify-center">
+                          <Sun className="h-4 w-4" />
+                          <span>Light</span>
+                        </ToggleGroupItem>
+                        <ToggleGroupItem value="dark" className="flex items-center gap-2 flex-1 justify-center">
+                          <Moon className="h-4 w-4" />
+                          <span>Dark</span>
+                        </ToggleGroupItem>
+                        <ToggleGroupItem value="system" className="flex items-center gap-2 flex-1 justify-center">
+                          <SettingsIcon className="h-4 w-4" />
+                          <span>System</span>
+                        </ToggleGroupItem>
+                      </ToggleGroup>
+                    </div>
+                    
+                    {/* Font Size Settings */}
+                    <div className="space-y-2">
+                      <Label htmlFor="font-size">{t('font_size')}</Label>
+                      <Select
+                        value={fontSize}
+                        onValueChange={(value) => setFontSize(value as 'small' | 'medium' | 'large')}
+                      >
+                        <SelectTrigger id="font-size" className="w-full">
+                          <div className="flex items-center gap-2">
+                            <Type className="h-4 w-4" />
+                            <SelectValue placeholder="Select font size" />
+                          </div>
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="small">Small</SelectItem>
+                          <SelectItem value="medium">Medium</SelectItem>
+                          <SelectItem value="large">Large</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <div className="mt-4 rounded-lg bg-muted p-4">
+                        <p className="text-sm text-muted-foreground">
+                          This is a preview of the current font size setting. Adjust it to your preference.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
             
             {/* Preferences Tab */}
             <TabsContent value="preferences">
@@ -331,7 +427,7 @@ const Settings = () => {
                 <CardHeader>
                   <CardTitle>Application Preferences</CardTitle>
                   <CardDescription>
-                    Customize how the application looks and behaves
+                    Customize how the application behaves
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -344,7 +440,10 @@ const Settings = () => {
                         onValueChange={setSelectedCurrency}
                       >
                         <SelectTrigger id="currency" className="w-full">
-                          <SelectValue placeholder="Select currency" />
+                          <div className="flex items-center gap-2">
+                            <DollarSign className="h-4 w-4" />
+                            <SelectValue placeholder="Select currency" />
+                          </div>
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="USD">USD ($)</SelectItem>
@@ -364,7 +463,10 @@ const Settings = () => {
                         onValueChange={setSelectedDateFormat}
                       >
                         <SelectTrigger id="date-format" className="w-full">
-                          <SelectValue placeholder="Select date format" />
+                          <div className="flex items-center gap-2">
+                            <Calendar className="h-4 w-4" />
+                            <SelectValue placeholder="Select date format" />
+                          </div>
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="MM/DD/YYYY">MM/DD/YYYY</SelectItem>
@@ -378,51 +480,21 @@ const Settings = () => {
                     {/* Default View */}
                     <div className="space-y-2">
                       <Label htmlFor="default-view">{t('default_view')}</Label>
-                      <Select
+                      <ToggleGroup 
+                        type="single" 
                         value={defaultView}
-                        onValueChange={setDefaultView}
+                        onValueChange={(value) => value && setDefaultView(value)}
+                        className="justify-start"
                       >
-                        <SelectTrigger id="default-view" className="w-full">
-                          <SelectValue placeholder="Select default view" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="dashboard">Dashboard View</SelectItem>
-                          <SelectItem value="list">List View</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    
-                    {/* Theme Customization */}
-                    <div className="flex items-center justify-between">
-                      <div className="space-y-0.5">
-                        <Label htmlFor="dark-mode">{t('theme')}</Label>
-                        <p className="text-sm text-muted-foreground">
-                          Enable dark mode for the application
-                        </p>
-                      </div>
-                      <Switch
-                        id="dark-mode"
-                        checked={isDarkMode}
-                        onCheckedChange={setIsDarkMode}
-                      />
-                    </div>
-                    
-                    {/* Font Size Settings */}
-                    <div className="space-y-2">
-                      <Label htmlFor="font-size">{t('font_size')}</Label>
-                      <Select
-                        value={fontSize}
-                        onValueChange={setFontSize}
-                      >
-                        <SelectTrigger id="font-size" className="w-full">
-                          <SelectValue placeholder="Select font size" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="small">Small</SelectItem>
-                          <SelectItem value="medium">Medium</SelectItem>
-                          <SelectItem value="large">Large</SelectItem>
-                        </SelectContent>
-                      </Select>
+                        <ToggleGroupItem value="dashboard" className="flex items-center gap-2">
+                          <LayoutDashboard className="h-4 w-4" />
+                          <span>Dashboard View</span>
+                        </ToggleGroupItem>
+                        <ToggleGroupItem value="list" className="flex items-center gap-2">
+                          <LayoutList className="h-4 w-4" />
+                          <span>List View</span>
+                        </ToggleGroupItem>
+                      </ToggleGroup>
                     </div>
                     
                     <Button 
