@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -21,7 +20,6 @@ const ResetPassword = () => {
   const { toast } = useToast();
   const { t } = useLanguage();
 
-  // Check if we have the hash parameter in the URL (from the reset link)
   useEffect(() => {
     if (!location.hash) {
       toast({
@@ -36,7 +34,6 @@ const ResetPassword = () => {
   const handleReset = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Simple validation
     if (password.length < 8) {
       setValidationError('Password must be at least 8 characters long');
       return;
@@ -68,7 +65,6 @@ const ResetPassword = () => {
         description: "Your password has been reset successfully. You can now sign in with your new password.",
       });
       
-      // Redirect to login after a short delay
       setTimeout(() => {
         navigate('/auth');
       }, 2000);
