@@ -11,6 +11,7 @@ import ThemeToggle from '@/components/ThemeToggle';
 import { useToast } from '@/hooks/use-toast';
 import { Mail, Phone, User, Lock, ArrowRight } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useLanguage } from '@/lib/languages';
 
 const Auth = () => {
   const [authMethod, setAuthMethod] = useState<'email' | 'phone'>('email');
@@ -27,6 +28,7 @@ const Auth = () => {
   const { signIn, signUp, resetPassword, signInWithPhone, isLoading } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { t } = useLanguage();
 
   useEffect(() => {
     // Reset form when switching between login/signup
@@ -36,10 +38,12 @@ const Auth = () => {
 
   useEffect(() => {
     // Reset form fields when switching auth methods
-    setEmail('');
-    setPhone('');
-    setPassword('');
-  }, [authMethod]);
+    if (isLogin) {
+      setEmail('');
+      setPhone('');
+      setPassword('');
+    }
+  }, [authMethod, isLogin]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -67,6 +71,27 @@ const Auth = () => {
       return;
     }
     
+    // For signup, validate that both email and phone are provided
+    if (!isLogin) {
+      if (!email) {
+        toast({
+          title: "Email required",
+          description: "Please provide your email address.",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      if (!phone) {
+        toast({
+          title: "Phone number required",
+          description: "Please provide your phone number.",
+          variant: "destructive",
+        });
+        return;
+      }
+    }
+    
     try {
       if (isLogin) {
         if (authMethod === 'email') {
@@ -78,12 +103,10 @@ const Auth = () => {
           navigate('/verify-otp', { state: { phone } });
         }
       } else {
-        // Sign up
-        if (authMethod === 'email') {
-          await signUp(email, password, name, phone);
-        } else {
-          await signUp(email, password, name, phone);
-          // Phone verification will happen after signup
+        // Sign up with both email and phone
+        await signUp(email, password, name, phone);
+        if (authMethod === 'phone') {
+          // Navigate to OTP verification if signing up with phone
           navigate('/verify-otp', { state: { phone } });
         }
       }
@@ -135,7 +158,7 @@ const Auth = () => {
             <CardTitle>
               {isForgotPassword 
                 ? 'Reset Password' 
-                : isLogin ? 'Sign In' : 'Create Account'}
+                : isLogin ? t('sign_in') : t('sign_up')}
             </CardTitle>
             <CardDescription>
               {isForgotPassword 
@@ -151,7 +174,7 @@ const Auth = () => {
               <CardContent className="space-y-4">
                 {!isLogin && (
                   <div className="space-y-2">
-                    <Label htmlFor="name">Full Name</Label>
+                    <Label htmlFor="name">{t('name')}</Label>
                     <div className="relative">
                       <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                       <Input 
@@ -166,136 +189,88 @@ const Auth = () => {
                     </div>
                   </div>
                 )}
+
+                {/* Email field - always visible for signup */}
+                {(!isLogin || authMethod === 'email') && (
+                  <div className="space-y-2">
+                    <Label htmlFor="email">{t('email')}</Label>
+                    <div className="relative">
+                      <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                      <Input 
+                        id="email" 
+                        type="email" 
+                        value={email} 
+                        onChange={(e) => setEmail(e.target.value)} 
+                        placeholder="your@email.com" 
+                        required={!isLogin || authMethod === 'email'}
+                        className="pl-10"
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {/* Phone field - always visible for signup */}
+                {(!isLogin || authMethod === 'phone') && (
+                  <div className="space-y-2">
+                    <Label htmlFor="phone">{t('phone')}</Label>
+                    <div className="relative">
+                      <Phone className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                      <Input 
+                        id="phone" 
+                        type="tel" 
+                        value={phone} 
+                        onChange={(e) => setPhone(e.target.value)} 
+                        placeholder="+1234567890" 
+                        required={!isLogin || authMethod === 'phone'}
+                        className="pl-10"
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {/* Login tabs - only for login flow */}
+                {isLogin && (
+                  <Tabs defaultValue={authMethod} onValueChange={(value) => setAuthMethod(value as 'email' | 'phone')}>
+                    <TabsList className="grid w-full grid-cols-2 mb-4">
+                      <TabsTrigger value="email">Email</TabsTrigger>
+                      <TabsTrigger value="phone">Phone</TabsTrigger>
+                    </TabsList>
+                  </Tabs>
+                )}
                 
-                <Tabs defaultValue={authMethod} onValueChange={(value) => setAuthMethod(value as 'email' | 'phone')}>
-                  <TabsList className="grid w-full grid-cols-2 mb-4">
-                    <TabsTrigger value="email">Email</TabsTrigger>
-                    <TabsTrigger value="phone">Phone</TabsTrigger>
-                  </TabsList>
-                  
-                  <TabsContent value="email" className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="email">Email</Label>
-                      <div className="relative">
-                        <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                        <Input 
-                          id="email" 
-                          type="email" 
-                          value={email} 
-                          onChange={(e) => setEmail(e.target.value)} 
-                          placeholder="your@email.com" 
-                          required 
-                          className="pl-10"
-                        />
-                      </div>
+                <div className="space-y-2">
+                  <Label htmlFor="password">{t('password')}</Label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                    <Input 
+                      id="password" 
+                      type="password" 
+                      value={password} 
+                      onChange={(e) => setPassword(e.target.value)} 
+                      placeholder="********" 
+                      required 
+                      className="pl-10"
+                    />
+                  </div>
+                </div>
+                
+                {!isLogin && (
+                  <div className="space-y-2">
+                    <Label htmlFor="confirmPassword">{t('confirm_password')}</Label>
+                    <div className="relative">
+                      <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                      <Input 
+                        id="confirmPassword" 
+                        type="password" 
+                        value={confirmPassword} 
+                        onChange={(e) => setConfirmPassword(e.target.value)} 
+                        placeholder="********" 
+                        required 
+                        className="pl-10"
+                      />
                     </div>
-                    
-                    <div className="space-y-2">
-                      <Label htmlFor="password">Password</Label>
-                      <div className="relative">
-                        <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                        <Input 
-                          id="password" 
-                          type="password" 
-                          value={password} 
-                          onChange={(e) => setPassword(e.target.value)} 
-                          placeholder="********" 
-                          required 
-                          className="pl-10"
-                        />
-                      </div>
-                    </div>
-                    
-                    {!isLogin && (
-                      <div className="space-y-2">
-                        <Label htmlFor="confirmPassword">Confirm Password</Label>
-                        <div className="relative">
-                          <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                          <Input 
-                            id="confirmPassword" 
-                            type="password" 
-                            value={confirmPassword} 
-                            onChange={(e) => setConfirmPassword(e.target.value)} 
-                            placeholder="********" 
-                            required 
-                            className="pl-10"
-                          />
-                        </div>
-                      </div>
-                    )}
-                  </TabsContent>
-                  
-                  <TabsContent value="phone" className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="phone">Phone Number</Label>
-                      <div className="relative">
-                        <Phone className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                        <Input 
-                          id="phone" 
-                          type="tel" 
-                          value={phone} 
-                          onChange={(e) => setPhone(e.target.value)} 
-                          placeholder="+1234567890" 
-                          required 
-                          className="pl-10"
-                        />
-                      </div>
-                    </div>
-                    
-                    {!isLogin && !authMethod && (
-                      <div className="space-y-2">
-                        <Label htmlFor="email">Email (Optional)</Label>
-                        <div className="relative">
-                          <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                          <Input 
-                            id="email" 
-                            type="email" 
-                            value={email} 
-                            onChange={(e) => setEmail(e.target.value)} 
-                            placeholder="your@email.com" 
-                            className="pl-10"
-                          />
-                        </div>
-                      </div>
-                    )}
-                    
-                    {!isLogin && (
-                      <>
-                        <div className="space-y-2">
-                          <Label htmlFor="password">Password</Label>
-                          <div className="relative">
-                            <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                            <Input 
-                              id="password" 
-                              type="password" 
-                              value={password} 
-                              onChange={(e) => setPassword(e.target.value)} 
-                              placeholder="********" 
-                              required 
-                              className="pl-10"
-                            />
-                          </div>
-                        </div>
-                        
-                        <div className="space-y-2">
-                          <Label htmlFor="confirmPassword">Confirm Password</Label>
-                          <div className="relative">
-                            <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                            <Input 
-                              id="confirmPassword" 
-                              type="password" 
-                              value={confirmPassword} 
-                              onChange={(e) => setConfirmPassword(e.target.value)} 
-                              placeholder="********" 
-                              required 
-                              className="pl-10"
-                            />
-                          </div>
-                        </div>
-                      </>
-                    )}
-                  </TabsContent>
-                </Tabs>
+                  </div>
+                )}
               </CardContent>
             )}
             
@@ -326,8 +301,8 @@ const Auth = () => {
                   : isForgotPassword 
                     ? 'Send Reset Link'
                     : isLogin
-                      ? (authMethod === 'email' ? 'Sign In' : 'Continue to OTP')
-                      : 'Create Account'}
+                      ? (authMethod === 'email' ? t('sign_in') : 'Continue to OTP')
+                      : t('sign_up')}
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
               
@@ -339,8 +314,8 @@ const Auth = () => {
                   onClick={() => setIsLogin(!isLogin)}
                 >
                   {isLogin 
-                    ? "Don't have an account? Sign up" 
-                    : "Already have an account? Sign in"}
+                    ? t('dont_have_account')
+                    : t('already_have_account')}
                 </Button>
               )}
               
@@ -351,7 +326,7 @@ const Auth = () => {
                   className="w-full"
                   onClick={toggleForgotPassword}
                 >
-                  Forgot password?
+                  {t('forgot_password')}
                 </Button>
               )}
               

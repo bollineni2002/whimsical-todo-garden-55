@@ -13,6 +13,7 @@ interface AuthContextType {
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
   updatePassword: (password: string) => Promise<void>;
+  updateProfile: (profile: { name?: string; email?: string; phone?: string }) => Promise<void>;
   signInWithPhone: (phone: string) => Promise<void>;
   verifyOTP: (phone: string, token: string) => Promise<void>;
   resendOTP: (phone: string) => Promise<void>;
@@ -204,6 +205,51 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const updateProfile = async (profile: { name?: string; email?: string; phone?: string }) => {
+    try {
+      setIsLoading(true);
+      
+      const updates: any = {};
+      
+      // Update user metadata if name or phone is provided
+      if (profile.name || profile.phone) {
+        updates.data = {
+          ...(profile.name && { full_name: profile.name }),
+          ...(profile.phone && { phone: profile.phone }),
+        };
+      }
+      
+      // Update email if provided
+      if (profile.email) {
+        updates.email = profile.email;
+      }
+      
+      // Only update if there are changes
+      if (Object.keys(updates).length > 0) {
+        const { error } = await supabase.auth.updateUser(updates);
+        
+        if (error) {
+          throw error;
+        }
+        
+        toast({
+          title: "Profile updated",
+          description: "Your profile has been successfully updated.",
+        });
+      }
+    } catch (error: any) {
+      console.error('Profile update error:', error);
+      toast({
+        title: "Profile update failed",
+        description: error.message || "Could not update profile. Please try again.",
+        variant: "destructive",
+      });
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const signInWithPhone = async (phone: string) => {
     try {
       setIsLoading(true);
@@ -312,6 +358,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       signOut, 
       resetPassword,
       updatePassword,
+      updateProfile,
       signInWithPhone,
       verifyOTP,
       resendOTP
