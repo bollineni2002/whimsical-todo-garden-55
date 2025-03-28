@@ -11,6 +11,8 @@ import TransactionDetail from "./pages/TransactionDetail";
 import NotFound from "./pages/NotFound";
 import NewTransaction from "./pages/NewTransaction";
 import Auth from "./pages/Auth";
+import VerifyOTP from "./pages/VerifyOTP";
+import ResetPassword from "./pages/ResetPassword";
 import Profile from "./pages/Profile";
 import { useAuth } from "./context/AuthContext";
 
@@ -57,6 +59,8 @@ const App = () => (
           <AnimatePresence mode="wait">
             <Routes>
               <Route path="/auth" element={<Auth />} />
+              <Route path="/verify-otp" element={<VerifyOTP />} />
+              <Route path="/reset-password" element={<ResetPassword />} />
               <Route path="/" element={
                 <ProtectedRoute>
                   <Index />

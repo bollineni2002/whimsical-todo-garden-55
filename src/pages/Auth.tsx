@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -9,15 +9,37 @@ import { useAuth } from '@/context/AuthContext';
 import { motion } from 'framer-motion';
 import ThemeToggle from '@/components/ThemeToggle';
 import { useToast } from '@/hooks/use-toast';
+import { Mail, Phone, User, Lock, ArrowRight } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const Auth = () => {
+  const [authMethod, setAuthMethod] = useState<'email' | 'phone'>('email');
   const [isLogin, setIsLogin] = useState(true);
   const [isForgotPassword, setIsForgotPassword] = useState(false);
+  
+  // Form fields
+  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
-  const { signIn, signUp, resetPassword, isLoading } = useAuth();
+  const [confirmPassword, setConfirmPassword] = useState('');
+  
+  const { signIn, signUp, resetPassword, signInWithPhone, isLoading } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+
+  useEffect(() => {
+    // Reset form when switching between login/signup
+    setPassword('');
+    setConfirmPassword('');
+  }, [isLogin]);
+
+  useEffect(() => {
+    // Reset form fields when switching auth methods
+    setEmail('');
+    setPhone('');
+    setPassword('');
+  }, [authMethod]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -34,13 +56,43 @@ const Auth = () => {
       }
       return;
     }
+
+    // Validate form
+    if (!isLogin && password !== confirmPassword) {
+      toast({
+        title: "Passwords don't match",
+        description: "Please make sure your passwords match.",
+        variant: "destructive",
+      });
+      return;
+    }
     
-    if (isLogin) {
-      await signIn(email, password);
-      navigate('/');
-    } else {
-      await signUp(email, password);
-      // Stay on the page after signup to allow login
+    try {
+      if (isLogin) {
+        if (authMethod === 'email') {
+          await signIn(email, password);
+          navigate('/');
+        } else {
+          // Navigate to OTP verification
+          await signInWithPhone(phone);
+          navigate('/verify-otp', { state: { phone } });
+        }
+      } else {
+        // Sign up
+        if (authMethod === 'email') {
+          await signUp(email, password, name, phone);
+        } else {
+          await signUp(email, password, name, phone);
+          // Phone verification will happen after signup
+          navigate('/verify-otp', { state: { phone } });
+        }
+      }
+    } catch (error: any) {
+      toast({
+        title: isLogin ? "Login failed" : "Signup failed",
+        description: error.message || "Authentication error",
+        variant: "destructive",
+      });
     }
   };
 
@@ -93,41 +145,190 @@ const Auth = () => {
                   : 'Sign up for a new account to manage your transactions'}
             </CardDescription>
           </CardHeader>
+          
           <form onSubmit={handleSubmit}>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input 
-                  id="email" 
-                  type="email" 
-                  value={email} 
-                  onChange={(e) => setEmail(e.target.value)} 
-                  placeholder="your@email.com" 
-                  required 
-                />
-              </div>
-              
-              {!isForgotPassword && (
+            {!isForgotPassword && (
+              <CardContent className="space-y-4">
+                {!isLogin && (
+                  <div className="space-y-2">
+                    <Label htmlFor="name">Full Name</Label>
+                    <div className="relative">
+                      <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                      <Input 
+                        id="name" 
+                        type="text" 
+                        value={name} 
+                        onChange={(e) => setName(e.target.value)} 
+                        placeholder="John Doe" 
+                        required 
+                        className="pl-10"
+                      />
+                    </div>
+                  </div>
+                )}
+                
+                <Tabs defaultValue={authMethod} onValueChange={(value) => setAuthMethod(value as 'email' | 'phone')}>
+                  <TabsList className="grid w-full grid-cols-2 mb-4">
+                    <TabsTrigger value="email">Email</TabsTrigger>
+                    <TabsTrigger value="phone">Phone</TabsTrigger>
+                  </TabsList>
+                  
+                  <TabsContent value="email" className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="email">Email</Label>
+                      <div className="relative">
+                        <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                        <Input 
+                          id="email" 
+                          type="email" 
+                          value={email} 
+                          onChange={(e) => setEmail(e.target.value)} 
+                          placeholder="your@email.com" 
+                          required 
+                          className="pl-10"
+                        />
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="password">Password</Label>
+                      <div className="relative">
+                        <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                        <Input 
+                          id="password" 
+                          type="password" 
+                          value={password} 
+                          onChange={(e) => setPassword(e.target.value)} 
+                          placeholder="********" 
+                          required 
+                          className="pl-10"
+                        />
+                      </div>
+                    </div>
+                    
+                    {!isLogin && (
+                      <div className="space-y-2">
+                        <Label htmlFor="confirmPassword">Confirm Password</Label>
+                        <div className="relative">
+                          <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                          <Input 
+                            id="confirmPassword" 
+                            type="password" 
+                            value={confirmPassword} 
+                            onChange={(e) => setConfirmPassword(e.target.value)} 
+                            placeholder="********" 
+                            required 
+                            className="pl-10"
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </TabsContent>
+                  
+                  <TabsContent value="phone" className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="phone">Phone Number</Label>
+                      <div className="relative">
+                        <Phone className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                        <Input 
+                          id="phone" 
+                          type="tel" 
+                          value={phone} 
+                          onChange={(e) => setPhone(e.target.value)} 
+                          placeholder="+1234567890" 
+                          required 
+                          className="pl-10"
+                        />
+                      </div>
+                    </div>
+                    
+                    {!isLogin && !authMethod && (
+                      <div className="space-y-2">
+                        <Label htmlFor="email">Email (Optional)</Label>
+                        <div className="relative">
+                          <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                          <Input 
+                            id="email" 
+                            type="email" 
+                            value={email} 
+                            onChange={(e) => setEmail(e.target.value)} 
+                            placeholder="your@email.com" 
+                            className="pl-10"
+                          />
+                        </div>
+                      </div>
+                    )}
+                    
+                    {!isLogin && (
+                      <>
+                        <div className="space-y-2">
+                          <Label htmlFor="password">Password</Label>
+                          <div className="relative">
+                            <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                            <Input 
+                              id="password" 
+                              type="password" 
+                              value={password} 
+                              onChange={(e) => setPassword(e.target.value)} 
+                              placeholder="********" 
+                              required 
+                              className="pl-10"
+                            />
+                          </div>
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <Label htmlFor="confirmPassword">Confirm Password</Label>
+                          <div className="relative">
+                            <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                            <Input 
+                              id="confirmPassword" 
+                              type="password" 
+                              value={confirmPassword} 
+                              onChange={(e) => setConfirmPassword(e.target.value)} 
+                              placeholder="********" 
+                              required 
+                              className="pl-10"
+                            />
+                          </div>
+                        </div>
+                      </>
+                    )}
+                  </TabsContent>
+                </Tabs>
+              </CardContent>
+            )}
+            
+            {isForgotPassword && (
+              <CardContent className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="password">Password</Label>
-                  <Input 
-                    id="password" 
-                    type="password" 
-                    value={password} 
-                    onChange={(e) => setPassword(e.target.value)} 
-                    placeholder="********" 
-                    required 
-                  />
+                  <Label htmlFor="reset-email">Email</Label>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                    <Input 
+                      id="reset-email" 
+                      type="email" 
+                      value={email} 
+                      onChange={(e) => setEmail(e.target.value)} 
+                      placeholder="your@email.com" 
+                      required 
+                      className="pl-10"
+                    />
+                  </div>
                 </div>
-              )}
-            </CardContent>
+              </CardContent>
+            )}
+            
             <CardFooter className="flex flex-col space-y-4">
               <Button type="submit" className="w-full" disabled={isLoading}>
                 {isLoading 
                   ? 'Processing...' 
                   : isForgotPassword 
                     ? 'Send Reset Link'
-                    : isLogin ? 'Sign In' : 'Create Account'}
+                    : isLogin
+                      ? (authMethod === 'email' ? 'Sign In' : 'Continue to OTP')
+                      : 'Create Account'}
+                <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
               
               {!isForgotPassword && (
@@ -143,16 +344,27 @@ const Auth = () => {
                 </Button>
               )}
               
-              <Button 
-                type="button" 
-                variant="link" 
-                className="w-full"
-                onClick={toggleForgotPassword}
-              >
-                {isForgotPassword
-                  ? "Back to sign in"
-                  : "Forgot password?"}
-              </Button>
+              {(isLogin && !isForgotPassword && authMethod === 'email') && (
+                <Button 
+                  type="button" 
+                  variant="link" 
+                  className="w-full"
+                  onClick={toggleForgotPassword}
+                >
+                  Forgot password?
+                </Button>
+              )}
+              
+              {isForgotPassword && (
+                <Button 
+                  type="button" 
+                  variant="link" 
+                  className="w-full"
+                  onClick={toggleForgotPassword}
+                >
+                  Back to sign in
+                </Button>
+              )}
             </CardFooter>
           </form>
         </Card>

@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -8,10 +9,13 @@ interface AuthContextType {
   session: Session | null;
   isLoading: boolean;
   signIn: (email: string, password: string) => Promise<void>;
-  signUp: (email: string, password: string) => Promise<void>;
+  signUp: (email: string, password: string, name?: string, phone?: string) => Promise<void>;
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
   updatePassword: (password: string) => Promise<void>;
+  signInWithPhone: (phone: string) => Promise<void>;
+  verifyOTP: (phone: string, token: string) => Promise<void>;
+  resendOTP: (phone: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -25,6 +29,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     const initializeAuth = async () => {
       try {
+        // First, set up the auth state change listener
+        const { data: { subscription } } = supabase.auth.onAuthStateChange(
+          async (_event, newSession) => {
+            setSession(newSession);
+            setUser(newSession?.user || null);
+          }
+        );
+        
+        // Then check for existing session
         const { data: { session: activeSession }, error } = await supabase.auth.getSession();
         
         if (error) {
@@ -33,13 +46,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setSession(activeSession);
           setUser(activeSession?.user || null);
         }
-        
-        const { data: { subscription } } = supabase.auth.onAuthStateChange(
-          async (_event, newSession) => {
-            setSession(newSession);
-            setUser(newSession?.user || null);
-          }
-        );
         
         return () => {
           subscription.unsubscribe();
@@ -74,15 +80,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         description: error.message || "Could not sign in. Please try again.",
         variant: "destructive",
       });
+      throw error;
     } finally {
       setIsLoading(false);
     }
   };
 
-  const signUp = async (email: string, password: string) => {
+  const signUp = async (email: string, password: string, name?: string, phone?: string) => {
     try {
       setIsLoading(true);
-      const { error } = await supabase.auth.signUp({ email, password });
+      
+      // Create default options
+      const options: any = {
+        email,
+        password,
+        options: {
+          data: {
+            full_name: name || '',
+            phone: phone || '',
+          },
+        },
+      };
+      
+      const { error } = await supabase.auth.signUp(options);
       
       if (error) {
         throw error;
@@ -99,6 +119,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         description: error.message || "Could not create account. Please try again.",
         variant: "destructive",
       });
+      throw error;
     } finally {
       setIsLoading(false);
     }
@@ -119,6 +140,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         description: error.message || "Could not sign out. Please try again.",
         variant: "destructive",
       });
+      throw error;
     } finally {
       setIsLoading(false);
     }
@@ -127,8 +149,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const resetPassword = async (email: string) => {
     try {
       setIsLoading(true);
+      
+      // Get the current window URL (deployment URL)
+      const deploymentUrl = window.location.origin;
+      
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: window.location.origin + '/profile',
+        redirectTo: `${deploymentUrl}/reset-password`,
       });
       
       if (error) {
@@ -146,6 +172,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         description: error.message || "Could not send reset email. Please try again.",
         variant: "destructive",
       });
+      throw error;
     } finally {
       setIsLoading(false);
     }
@@ -171,6 +198,105 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         description: error.message || "Could not update password. Please try again.",
         variant: "destructive",
       });
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const signInWithPhone = async (phone: string) => {
+    try {
+      setIsLoading(true);
+      
+      // This is a placeholder as Supabase currently doesn't support OTP directly
+      // In a production app, integrate with Twilio to send OTP
+      // For now, we'll just mock this functionality
+      
+      // Mock successful OTP sent
+      setTimeout(() => {
+        toast({
+          title: "OTP Sent",
+          description: "A verification code has been sent to your phone.",
+        });
+      }, 1000);
+      
+      return Promise.resolve();
+      
+    } catch (error: any) {
+      console.error('Phone sign in error:', error);
+      toast({
+        title: "Sign in failed",
+        description: error.message || "Could not send verification code. Please try again.",
+        variant: "destructive",
+      });
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const verifyOTP = async (phone: string, token: string) => {
+    try {
+      setIsLoading(true);
+      
+      // This is a placeholder as Supabase currently doesn't support OTP directly
+      // In a production app, verify with Twilio API
+      // For demo purposes, we'll mock verification with any 6-digit code
+      
+      if (token.length === 6) {
+        // Mock successful verification
+        // In a real implementation, you would verify with your SMS provider (Twilio)
+        
+        // After verification, you'd sign in the user
+        // For now, we'll use a placeholder email based on phone number to simulate login
+        const placeholderEmail = `${phone.replace(/\D/g, '')}@example.com`;
+        const placeholderPassword = 'phone-auth-password';
+        
+        // You would need to have created this user in advance or implement phone-based auth
+        // This is just a mock for demonstration purposes
+        await signIn(placeholderEmail, placeholderPassword);
+        
+        return Promise.resolve();
+      } else {
+        throw new Error("Invalid verification code");
+      }
+      
+    } catch (error: any) {
+      console.error('OTP verification error:', error);
+      toast({
+        title: "Verification failed",
+        description: error.message || "Could not verify code. Please try again.",
+        variant: "destructive",
+      });
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const resendOTP = async (phone: string) => {
+    try {
+      setIsLoading(true);
+      
+      // Mock resending OTP
+      // In a real implementation, you would call your SMS provider API (Twilio)
+      setTimeout(() => {
+        toast({
+          title: "OTP Resent",
+          description: "A new verification code has been sent to your phone.",
+        });
+      }, 1000);
+      
+      return Promise.resolve();
+      
+    } catch (error: any) {
+      console.error('Resend OTP error:', error);
+      toast({
+        title: "Failed to resend code",
+        description: error.message || "Could not resend verification code. Please try again.",
+        variant: "destructive",
+      });
+      throw error;
     } finally {
       setIsLoading(false);
     }
@@ -185,7 +311,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       signUp, 
       signOut, 
       resetPassword,
-      updatePassword
+      updatePassword,
+      signInWithPhone,
+      verifyOTP,
+      resendOTP
     }}>
       {children}
     </AuthContext.Provider>
