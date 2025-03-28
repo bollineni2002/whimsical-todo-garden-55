@@ -27,7 +27,6 @@ const TabContent: React.FC<TabContentProps> = ({ activeTab, transaction, refresh
         );
         
       case TabKey.TRANSPORTATION:
-        // Pass data, even if undefined
         return (
           <TransportationContent 
             data={transaction.transportation} 
@@ -37,7 +36,6 @@ const TabContent: React.FC<TabContentProps> = ({ activeTab, transaction, refresh
         );
         
       case TabKey.LOAD_SOLD:
-        // Pass data, even if undefined
         return (
           <LoadSoldContent 
             data={transaction.loadSold} 
@@ -49,7 +47,7 @@ const TabContent: React.FC<TabContentProps> = ({ activeTab, transaction, refresh
       case TabKey.PAYMENTS:
         return (
           <PaymentsContent 
-            payments={transaction.payments} 
+            payments={transaction.payments || []} 
             transaction={transaction} 
             refreshTransaction={refreshTransaction} 
           />
@@ -58,7 +56,7 @@ const TabContent: React.FC<TabContentProps> = ({ activeTab, transaction, refresh
       case TabKey.NOTES:
         return (
           <NotesContent 
-            notes={transaction.notes} 
+            notes={transaction.notes || []} 
             transaction={transaction} 
             refreshTransaction={refreshTransaction} 
           />
@@ -67,7 +65,7 @@ const TabContent: React.FC<TabContentProps> = ({ activeTab, transaction, refresh
       case TabKey.ATTACHMENTS:
         return (
           <AttachmentsContent 
-            attachments={transaction.attachments} 
+            attachments={transaction.attachments || []} 
             transaction={transaction} 
             refreshTransaction={refreshTransaction} 
           />
