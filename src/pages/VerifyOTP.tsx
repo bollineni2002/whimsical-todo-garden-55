@@ -7,15 +7,12 @@ import { useAuth } from '@/context/AuthContext';
 import { motion } from 'framer-motion';
 import ThemeToggle from '@/components/ThemeToggle';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowRight, Globe } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import { 
   InputOTP, 
   InputOTPGroup, 
   InputOTPSlot 
 } from '@/components/ui/input-otp';
-import { useLanguage, languages } from '@/lib/languages';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useUserPreferences } from '@/context/UserPreferencesContext';
 
 const VerifyOTP = () => {
   const [otp, setOtp] = useState('');
@@ -26,8 +23,6 @@ const VerifyOTP = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
-  const { t, language, setLanguage } = useLanguage();
-  const { updatePreferences } = useUserPreferences();
   
   // Get phone number from location state
   const phone = location.state?.phone || '';
@@ -107,32 +102,13 @@ const VerifyOTP = () => {
     }
   };
   
-  const handleLanguageChange = (value: string) => {
-    const newLang = value as any;
-    setLanguage(newLang);
-    updatePreferences({ language: newLang });
-  };
-  
   return (
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       className="min-h-screen flex flex-col items-center justify-center p-4 bg-background"
     >
-      <div className="absolute top-4 right-4 flex items-center gap-2">
-        <Select value={language} onValueChange={handleLanguageChange}>
-          <SelectTrigger className="w-[140px]">
-            <Globe className="h-4 w-4 mr-2" />
-            <SelectValue placeholder="Language" />
-          </SelectTrigger>
-          <SelectContent>
-            {languages.map((lang) => (
-              <SelectItem key={lang.code} value={lang.code}>
-                {lang.nativeName}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+      <div className="absolute top-4 right-4">
         <ThemeToggle />
       </div>
       
@@ -158,7 +134,7 @@ const VerifyOTP = () => {
         
         <Card>
           <CardHeader>
-            <CardTitle>{t('verify_otp')}</CardTitle>
+            <CardTitle>Verify Your Phone</CardTitle>
             <CardDescription>
               We've sent a 6-digit code to {phone}. 
               Enter the code below to verify your phone number.
@@ -190,7 +166,7 @@ const VerifyOTP = () => {
               className="w-full" 
               disabled={isLoading || otp.length !== 6}
             >
-              {isLoading ? 'Verifying...' : t('verify_otp')}
+              {isLoading ? 'Verifying...' : 'Verify OTP'}
               <ArrowRight className="ml-2 h-4 w-4" />
             </Button>
             
@@ -201,8 +177,8 @@ const VerifyOTP = () => {
                 disabled={resendDisabled}
               >
                 {resendDisabled 
-                  ? `${t('resend_otp')} in ${countdown}s` 
-                  : `${t('resend_otp')}`}
+                  ? `Resend OTP in ${countdown}s` 
+                  : "Didn't receive the code? Resend"}
               </Button>
             </div>
             
@@ -211,7 +187,7 @@ const VerifyOTP = () => {
               className="w-full"
               onClick={() => navigate('/auth')}
             >
-              {t('already_have_account')}
+              Back to login
             </Button>
           </CardFooter>
         </Card>

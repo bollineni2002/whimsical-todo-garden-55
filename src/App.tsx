@@ -15,10 +15,6 @@ import VerifyOTP from "./pages/VerifyOTP";
 import ResetPassword from "./pages/ResetPassword";
 import Profile from "./pages/Profile";
 import { useAuth } from "./context/AuthContext";
-import { LanguageProvider } from "./lib/languages";
-import { UserPreferencesProvider } from "./context/UserPreferencesContext";
-import Settings from "./pages/Settings";
-import Calculations from "./pages/Calculations";
 
 // Create a client
 const queryClient = new QueryClient();
@@ -56,54 +52,40 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 const App = () => (
   <React.StrictMode>
     <QueryClientProvider client={queryClient}>
-      <LanguageProvider>
-        <UserPreferencesProvider>
-          <TooltipProvider>
-            <Toaster />
-            <Sonner />
-            <BrowserRouter>
-              <AnimatePresence mode="wait">
-                <Routes>
-                  <Route path="/auth" element={<Auth />} />
-                  <Route path="/verify-otp" element={<VerifyOTP />} />
-                  <Route path="/reset-password" element={<ResetPassword />} />
-                  <Route path="/" element={
-                    <ProtectedRoute>
-                      <Index />
-                    </ProtectedRoute>
-                  } />
-                  <Route path="/transaction/:id" element={
-                    <ProtectedRoute>
-                      <TransactionDetail />
-                    </ProtectedRoute>
-                  } />
-                  <Route path="/new-transaction" element={
-                    <ProtectedRoute>
-                      <NewTransaction />
-                    </ProtectedRoute>
-                  } />
-                  <Route path="/profile" element={
-                    <ProtectedRoute>
-                      <Profile />
-                    </ProtectedRoute>
-                  } />
-                  <Route path="/settings" element={
-                    <ProtectedRoute>
-                      <Settings />
-                    </ProtectedRoute>
-                  } />
-                  <Route path="/calculations" element={
-                    <ProtectedRoute>
-                      <Calculations />
-                    </ProtectedRoute>
-                  } />
-                  <Route path="*" element={<NotFound />} />
-                </Routes>
-              </AnimatePresence>
-            </BrowserRouter>
-          </TooltipProvider>
-        </UserPreferencesProvider>
-      </LanguageProvider>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <AnimatePresence mode="wait">
+            <Routes>
+              <Route path="/auth" element={<Auth />} />
+              <Route path="/verify-otp" element={<VerifyOTP />} />
+              <Route path="/reset-password" element={<ResetPassword />} />
+              <Route path="/" element={
+                <ProtectedRoute>
+                  <Index />
+                </ProtectedRoute>
+              } />
+              <Route path="/transaction/:id" element={
+                <ProtectedRoute>
+                  <TransactionDetail />
+                </ProtectedRoute>
+              } />
+              <Route path="/new-transaction" element={
+                <ProtectedRoute>
+                  <NewTransaction />
+                </ProtectedRoute>
+              } />
+              <Route path="/profile" element={
+                <ProtectedRoute>
+                  <Profile />
+                </ProtectedRoute>
+              } />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </AnimatePresence>
+        </BrowserRouter>
+      </TooltipProvider>
     </QueryClientProvider>
   </React.StrictMode>
 );
