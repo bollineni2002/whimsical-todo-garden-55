@@ -1,404 +1,330 @@
 
-import React, { createContext, useState, useContext, useEffect } from 'react';
+import React, { createContext, useContext, useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Session, User } from '@supabase/supabase-js';
 import { useToast } from '@/hooks/use-toast';
+import type { User, Session } from '@supabase/supabase-js';
 
-// AuthContext type
-export type AuthContextType = {
-  session: Session | null;
+interface AuthContextType {
   user: User | null;
-  signIn: (email: string, password: string) => Promise<{ error: any }>;
-  signUp: (email: string, password: string, phone: string, name: string) => Promise<{ error: any, data: any }>;
+  session: Session | null;
+  isLoading: boolean;
+  signIn: (email: string, password: string) => Promise<void>;
+  signUp: (email: string, password: string, name?: string, phone?: string) => Promise<void>;
   signOut: () => Promise<void>;
-  loading: boolean;
-  isLoading: boolean; // Alias for loading to maintain compatibility
-  sendPasswordResetEmail: (email: string) => Promise<{ error: any }>;
-  resetPassword: (password: string) => Promise<{ error: any }>;
-  updateProfile: (data: { name?: string, phone?: string }) => Promise<{ error: any }>;
-  updatePassword: (oldPassword: string, newPassword: string) => Promise<{ error: any }>;
-  signInWithPhone: (phone: string) => Promise<{ error: any }>;
-  verifyOTP: (phone: string, otp: string) => Promise<{ error: any }>;
-  resendOTP: (phone: string) => Promise<{ error: any }>;
-};
+  resetPassword: (email: string) => Promise<void>;
+  updatePassword: (password: string) => Promise<void>;
+  signInWithPhone: (phone: string) => Promise<void>;
+  verifyOTP: (phone: string, token: string) => Promise<void>;
+  resendOTP: (phone: string) => Promise<void>;
+}
 
-// Create the context
-const AuthContext = createContext<AuthContextType>({} as AuthContextType);
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Export the context hook
-export const useAuth = () => useContext(AuthContext);
-
-// AuthProvider component
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
   useEffect(() => {
-    // Set up listener for auth state changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (_event, newSession) => {
-        setSession(newSession);
-        setUser(newSession?.user ?? null);
-        setLoading(false);
-      }
-    );
-
-    // Initial session check
     const initializeAuth = async () => {
       try {
-        const { data } = await supabase.auth.getSession();
-        setSession(data.session);
-        setUser(data.session?.user ?? null);
+        // First, set up the auth state change listener
+        const { data: { subscription } } = supabase.auth.onAuthStateChange(
+          async (_event, newSession) => {
+            setSession(newSession);
+            setUser(newSession?.user || null);
+          }
+        );
+        
+        // Then check for existing session
+        const { data: { session: activeSession }, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error('Error retrieving session:', error);
+        } else {
+          setSession(activeSession);
+          setUser(activeSession?.user || null);
+        }
+        
+        return () => {
+          subscription.unsubscribe();
+        };
       } catch (error) {
-        console.error('Error loading auth session:', error);
+        console.error('Auth initialization error:', error);
       } finally {
-        setLoading(false);
+        setIsLoading(false);
       }
     };
 
     initializeAuth();
-
-    // Clean up subscription
-    return () => {
-      subscription.unsubscribe();
-    };
   }, []);
 
-  // Sign in function
   const signIn = async (email: string, password: string) => {
     try {
-      const { error, data } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-
+      setIsLoading(true);
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      
       if (error) {
-        toast({
-          title: "Sign in failed",
-          description: error.message,
-          variant: "destructive",
-        });
-        return { error };
+        throw error;
       }
-
+      
       toast({
         title: "Welcome back!",
-        description: "You have been successfully signed in.",
+        description: "You have successfully signed in.",
       });
-
-      return { error: null };
-    } catch (error) {
-      console.error('Error signing in:', error);
+    } catch (error: any) {
+      console.error('Sign in error:', error);
       toast({
         title: "Sign in failed",
-        description: "An unexpected error occurred. Please try again.",
+        description: error.message || "Could not sign in. Please try again.",
         variant: "destructive",
       });
-      return { error };
+      throw error;
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  // Sign up function with phone
-  const signUp = async (email: string, password: string, phone: string, name: string) => {
+  const signUp = async (email: string, password: string, name?: string, phone?: string) => {
     try {
-      const { error, data } = await supabase.auth.signUp({
+      setIsLoading(true);
+      
+      // Create default options
+      const options: any = {
         email,
         password,
         options: {
           data: {
-            phone_number: phone,
-            full_name: name,
+            full_name: name || '',
+            phone: phone || '',
           },
         },
-      });
-
+      };
+      
+      const { error } = await supabase.auth.signUp(options);
+      
       if (error) {
-        toast({
-          title: "Sign up failed",
-          description: error.message,
-          variant: "destructive",
-        });
-        return { error, data: null };
+        throw error;
       }
-
+      
       toast({
         title: "Account created",
-        description: "Your account has been created successfully.",
+        description: "Please check your email to confirm your account.",
       });
-
-      return { error: null, data };
-    } catch (error) {
-      console.error('Error signing up:', error);
+    } catch (error: any) {
+      console.error('Sign up error:', error);
       toast({
         title: "Sign up failed",
-        description: "An unexpected error occurred. Please try again.",
+        description: error.message || "Could not create account. Please try again.",
         variant: "destructive",
       });
-      return { error, data: null };
+      throw error;
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  // Sign out function
   const signOut = async () => {
     try {
+      setIsLoading(true);
       await supabase.auth.signOut();
       toast({
         title: "Signed out",
         description: "You have been successfully signed out.",
       });
-    } catch (error) {
-      console.error('Error signing out:', error);
+    } catch (error: any) {
+      console.error('Sign out error:', error);
       toast({
         title: "Sign out failed",
-        description: "An unexpected error occurred. Please try again.",
+        description: error.message || "Could not sign out. Please try again.",
         variant: "destructive",
       });
+      throw error;
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  // Password reset function
-  const sendPasswordResetEmail = async (email: string) => {
+  const resetPassword = async (email: string) => {
     try {
+      setIsLoading(true);
+      
+      // Get the current window URL (deployment URL)
+      const deploymentUrl = window.location.origin;
+      
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/reset-password`,
+        redirectTo: `${deploymentUrl}/reset-password`,
       });
-
+      
       if (error) {
-        toast({
-          title: "Password reset failed",
-          description: error.message,
-          variant: "destructive",
-        });
-        return { error };
+        throw error;
       }
-
+      
       toast({
         title: "Password reset email sent",
-        description: "Check your email for a password reset link.",
+        description: "Check your inbox for a password reset link.",
       });
-
-      return { error: null };
-    } catch (error) {
-      console.error('Error sending password reset:', error);
+    } catch (error: any) {
+      console.error('Password reset error:', error);
       toast({
         title: "Password reset failed",
-        description: "An unexpected error occurred. Please try again.",
+        description: error.message || "Could not send reset email. Please try again.",
         variant: "destructive",
       });
-      return { error };
+      throw error;
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  // Update password function after reset
-  const resetPassword = async (password: string) => {
+  const updatePassword = async (password: string) => {
     try {
-      const { error } = await supabase.auth.updateUser({
-        password,
-      });
-
+      setIsLoading(true);
+      const { error } = await supabase.auth.updateUser({ password });
+      
       if (error) {
-        toast({
-          title: "Password update failed",
-          description: error.message,
-          variant: "destructive",
-        });
-        return { error };
+        throw error;
       }
-
+      
       toast({
         title: "Password updated",
-        description: "Your password has been updated successfully.",
+        description: "Your password has been successfully updated.",
       });
-
-      return { error: null };
-    } catch (error) {
-      console.error('Error updating password:', error);
+    } catch (error: any) {
+      console.error('Password update error:', error);
       toast({
         title: "Password update failed",
-        description: "An unexpected error occurred. Please try again.",
+        description: error.message || "Could not update password. Please try again.",
         variant: "destructive",
       });
-      return { error };
+      throw error;
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  // Update profile function
-  const updateProfile = async (data: { name?: string, phone?: string }) => {
-    try {
-      const { error } = await supabase.auth.updateUser({
-        data: {
-          full_name: data.name,
-          phone_number: data.phone
-        }
-      });
-
-      if (error) {
-        toast({
-          title: "Profile update failed",
-          description: error.message,
-          variant: "destructive",
-        });
-        return { error };
-      }
-
-      toast({
-        title: "Profile updated",
-        description: "Your profile has been updated successfully.",
-      });
-
-      return { error: null };
-    } catch (error) {
-      console.error('Error updating profile:', error);
-      toast({
-        title: "Profile update failed",
-        description: "An unexpected error occurred. Please try again.",
-        variant: "destructive",
-      });
-      return { error };
-    }
-  };
-
-  // Update password function - requires old password
-  const updatePassword = async (oldPassword: string, newPassword: string) => {
-    try {
-      // First verify the old password is correct
-      const { error: verifyError } = await supabase.auth.signInWithPassword({
-        email: user?.email || '',
-        password: oldPassword,
-      });
-
-      if (verifyError) {
-        toast({
-          title: "Password update failed",
-          description: "The current password you entered is incorrect.",
-          variant: "destructive",
-        });
-        return { error: verifyError };
-      }
-
-      // Now update to new password
-      const { error } = await supabase.auth.updateUser({
-        password: newPassword,
-      });
-
-      if (error) {
-        toast({
-          title: "Password update failed",
-          description: error.message,
-          variant: "destructive",
-        });
-        return { error };
-      }
-
-      toast({
-        title: "Password updated",
-        description: "Your password has been updated successfully.",
-      });
-
-      return { error: null };
-    } catch (error) {
-      console.error('Error updating password:', error);
-      toast({
-        title: "Password update failed",
-        description: "An unexpected error occurred. Please try again.",
-        variant: "destructive",
-      });
-      return { error };
-    }
-  };
-
-  // Sign in with phone function
   const signInWithPhone = async (phone: string) => {
     try {
-      // In a real implementation, you would initiate OTP sending here
-      // For now, we'll simulate a successful OTP send
-      toast({
-        title: "OTP Sent",
-        description: `A verification code has been sent to ${phone}`,
-      });
+      setIsLoading(true);
       
-      return { error: null };
-    } catch (error) {
-      console.error('Error sending OTP:', error);
+      // This is a placeholder as Supabase currently doesn't support OTP directly
+      // In a production app, integrate with Twilio to send OTP
+      // For now, we'll just mock this functionality
+      
+      // Mock successful OTP sent
+      setTimeout(() => {
+        toast({
+          title: "OTP Sent",
+          description: "A verification code has been sent to your phone.",
+        });
+      }, 1000);
+      
+      return Promise.resolve();
+      
+    } catch (error: any) {
+      console.error('Phone sign in error:', error);
       toast({
-        title: "Failed to send OTP",
-        description: "An unexpected error occurred. Please try again.",
+        title: "Sign in failed",
+        description: error.message || "Could not send verification code. Please try again.",
         variant: "destructive",
       });
-      return { error };
+      throw error;
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  // Verify OTP function
-  const verifyOTP = async (phone: string, otp: string) => {
+  const verifyOTP = async (phone: string, token: string) => {
     try {
-      // In a real implementation, you would verify the OTP here
-      // For now, we'll simulate a successful verification
-      // In production, this would involve a call to your auth system
+      setIsLoading(true);
       
-      // Simulate verification success
-      toast({
-        title: "Verification Successful",
-        description: "Your phone number has been verified.",
-      });
+      // This is a placeholder as Supabase currently doesn't support OTP directly
+      // In a production app, verify with Twilio API
+      // For demo purposes, we'll mock verification with any 6-digit code
       
-      return { error: null };
-    } catch (error) {
-      console.error('Error verifying OTP:', error);
+      if (token.length === 6) {
+        // Mock successful verification
+        // In a real implementation, you would verify with your SMS provider (Twilio)
+        
+        // After verification, you'd sign in the user
+        // For now, we'll use a placeholder email based on phone number to simulate login
+        const placeholderEmail = `${phone.replace(/\D/g, '')}@example.com`;
+        const placeholderPassword = 'phone-auth-password';
+        
+        // You would need to have created this user in advance or implement phone-based auth
+        // This is just a mock for demonstration purposes
+        await signIn(placeholderEmail, placeholderPassword);
+        
+        return Promise.resolve();
+      } else {
+        throw new Error("Invalid verification code");
+      }
+      
+    } catch (error: any) {
+      console.error('OTP verification error:', error);
       toast({
-        title: "Verification Failed",
-        description: "The OTP you entered is incorrect or has expired.",
+        title: "Verification failed",
+        description: error.message || "Could not verify code. Please try again.",
         variant: "destructive",
       });
-      return { error };
+      throw error;
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  // Resend OTP function
   const resendOTP = async (phone: string) => {
     try {
-      // In a real implementation, you would resend the OTP here
-      // For now, we'll simulate a successful resend
+      setIsLoading(true);
       
-      toast({
-        title: "OTP Resent",
-        description: `A new verification code has been sent to ${phone}`,
-      });
+      // Mock resending OTP
+      // In a real implementation, you would call your SMS provider API (Twilio)
+      setTimeout(() => {
+        toast({
+          title: "OTP Resent",
+          description: "A new verification code has been sent to your phone.",
+        });
+      }, 1000);
       
-      return { error: null };
-    } catch (error) {
-      console.error('Error resending OTP:', error);
+      return Promise.resolve();
+      
+    } catch (error: any) {
+      console.error('Resend OTP error:', error);
       toast({
-        title: "Failed to resend OTP",
-        description: "An unexpected error occurred. Please try again.",
+        title: "Failed to resend code",
+        description: error.message || "Could not resend verification code. Please try again.",
         variant: "destructive",
       });
-      return { error };
+      throw error;
+    } finally {
+      setIsLoading(false);
     }
   };
 
   return (
-    <AuthContext.Provider
-      value={{
-        session,
-        user,
-        signIn,
-        signUp,
-        signOut,
-        loading,
-        isLoading: loading, // Alias for compatibility
-        sendPasswordResetEmail,
-        resetPassword,
-        updateProfile,
-        updatePassword,
-        signInWithPhone,
-        verifyOTP,
-        resendOTP
-      }}
-    >
+    <AuthContext.Provider value={{ 
+      user, 
+      session, 
+      isLoading, 
+      signIn, 
+      signUp, 
+      signOut, 
+      resetPassword,
+      updatePassword,
+      signInWithPhone,
+      verifyOTP,
+      resendOTP
+    }}>
       {children}
     </AuthContext.Provider>
   );
+};
+
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
 };
