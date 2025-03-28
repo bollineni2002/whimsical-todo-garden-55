@@ -10,6 +10,7 @@ import { Switch } from '@/components/ui/switch';
 import { dbManager } from '@/lib/db';
 import { useToast } from '@/hooks/use-toast';
 import { generateId } from '@/lib/utils';
+import { useCurrency } from '@/context/CurrencyContext'; // Import useCurrency hook
 import { CalendarIcon, Plus } from 'lucide-react';
 import { format } from 'date-fns';
 import { Calendar } from '@/components/ui/calendar';
@@ -33,6 +34,7 @@ const PaymentsContent: React.FC<PaymentsContentProps> = ({ payments, transaction
     notes: '',
   });
   const { toast } = useToast();
+  const { formatCurrency } = useCurrency(); // Get formatCurrency from context
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type } = e.target;
@@ -164,8 +166,9 @@ const PaymentsContent: React.FC<PaymentsContentProps> = ({ payments, transaction
               <div className="flex flex-col md:flex-row justify-between">
                 <div className="mb-2 md:mb-0">
                   <div className="flex items-center">
+                    {/* Apply formatting */}
                     <span className={`mr-2 font-medium ${payment.isIncoming ? 'text-success' : 'text-destructive'}`}>
-                      {payment.isIncoming ? '+' : '-'} ${payment.amount.toFixed(2)}
+                      {payment.isIncoming ? '+' : '-'} {formatCurrency(payment.amount)} 
                     </span>
                     <span className="text-muted-foreground text-sm">({payment.mode})</span>
                   </div>

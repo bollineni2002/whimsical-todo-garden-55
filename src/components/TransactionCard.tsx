@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom';
-import { formatCurrency } from '@/lib/utils';
+// import { formatCurrency } from '@/lib/utils'; // Remove old import
+import { useCurrency } from '@/context/CurrencyContext'; // Import useCurrency hook
 import { Transaction } from '@/lib/types';
 import { motion } from 'framer-motion';
 
@@ -38,6 +39,7 @@ const StatusBadge = ({ status }: { status: Transaction['status'] }) => {
 
 const TransactionCard = ({ transaction, index }: TransactionCardProps) => {
   const navigate = useNavigate();
+  const { formatCurrency } = useCurrency(); // Get formatCurrency from context
   const formattedDate = new Date(transaction.date).toLocaleDateString('en-US', {
     year: 'numeric',
     month: 'short',

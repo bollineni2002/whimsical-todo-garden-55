@@ -15,13 +15,18 @@ import { exportTransactions, ExportFormat } from '@/lib/exportUtils';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Settings, Users, UserPlus, LineChart, Plus } from 'lucide-react';
+// Import icons for the new section
+import { Settings, Users, UserPlus, LineChart, Plus, Calculator, Percent, Landmark, Replace } from 'lucide-react'; 
 import { dbManager } from '@/lib/db';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { useNavigate } from 'react-router-dom';
+// Import placeholder components (will be created next)
+import TaxCalculator from '@/components/calculations/TaxCalculator';
+import InterestCalculator from '@/components/calculations/InterestCalculator';
+import CurrencyConverter from '@/components/calculations/CurrencyConverter';
 
 interface Buyer {
   id: string;
@@ -51,9 +56,10 @@ const Index = () => {
   
   const navigate = useNavigate();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [businessName, setBusinessName] = useState('TransactLy');
-  const [isNameDialogOpen, setIsNameDialogOpen] = useState(false);
-  const [newBusinessName, setNewBusinessName] = useState('');
+  const [businessName, setBusinessName] = useState('TransactLy'); // Keep for Header display
+  // Remove state related to name editing dialog
+  // const [isNameDialogOpen, setIsNameDialogOpen] = useState(false); 
+  // const [newBusinessName, setNewBusinessName] = useState('');
   const [isBuyerDialogOpen, setIsBuyerDialogOpen] = useState(false);
   const [isSellerDialogOpen, setIsSellerDialogOpen] = useState(false);
   const [buyers, setBuyers] = useState<Buyer[]>([]);
@@ -94,26 +100,10 @@ const Index = () => {
     }
   };
 
-  const saveBusinessName = async () => {
-    try {
-      if (newBusinessName.trim()) {
-        await localStorage.setItem('businessName', newBusinessName);
-        setBusinessName(newBusinessName);
-        setIsNameDialogOpen(false);
-        toast({
-          title: 'Success',
-          description: 'Business name updated successfully',
-        });
-      }
-    } catch (error) {
-      console.error('Failed to save business name:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to update business name',
-        variant: 'destructive',
-      });
-    }
-  };
+  // Remove saveBusinessName function
+  /*
+  const saveBusinessName = async () => { ... };
+  */
 
   const loadBuyersAndSellers = async () => {
     try {
@@ -237,10 +227,12 @@ const Index = () => {
       animate={{ opacity: 1 }}
       className="min-h-screen flex flex-col"
     >
-      <Header onExport={handleExport} businessName={businessName} onEditName={() => setIsNameDialogOpen(true)} />
+      {/* Remove onEditName prop from Header */}
+      <Header onExport={handleExport} businessName={businessName} /> 
       
       <Tabs defaultValue="dashboard" className="w-full">
-        <TabsList className="w-full max-w-3xl mx-auto mb-6 grid grid-cols-4">
+        {/* Update grid columns to 5 */}
+        <TabsList className="w-full max-w-4xl mx-auto mb-6 grid grid-cols-5"> 
           <TabsTrigger value="dashboard">
             <LineChart className="w-4 h-4 mr-2" />
             Dashboard
@@ -253,10 +245,20 @@ const Index = () => {
             <Users className="w-4 h-4 mr-2" />
             Sellers
           </TabsTrigger>
-          <TabsTrigger value="more">
+          {/* Add new Calculations TabTrigger */}
+          <TabsTrigger value="calculations">
+            <Calculator className="w-4 h-4 mr-2" />
+            Calculations
+          </TabsTrigger>
+          {/* Settings button remains the same (navigates) */}
+          <Button 
+            variant="ghost" 
+            className="flex items-center justify-center text-muted-foreground data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm" // Mimic TabsTrigger style
+            onClick={() => navigate('/settings')}
+          >
             <Settings className="w-4 h-4 mr-2" />
             Settings
-          </TabsTrigger>
+          </Button>
         </TabsList>
         
         <TabsContent value="dashboard" className="container mx-auto px-4 py-8">
@@ -511,52 +513,46 @@ const Index = () => {
           </Card>
         </TabsContent>
         
-        <TabsContent value="more" className="container mx-auto px-4 py-8">
+        {/* Add new TabsContent for Calculations */}
+        <TabsContent value="calculations" className="container mx-auto px-4 py-8">
           <Card>
             <CardHeader>
-              <CardTitle>Settings</CardTitle>
-              <CardDescription>Customize your application settings</CardDescription>
+              <CardTitle>Calculations</CardTitle>
+              <CardDescription>Tools for tax, interest, and currency conversion.</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                <div className="flex justify-between items-center">
-                  <div>
-                    <h3 className="text-lg font-medium">Business Name</h3>
-                    <p className="text-sm text-muted-foreground">Current: {businessName}</p>
-                  </div>
-                  <Button onClick={() => setIsNameDialogOpen(true)}>Edit</Button>
-                </div>
-              </div>
+              {/* Nested Tabs for Calculation Types */}
+              <Tabs defaultValue="tax" className="w-full">
+                <TabsList className="grid w-full grid-cols-3 mb-4">
+                  <TabsTrigger value="tax">
+                    <Percent className="w-4 h-4 mr-2" /> Tax
+                  </TabsTrigger>
+                  <TabsTrigger value="interest">
+                    <Landmark className="w-4 h-4 mr-2" /> Interest
+                  </TabsTrigger>
+                  <TabsTrigger value="currency">
+                    <Replace className="w-4 h-4 mr-2" /> Currency
+                  </TabsTrigger>
+                </TabsList>
+                <TabsContent value="tax">
+                  <TaxCalculator /> 
+                </TabsContent>
+                <TabsContent value="interest">
+                  <InterestCalculator />
+                </TabsContent>
+                <TabsContent value="currency">
+                  <CurrencyConverter />
+                </TabsContent>
+              </Tabs>
             </CardContent>
           </Card>
         </TabsContent>
+        
       </Tabs>
       
-      <Dialog open={isNameDialogOpen} onOpenChange={setIsNameDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Update Business Name</DialogTitle>
-            <DialogDescription>
-              Enter your business name to customize your dashboard
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="businessName">Business Name</Label>
-              <Input 
-                id="businessName" 
-                placeholder="Enter your business name"
-                value={newBusinessName}
-                onChange={(e) => setNewBusinessName(e.target.value)}
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsNameDialogOpen(false)}>Cancel</Button>
-            <Button onClick={saveBusinessName}>Save Changes</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {/* Remove Business Name Dialog */}
+      {/* <Dialog open={isNameDialogOpen} onOpenChange={setIsNameDialogOpen}> ... </Dialog> */}
+      
     </motion.div>
   );
 };

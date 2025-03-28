@@ -12,6 +12,6 @@ export interface TabNavigationProps {
 export interface AuthHeaderProps {
   children?: React.ReactNode;
   businessName: string;
-  onEditName: () => void;
+  onEditName?: () => void; // Made optional
   onExport?: (format: ExportFormat) => Promise<void>;
 }

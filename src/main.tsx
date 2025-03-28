@@ -6,6 +6,7 @@ import './index.css';
 import { AuthProvider } from './context/AuthContext';
 import { LanguageProvider } from './lib/languages';
 import { ThemeProvider } from './context/ThemeContext';
+import { CurrencyProvider } from './context/CurrencyContext'; // Import CurrencyProvider
 
 const root = createRoot(document.getElementById('root')!);
 
@@ -14,7 +15,9 @@ root.render(
     <LanguageProvider>
       <ThemeProvider>
         <AuthProvider>
-          <App />
+          <CurrencyProvider> {/* Wrap App with CurrencyProvider */}
+            <App />
+          </CurrencyProvider>
         </AuthProvider>
       </ThemeProvider>
     </LanguageProvider>

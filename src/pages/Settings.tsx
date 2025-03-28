@@ -9,12 +9,16 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import { supabase } from '@/integrations/supabase/client'; // Import supabase client
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { useLanguage } from '@/lib/languages';
 import { useTheme } from '@/context/ThemeContext';
+import { useCurrency } from '@/context/CurrencyContext'; // Import useCurrency hook
 import { languages } from '@/lib/languages';
 import AuthHeader from '@/components/AuthHeader';
+// Import Dialog components
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'; 
 import { 
   ArrowLeft, Save, User, Lock, Globe, DollarSign, 
   Calendar, LayoutDashboard, LayoutList, Sun, Moon, 
@@ -28,6 +32,7 @@ const Settings = () => {
   const { toast } = useToast();
   const { t, language, setLanguage } = useLanguage();
   const { theme, setTheme, fontSize, setFontSize } = useTheme();
+  const { currency, setCurrency } = useCurrency(); // Use currency context
 
   // Password change state
   const [oldPassword, setOldPassword] = useState('');
@@ -42,9 +47,8 @@ const Settings = () => {
   const [isProfileUpdating, setIsProfileUpdating] = useState(false);
 
   // Preferences state
-  const [selectedCurrency, setSelectedCurrency] = useState(() => {
-    return localStorage.getItem('currency') || 'USD';
-  });
+  // Remove local state for currency, use context value 'currency' instead
+  // const [selectedCurrency, setSelectedCurrency] = useState(...); 
   
   const [selectedDateFormat, setSelectedDateFormat] = useState(() => {
     return localStorage.getItem('dateFormat') || 'MM/DD/YYYY';
@@ -53,15 +57,65 @@ const Settings = () => {
   const [defaultView, setDefaultView] = useState(() => {
     return localStorage.getItem('defaultView') || 'dashboard';
   });
+  
+  // Business Name state
+  const [businessName, setBusinessName] = useState('TransactLy'); // Default
+  const [isNameDialogOpen, setIsNameDialogOpen] = useState(false);
+  const [newBusinessName, setNewBusinessName] = useState('');
 
-  // Load user data when component mounts
+  // Load user data and business name when component mounts
   useEffect(() => {
+    // Load user profile data
     if (user) {
       setName(user.user_metadata?.full_name || '');
       setEmail(user.email || '');
       setPhone(user.user_metadata?.phone || '');
     }
+    // Load business name
+    loadBusinessName(); 
   }, [user]);
+
+  // Function to load business name from localStorage
+  const loadBusinessName = async () => {
+    try {
+      const storedName = await localStorage.getItem('businessName');
+      if (storedName) {
+        setBusinessName(storedName);
+        setNewBusinessName(storedName); // Pre-fill dialog input
+      }
+    } catch (error) {
+      console.error('Failed to load business name:', error);
+      // Use default name if loading fails
+    }
+  };
+  
+  // Function to save business name to localStorage
+  const saveBusinessName = async () => {
+    try {
+      if (newBusinessName.trim()) {
+        await localStorage.setItem('businessName', newBusinessName.trim());
+        setBusinessName(newBusinessName.trim());
+        setIsNameDialogOpen(false);
+        toast({
+          title: 'Success',
+          description: 'Business name updated successfully',
+        });
+      } else {
+         toast({
+          title: 'Error',
+          description: 'Business name cannot be empty',
+          variant: 'destructive',
+        });
+      }
+    } catch (error) {
+      console.error('Failed to save business name:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to update business name',
+        variant: 'destructive',
+      });
+    }
+  };
 
   const handlePasswordChange = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -86,12 +140,26 @@ const Settings = () => {
     
     setIsPasswordChanging(true);
     try {
-      // In a real implementation, we would first verify the old password
-      // before updating to the new password
-      await updatePassword(newPassword);
+      // 1. Verify the old password
+      if (!user?.email) {
+        throw new Error("User email not found. Cannot verify password.");
+      }
+      
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: user.email,
+        password: oldPassword,
+      });
+
+      if (signInError) {
+        // If sign-in fails, the old password was incorrect
+        throw new Error("Incorrect old password. Please try again.");
+      }
+
+      // 2. If old password is correct, update to the new password
+      await updatePassword(newPassword); // This uses supabase.auth.updateUser internally
       
       toast({
-        title: "Password updated",
+        title: "Password updated successfully",
         description: "Your password has been successfully updated.",
       });
       
@@ -146,8 +214,8 @@ const Settings = () => {
 
   const handlePreferencesUpdate = async () => {
     try {
-      // Save preferences to localStorage
-      localStorage.setItem('currency', selectedCurrency);
+      // Currency is saved automatically by the context
+      // localStorage.setItem('currency', selectedCurrency); 
       localStorage.setItem('dateFormat', selectedDateFormat);
       localStorage.setItem('defaultView', defaultView);
       
@@ -432,12 +500,28 @@ const Settings = () => {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-6">
+                    {/* Business Name Setting */}
+                    <div className="space-y-2">
+                       <Label>Business Name</Label>
+                       <div className="flex justify-between items-center p-3 border rounded-md">
+                         <p className="text-sm text-muted-foreground">Current: <span className="font-medium text-foreground">{businessName}</span></p>
+                         <Button variant="outline" size="sm" onClick={() => {
+                           setNewBusinessName(businessName); // Ensure dialog opens with current name
+                           setIsNameDialogOpen(true);
+                         }}>Edit</Button>
+                       </div>
+                    </div>
+                    
+                    {/* Separator */}
+                    <hr className="my-4" /> 
+
                     {/* Currency Preferences */}
                     <div className="space-y-2">
                       <Label htmlFor="currency">{t('currency')}</Label>
+                      {/* Use currency context value and setter */}
                       <Select
-                        value={selectedCurrency}
-                        onValueChange={setSelectedCurrency}
+                        value={currency} 
+                        onValueChange={setCurrency} 
                       >
                         <SelectTrigger id="currency" className="w-full">
                           <div className="flex items-center gap-2">
@@ -511,6 +595,33 @@ const Settings = () => {
           </Tabs>
         </motion.div>
       </div>
+
+      {/* Business Name Edit Dialog */}
+      <Dialog open={isNameDialogOpen} onOpenChange={setIsNameDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Update Business Name</DialogTitle>
+            <DialogDescription>
+              Enter your business name to customize the application.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="businessNameDialogInput">Business Name</Label>
+              <Input 
+                id="businessNameDialogInput" 
+                placeholder="Enter your business name"
+                value={newBusinessName}
+                onChange={(e) => setNewBusinessName(e.target.value)}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsNameDialogOpen(false)}>Cancel</Button>
+            <Button onClick={saveBusinessName}>Save Changes</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

@@ -11,16 +11,18 @@ import { AuthHeaderProps } from '@/types/component-types';
 interface HeaderProps {
   onExport: (format: ExportFormat) => Promise<void>;
   businessName?: string;
-  onEditName?: () => void;
+  // onEditName?: () => void; // Remove prop
 }
 
-const Header = ({ onExport, businessName = 'TransactLy', onEditName }: HeaderProps) => {
-  const handleEditName = onEditName ? onEditName : () => {};
+// Remove onEditName from destructuring
+const Header = ({ onExport, businessName = 'TransactLy' }: HeaderProps) => { 
+  // Remove handleEditName logic
+  // const handleEditName = onEditName ? onEditName : () => {}; 
   
   return (
+    // Remove onEditName prop from AuthHeader
     <AuthHeader 
       businessName={businessName} 
-      onEditName={handleEditName}
       onExport={onExport}
     >
       <DropdownMenu>

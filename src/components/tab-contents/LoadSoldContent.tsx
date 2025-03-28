@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { dbManager } from '@/lib/db';
+import { useCurrency } from '@/context/CurrencyContext'; // Import useCurrency hook
 
 interface LoadSoldContentProps {
   data: Transaction['loadSold'];
@@ -25,6 +26,7 @@ const LoadSoldContent: React.FC<LoadSoldContentProps> = ({ data, transaction, re
     pendingBalance: 0
   });
   const { toast } = useToast();
+  const { formatCurrency } = useCurrency(); // Get formatCurrency from context
 
   useEffect(() => {
     if (!data) {
@@ -184,7 +186,7 @@ const LoadSoldContent: React.FC<LoadSoldContentProps> = ({ data, transaction, re
           <h3 className="text-lg font-medium mb-4">Financial Details</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="saleRate">Sale Rate ($/unit)</Label>
+              <Label htmlFor="saleRate">Sale Rate (/unit)</Label>
               <Input 
                 id="saleRate" 
                 name="saleRate" 
@@ -194,7 +196,7 @@ const LoadSoldContent: React.FC<LoadSoldContentProps> = ({ data, transaction, re
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="totalSaleAmount">Total Sale Amount ($)</Label>
+              <Label htmlFor="totalSaleAmount">Total Sale Amount</Label>
               <Input 
                 id="totalSaleAmount" 
                 name="totalSaleAmount" 
@@ -205,7 +207,7 @@ const LoadSoldContent: React.FC<LoadSoldContentProps> = ({ data, transaction, re
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="amountReceived">Amount Received ($)</Label>
+              <Label htmlFor="amountReceived">Amount Received</Label>
               <Input 
                 id="amountReceived" 
                 name="amountReceived" 
@@ -215,7 +217,7 @@ const LoadSoldContent: React.FC<LoadSoldContentProps> = ({ data, transaction, re
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="pendingBalance">Pending Balance ($)</Label>
+              <Label htmlFor="pendingBalance">Pending Balance</Label>
               <Input 
                 id="pendingBalance" 
                 name="pendingBalance" 
@@ -327,19 +329,23 @@ const LoadSoldContent: React.FC<LoadSoldContentProps> = ({ data, transaction, re
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <div className="bg-muted/50 p-4 rounded-lg">
             <p className="text-sm text-muted-foreground">Sale Rate</p>
-            <p className="text-lg font-semibold">${data.saleRate.toFixed(2)}/unit</p>
+            {/* Apply formatting */}
+            <p className="text-lg font-semibold">{formatCurrency(data.saleRate)}/unit</p> 
           </div>
           <div className="bg-muted/50 p-4 rounded-lg">
             <p className="text-sm text-muted-foreground">Total Sale Amount</p>
-            <p className="text-lg font-semibold">${data.totalSaleAmount.toFixed(2)}</p>
+            {/* Apply formatting */}
+            <p className="text-lg font-semibold">{formatCurrency(data.totalSaleAmount)}</p> 
           </div>
           <div className="bg-muted/50 p-4 rounded-lg">
             <p className="text-sm text-muted-foreground">Amount Received</p>
-            <p className="text-lg font-semibold">${data.amountReceived.toFixed(2)}</p>
+            {/* Apply formatting */}
+            <p className="text-lg font-semibold">{formatCurrency(data.amountReceived)}</p> 
           </div>
           <div className="bg-muted/50 p-4 rounded-lg">
             <p className="text-sm text-muted-foreground">Pending Balance</p>
-            <p className="text-lg font-semibold">${data.pendingBalance.toFixed(2)}</p>
+            {/* Apply formatting */}
+            <p className="text-lg font-semibold">{formatCurrency(data.pendingBalance)}</p> 
           </div>
         </div>
       </div>

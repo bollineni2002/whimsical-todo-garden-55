@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { dbManager } from '@/lib/db';
+import { useCurrency } from '@/context/CurrencyContext'; // Import useCurrency hook
 
 interface LoadBuyContentProps {
   data: Transaction['loadBuy'];
@@ -28,6 +29,7 @@ const LoadBuyContent: React.FC<LoadBuyContentProps> = ({ data, transaction, refr
     balance: 0
   });
   const { toast } = useToast();
+  const { formatCurrency } = useCurrency(); // Get formatCurrency from context
 
   if (!data && !isEditing) {
     return (
@@ -215,7 +217,8 @@ const LoadBuyContent: React.FC<LoadBuyContentProps> = ({ data, transaction, refr
           <h3 className="text-lg font-medium mb-4">Financial Details</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="purchaseRate">Purchase Rate ($/unit)</Label>
+              {/* Keep label generic for now */}
+              <Label htmlFor="purchaseRate">Purchase Rate (/unit)</Label> 
               <Input 
                 id="purchaseRate" 
                 name="purchaseRate" 
@@ -225,7 +228,7 @@ const LoadBuyContent: React.FC<LoadBuyContentProps> = ({ data, transaction, refr
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="totalCost">Total Cost ($)</Label>
+              <Label htmlFor="totalCost">Total Cost</Label>
               <Input 
                 id="totalCost" 
                 name="totalCost" 
@@ -236,7 +239,7 @@ const LoadBuyContent: React.FC<LoadBuyContentProps> = ({ data, transaction, refr
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="amountPaid">Amount Paid ($)</Label>
+              <Label htmlFor="amountPaid">Amount Paid</Label>
               <Input 
                 id="amountPaid" 
                 name="amountPaid" 
@@ -246,7 +249,7 @@ const LoadBuyContent: React.FC<LoadBuyContentProps> = ({ data, transaction, refr
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="balance">Balance ($)</Label>
+              <Label htmlFor="balance">Balance</Label>
               <Input 
                 id="balance" 
                 name="balance" 
@@ -323,19 +326,23 @@ const LoadBuyContent: React.FC<LoadBuyContentProps> = ({ data, transaction, refr
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               <div className="bg-muted/50 p-4 rounded-lg">
                 <p className="text-sm text-muted-foreground">Purchase Rate</p>
-                <p className="text-lg font-semibold">${data.purchaseRate.toFixed(2)}/unit</p>
+                {/* Apply formatting */}
+                <p className="text-lg font-semibold">{formatCurrency(data.purchaseRate)}/unit</p> 
               </div>
               <div className="bg-muted/50 p-4 rounded-lg">
                 <p className="text-sm text-muted-foreground">Total Cost</p>
-                <p className="text-lg font-semibold">${data.totalCost.toFixed(2)}</p>
+                 {/* Apply formatting */}
+                <p className="text-lg font-semibold">{formatCurrency(data.totalCost)}</p>
               </div>
               <div className="bg-muted/50 p-4 rounded-lg">
                 <p className="text-sm text-muted-foreground">Amount Paid</p>
-                <p className="text-lg font-semibold">${data.amountPaid.toFixed(2)}</p>
+                 {/* Apply formatting */}
+                <p className="text-lg font-semibold">{formatCurrency(data.amountPaid)}</p>
               </div>
               <div className="bg-muted/50 p-4 rounded-lg">
                 <p className="text-sm text-muted-foreground">Balance</p>
-                <p className="text-lg font-semibold">${data.balance.toFixed(2)}</p>
+                 {/* Apply formatting */}
+                <p className="text-lg font-semibold">{formatCurrency(data.balance)}</p>
               </div>
             </div>
           </div>

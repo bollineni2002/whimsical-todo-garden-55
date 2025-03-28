@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from '@/context/AuthContext';
-import { At, PhoneCall, Eye, EyeOff, ArrowRight } from 'lucide-react';
+import { Mail, Phone, PhoneCall, Eye, EyeOff, ArrowRight } from 'lucide-react'; // Added Phone icon
 import { useLanguage } from '@/lib/languages';
 import { useToast } from '@/hooks/use-toast';
 import { motion } from 'framer-motion';
@@ -31,24 +31,48 @@ const Auth = () => {
   
   // State for form fields
   const [activeTab, setActiveTab] = useState<string>("signin");
-  const [identifier, setIdentifier] = useState("");
-  const [identifierType, setIdentifierType] = useState<"email" | "phone" | null>(null);
+  // Sign-in state
+  const [signInIdentifier, setSignInIdentifier] = useState(""); 
+  const [signInIdentifierType, setSignInIdentifierType] = useState<"email" | "phone" | null>(null);
+  // Sign-up state
+  const [signUpEmail, setSignUpEmail] = useState("");
+  const [signUpPhoneNumber, setSignUpPhoneNumber] = useState("");
+  // Common state
   const [showPassword, setShowPassword] = useState(false);
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [name, setName] = useState("");
   const [loading, setLoading] = useState(false);
   
-  // Determine identifier type whenever it changes
+  // Determine sign-in identifier type whenever it changes
   useEffect(() => {
-    if (isValidEmail(identifier)) {
-      setIdentifierType("email");
-    } else if (isValidPhone(identifier)) {
-      setIdentifierType("phone");
+    if (isValidEmail(signInIdentifier)) {
+      setSignInIdentifierType("email");
+    } else if (isValidPhone(signInIdentifier)) {
+      setSignInIdentifierType("phone");
     } else {
-      setIdentifierType(null);
+      setSignInIdentifierType(null);
     }
-  }, [identifier]);
+  }, [signInIdentifier]);
+  
+  // Reset fields when switching tabs
+  useEffect(() => {
+    // Reset common fields
+    setPassword("");
+    setConfirmPassword("");
+    setShowPassword(false);
+    setLoading(false);
+    
+    // Reset specific fields based on the new tab
+    if (activeTab === 'signin') {
+      setName("");
+      setSignUpEmail("");
+      setSignUpPhoneNumber("");
+    } else { // signup tab
+      setSignInIdentifier("");
+      setSignInIdentifierType(null);
+    }
+  }, [activeTab]);
   
   // Redirect if already logged in
   useEffect(() => {
@@ -62,20 +86,20 @@ const Auth = () => {
     setLoading(true);
     
     try {
-      if (!identifier) {
+      if (!signInIdentifier) {
         throw new Error("Please enter an email or phone number");
       }
       
-      if (identifierType === "email") {
+      if (signInIdentifierType === "email") {
         if (!password) {
           throw new Error("Please enter your password");
         }
-        await signIn(identifier, password);
+        await signIn(signInIdentifier, password);
         // Navigate on success happens automatically via the auth effect
-      } else if (identifierType === "phone") {
-        await signInWithPhone(identifier);
+      } else if (signInIdentifierType === "phone") {
+        await signInWithPhone(signInIdentifier);
         // Store phone number for OTP verification
-        sessionStorage.setItem("verifyPhone", identifier);
+        sessionStorage.setItem("verifyPhone", signInIdentifier);
         navigate("/verify-otp");
       } else {
         throw new Error("Please enter a valid email or phone number");
@@ -96,46 +120,32 @@ const Auth = () => {
     setLoading(true);
     
     try {
-      if (!name) {
-        throw new Error("Please enter your name");
-      }
+      // Validation
+      if (!name) throw new Error("Please enter your name");
+      if (!signUpEmail) throw new Error("Please enter your email address");
+      if (!isValidEmail(signUpEmail)) throw new Error("Please enter a valid email address");
+      if (!signUpPhoneNumber) throw new Error("Please enter your phone number");
+      if (!isValidPhone(signUpPhoneNumber)) throw new Error("Please enter a valid phone number (e.g., +1234567890)");
+      if (!password) throw new Error("Please enter a password");
+      if (password.length < 6) throw new Error("Password must be at least 6 characters");
+      if (password !== confirmPassword) throw new Error("Passwords do not match");
       
-      if (!identifier) {
-        throw new Error("Please enter an email and phone number");
-      }
+      // Call signUp context function with email, password, name, and phone
+      await signUp(signUpEmail, password, name, signUpPhoneNumber);
       
-      if (!identifierType) {
-        throw new Error("Please enter a valid email or phone number");
-      }
+      // Reset sign-up fields and switch to sign-in tab on success
+      setName("");
+      setSignUpEmail("");
+      setSignUpPhoneNumber("");
+      setPassword("");
+      setConfirmPassword("");
+      setActiveTab("signin");
       
-      if (identifierType === "email") {
-        if (!password) {
-          throw new Error("Please enter a password");
-        }
-        
-        if (password.length < 6) {
-          throw new Error("Password must be at least 6 characters");
-        }
-        
-        if (password !== confirmPassword) {
-          throw new Error("Passwords do not match");
-        }
-        
-        await signUp(identifier, password, name);
-        setActiveTab("signin");
-        toast({
-          title: "Account Created",
-          description: "Your account has been created successfully. Please sign in.",
-        });
-      } else if (identifierType === "phone") {
-        // For phone signup, we'll need to collect an email as well
-        toast({
-          title: "Email Required",
-          description: "Please provide an email address for account creation.",
-          variant: "destructive",
-        });
-        return;
-      }
+      toast({
+        title: "Account Created",
+        description: "Your account has been created successfully. Please check your email for verification and then sign in.",
+      });
+      
     } catch (error: any) {
       toast({
         title: "Sign Up Failed",
@@ -148,16 +158,17 @@ const Auth = () => {
   };
   
   const handleForgotPassword = () => {
-    if (!identifier || identifierType !== "email") {
+    // Use signInIdentifier for forgot password check
+    if (!signInIdentifier || !isValidEmail(signInIdentifier)) {
       toast({
-        title: "Email Required",
-        description: "Please enter a valid email address to reset your password.",
+        title: "Valid Email Required",
+        description: "Please enter the email address associated with your account to reset your password.",
         variant: "destructive",
       });
       return;
     }
     
-    navigate("/reset-password", { state: { email: identifier } });
+    navigate("/reset-password", { state: { email: signInIdentifier } });
   };
   
   return (
@@ -193,30 +204,32 @@ const Auth = () => {
                 <TabsContent value="signin">
                   <form onSubmit={handleSignIn} className="space-y-4">
                     <div className="space-y-2">
-                      <Label htmlFor="identifier">Email or Phone Number</Label>
+                      <Label htmlFor="signin-identifier">Email or Phone Number</Label>
                       <div className="relative">
                         <Input
-                          id="identifier"
+                          id="signin-identifier" // Changed ID
                           type="text"
                           placeholder="Enter email or phone number"
-                          value={identifier}
-                          onChange={(e) => setIdentifier(e.target.value)}
+                          value={signInIdentifier} // Use signInIdentifier state
+                          onChange={(e) => setSignInIdentifier(e.target.value)} // Update signInIdentifier state
                           className="pl-10"
                           required
                         />
                         <div className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
-                          {identifierType === "email" ? (
-                            <At size={16} />
-                          ) : identifierType === "phone" ? (
+                          {/* Use signInIdentifierType for icon */}
+                          {signInIdentifierType === "email" ? (
+                            <Mail size={16} />
+                          ) : signInIdentifierType === "phone" ? (
                             <PhoneCall size={16} />
                           ) : (
-                            <At size={16} />
+                            <Mail size={16} /> // Default icon
                           )}
                         </div>
                       </div>
                     </div>
                     
-                    {identifierType === "email" && (
+                    {/* Show password field only if identifier is an email */}
+                    {signInIdentifierType === "email" && (
                       <div className="space-y-2">
                         <div className="flex items-center justify-between">
                           <Label htmlFor="signin-password">{t('password')}</Label>
@@ -258,7 +271,8 @@ const Auth = () => {
                         </span>
                       ) : (
                         <>
-                          {identifierType === "phone" ? "Continue with OTP" : t('sign_in')}
+                          {/* Button text depends on identifier type */}
+                          {signInIdentifierType === "phone" ? "Continue with OTP" : t('sign_in')}
                           <ArrowRight className="ml-2 h-4 w-4" />
                         </>
                       )}
@@ -266,12 +280,14 @@ const Auth = () => {
                   </form>
                 </TabsContent>
                 
+                {/* === Sign Up Form === */}
                 <TabsContent value="signup">
                   <form onSubmit={handleSignUp} className="space-y-4">
+                    {/* Name Field */}
                     <div className="space-y-2">
-                      <Label htmlFor="name">{t('name')}</Label>
+                      <Label htmlFor="signup-name">{t('name')}</Label> 
                       <Input
-                        id="name"
+                        id="signup-name" // Changed ID
                         placeholder="Enter your full name"
                         value={name}
                         onChange={(e) => setName(e.target.value)}
@@ -279,69 +295,76 @@ const Auth = () => {
                       />
                     </div>
                     
+                    {/* Email Field */}
                     <div className="space-y-2">
-                      <Label htmlFor="signup-identifier">Email or Phone Number</Label>
+                      <Label htmlFor="signup-email">Email</Label>
                       <div className="relative">
                         <Input
-                          id="signup-identifier"
-                          type="text"
-                          placeholder="Enter email or phone number"
-                          value={identifier}
-                          onChange={(e) => setIdentifier(e.target.value)}
+                          id="signup-email"
+                          type="email"
+                          placeholder="Enter your email address"
+                          value={signUpEmail} // Use signUpEmail state
+                          onChange={(e) => setSignUpEmail(e.target.value)} // Update signUpEmail state
                           className="pl-10"
                           required
                         />
-                        <div className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
-                          {identifierType === "email" ? (
-                            <At size={16} />
-                          ) : identifierType === "phone" ? (
-                            <PhoneCall size={16} />
-                          ) : (
-                            <At size={16} />
-                          )}
-                        </div>
+                        <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={16} />
+                      </div>
+                    </div>
+
+                    {/* Phone Number Field */}
+                    <div className="space-y-2">
+                      <Label htmlFor="signup-phone">Phone Number</Label>
+                      <div className="relative">
+                        <Input
+                          id="signup-phone"
+                          type="tel" // Use type="tel" for phone numbers
+                          placeholder="Enter your phone number (e.g., +1234567890)"
+                          value={signUpPhoneNumber} // Use signUpPhoneNumber state
+                          onChange={(e) => setSignUpPhoneNumber(e.target.value)} // Update signUpPhoneNumber state
+                          className="pl-10"
+                          required
+                        />
+                        <Phone className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={16} />
                       </div>
                     </div>
                     
-                    {identifierType === "email" && (
-                      <>
-                        <div className="space-y-2">
-                          <Label htmlFor="signup-password">{t('password')}</Label>
-                          <div className="relative">
-                            <Input
-                              id="signup-password"
-                              type={showPassword ? "text" : "password"}
-                              placeholder="Create a password"
-                              value={password}
-                              onChange={(e) => setPassword(e.target.value)}
-                              className="pr-10"
-                              required
-                            />
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="sm"
-                              className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                              onClick={() => setShowPassword(!showPassword)}
-                            >
-                              {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                            </Button>
-                          </div>
-                        </div>
-                        
-                        <div className="space-y-2">
-                          <Label htmlFor="confirm-password">{t('confirm_password')}</Label>
-                          <Input
-                            id="confirm-password"
-                            type={showPassword ? "text" : "password"}
-                            placeholder="Confirm your password"
-                            value={confirmPassword}
-                            onChange={(e) => setConfirmPassword(e.target.value)}
-                            required
-                          />
-                        </div>
-                      </>
-                    )}
+                    {/* Password Fields (always shown for sign-up) */}
+                    <div className="space-y-2">
+                      <Label htmlFor="signup-password">{t('password')}</Label>
+                      <div className="relative">
+                        <Input
+                          id="signup-password"
+                          type={showPassword ? "text" : "password"}
+                          placeholder="Create a password (min. 6 characters)"
+                          value={password}
+                          onChange={(e) => setPassword(e.target.value)}
+                          className="pr-10"
+                          required
+                        />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                          onClick={() => setShowPassword(!showPassword)}
+                        >
+                          {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                        </Button>
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="confirm-password">{t('confirm_password')}</Label>
+                      <Input
+                        id="confirm-password"
+                        type={showPassword ? "text" : "password"}
+                        placeholder="Confirm your password"
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        required
+                      />
+                    </div>
                     
                     <Button type="submit" className="w-full" disabled={loading}>
                       {loading ? (

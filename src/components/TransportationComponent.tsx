@@ -6,7 +6,8 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { dbManager } from '@/lib/db';
-import { formatCurrency } from '@/lib/utils';
+// import { formatCurrency } from '@/lib/utils'; // Remove old import
+import { useCurrency } from '@/context/CurrencyContext'; // Import useCurrency hook
 import { Edit } from 'lucide-react';
 
 interface TransportationContentProps {
@@ -21,6 +22,7 @@ const TransportationContent: React.FC<TransportationContentProps> = ({
   refreshTransaction 
 }) => {
   const { toast } = useToast();
+  const { formatCurrency } = useCurrency(); // Get formatCurrency from context
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({
     vehicleType: data?.vehicleType || '',
