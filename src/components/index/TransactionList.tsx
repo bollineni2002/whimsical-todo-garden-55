@@ -1,3 +1,4 @@
+
 import { Transaction } from '@/lib/types';
 import TransactionCard from '@/components/TransactionCard';
 import { motion } from 'framer-motion';

@@ -5,7 +5,11 @@ import { PlusCircle } from 'lucide-react';
 import { Dialog, DialogTrigger } from '@/components/ui/dialog';
 import CreateTransactionDialog from '@/components/index/CreateTransactionDialog';
 
-const EmptyTransactionsState: React.FC<{ onTransactionCreated: () => void }> = ({ 
+interface EmptyTransactionsStateProps {
+  onTransactionCreated: () => void;
+}
+
+const EmptyTransactionsState: React.FC<EmptyTransactionsStateProps> = ({ 
   onTransactionCreated 
 }) => {
   const [isDialogOpen, setIsDialogOpen] = React.useState(false);

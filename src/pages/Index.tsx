@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -22,6 +21,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { useNavigate } from 'react-router-dom';
 
 interface Buyer {
   id: string;
@@ -45,9 +45,11 @@ const Index = () => {
     loading, 
     searchQuery, 
     setSearchQuery,
-    setStatusFilter
+    setStatusFilter,
+    loadTransactions
   } = useTransactions();
   
+  const navigate = useNavigate();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [businessName, setBusinessName] = useState('TransactLy');
   const [isNameDialogOpen, setIsNameDialogOpen] = useState(false);
@@ -220,6 +222,10 @@ const Index = () => {
     }
   };
 
+  const handleCreateTransaction = () => {
+    navigate('/new-transaction');
+  };
+
   useEffect(() => {
     loadBusinessName();
     loadBuyersAndSellers();
@@ -290,7 +296,20 @@ const Index = () => {
               </div>
             </div>
             
-            <CreateTransactionDialog />
+            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+              <DialogTrigger asChild>
+                <Button onClick={() => setIsDialogOpen(true)}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  New Transaction
+                </Button>
+              </DialogTrigger>
+              <CreateTransactionDialog 
+                onTransactionCreated={() => {
+                  setIsDialogOpen(false);
+                  loadTransactions();
+                }} 
+              />
+            </Dialog>
           </div>
           
           <AnimatePresence>
@@ -299,10 +318,15 @@ const Index = () => {
             ) : filteredTransactions.length === 0 ? (
               <EmptyState 
                 hasSearchQuery={searchQuery.length > 0}
-                onCreateTransaction={() => setIsDialogOpen(true)}
+                onCreateTransaction={handleCreateTransaction}
               />
             ) : (
-              <TransactionList transactions={filteredTransactions} />
+              <TransactionList 
+                transactions={filteredTransactions} 
+                loading={loading}
+                onRefresh={loadTransactions}
+                onCreateTransaction={handleCreateTransaction}
+              />
             )}
           </AnimatePresence>
         </TabsContent>
