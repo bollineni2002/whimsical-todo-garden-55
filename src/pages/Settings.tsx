@@ -25,6 +25,7 @@ import {
   Settings as SettingsIcon, Type
 } from 'lucide-react';
 import { motion } from 'framer-motion';
+// Removed image import
 
 const Settings = () => {
   const { user, updatePassword, updateProfile } = useAuth();
@@ -593,6 +594,24 @@ const Settings = () => {
               </Card>
             </TabsContent>
           </Tabs>
+
+          {/* Support Us Section */}
+          <div className="mt-8 pt-6 border-t border-border/40 text-center">
+            <h3 className="text-sm font-medium text-muted-foreground mb-3">
+              Buy Me a Coffee ☕
+            </h3>
+            <div className="flex justify-center items-center space-x-4">
+              <img 
+                src="/photo_2025-03-28 13.45.48.jpeg" // Use the public path
+                alt="Support QR Code" 
+                className="w-24 h-24 border rounded-md p-1 bg-card" 
+              />
+              <p className="text-xs text-muted-foreground max-w-xs">
+                If you find this app helpful, consider supporting its development. Your contribution helps keep the app ad-free!
+              </p>
+            </div>
+          </div>
+          
         </motion.div>
       </div>
 
