@@ -16,7 +16,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 // Import icons for the new section
-import { Settings, Users, UserPlus, LineChart, Plus, Calculator, Percent, Landmark, Replace } from 'lucide-react'; 
+import { Settings, Users, UserPlus, LineChart, Plus, Calculator, Percent, Landmark, Replace, Briefcase, ListChecks } from 'lucide-react'; // Added Briefcase, ListChecks
 import { dbManager } from '@/lib/db';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -27,6 +27,8 @@ import { useNavigate } from 'react-router-dom';
 import TaxCalculator from '@/components/calculations/TaxCalculator';
 import InterestCalculator from '@/components/calculations/InterestCalculator';
 import CurrencyConverter from '@/components/calculations/CurrencyConverter';
+// Import the new Daily Transactions Log component
+import DailyTransactionsLog from '@/components/tab-contents/DailyTransactionsLog';
 
 interface Buyer {
   id: string;
@@ -232,23 +234,25 @@ const Index = () => {
       
       <Tabs defaultValue="dashboard" className="w-full">
         {/* Update grid columns to 5 */}
-        <TabsList className="w-full max-w-4xl mx-auto mb-6 grid grid-cols-5"> 
+        <TabsList className="w-full max-w-4xl mx-auto mb-6 grid grid-cols-5">
           <TabsTrigger value="dashboard">
             <LineChart className="w-4 h-4 mr-2" />
             Dashboard
           </TabsTrigger>
-          <TabsTrigger value="buyers">
-            <UserPlus className="w-4 h-4 mr-2" />
-            Buyers
+          {/* New Transactions Tab */}
+          <TabsTrigger value="transactions">
+            <ListChecks className="w-4 h-4 mr-2" />
+            Transactions
           </TabsTrigger>
-          <TabsTrigger value="sellers">
-            <Users className="w-4 h-4 mr-2" />
-            Sellers
-          </TabsTrigger>
-          {/* Add new Calculations TabTrigger */}
+          {/* Calculations Tab */}
           <TabsTrigger value="calculations">
             <Calculator className="w-4 h-4 mr-2" />
             Calculations
+          </TabsTrigger>
+          {/* Combined Clients & Vendors Tab */}
+          <TabsTrigger value="clients-vendors">
+            <Briefcase className="w-4 h-4 mr-2" />
+            Clients & Vendors
           </TabsTrigger>
           {/* Settings button remains the same (navigates) */}
           <Button 
@@ -332,11 +336,22 @@ const Index = () => {
             )}
           </AnimatePresence>
         </TabsContent>
-        
-        <TabsContent value="buyers" className="container mx-auto px-4 py-8">
-          <Card>
-            <CardHeader>
-              <CardTitle>Buyers Management</CardTitle>
+
+        {/* Combined Clients & Vendors Content */}
+        <TabsContent value="clients-vendors" className="container mx-auto px-4 py-8">
+          <Tabs defaultValue="buyers" className="w-full">
+            <TabsList className="grid w-full grid-cols-2 mb-4">
+              <TabsTrigger value="buyers">
+                <UserPlus className="w-4 h-4 mr-2" /> Buyers
+              </TabsTrigger>
+              <TabsTrigger value="sellers">
+                <Users className="w-4 h-4 mr-2" /> Sellers
+              </TabsTrigger>
+            </TabsList>
+            <TabsContent value="buyers">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Buyers Management</CardTitle>
               <CardDescription>Add and manage your buyers in one place</CardDescription>
             </CardHeader>
             <CardContent>
@@ -420,13 +435,13 @@ const Index = () => {
                 </DialogContent>
               </Dialog>
             </CardFooter>
-          </Card>
-        </TabsContent>
-        
-        <TabsContent value="sellers" className="container mx-auto px-4 py-8">
-          <Card>
-            <CardHeader>
-              <CardTitle>Sellers Management</CardTitle>
+              {/* Removed extra </CardFooter> here */}
+              </Card>
+            </TabsContent>
+            <TabsContent value="sellers">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Sellers Management</CardTitle>
               <CardDescription>Add and manage your sellers in one place</CardDescription>
             </CardHeader>
             <CardContent>
@@ -510,10 +525,18 @@ const Index = () => {
                 </DialogContent>
               </Dialog>
             </CardFooter>
-          </Card>
+              {/* Removed extra </CardFooter> here */}
+              </Card>
+            </TabsContent>
+          </Tabs> {/* Closing tag for nested Tabs */}
+        </TabsContent> {/* Closing tag for clients-vendors TabsContent */}
+
+        {/* New Transactions Content Area - Now using the dedicated component */}
+        <TabsContent value="transactions" className="container mx-auto px-4 py-8">
+          <DailyTransactionsLog />
         </TabsContent>
-        
-        {/* Add new TabsContent for Calculations */}
+
+        {/* Calculations Content */}
         <TabsContent value="calculations" className="container mx-auto px-4 py-8">
           <Card>
             <CardHeader>
