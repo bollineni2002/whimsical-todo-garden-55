@@ -15,20 +15,15 @@ import { exportTransactions, ExportFormat } from '@/lib/exportUtils';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-// Import icons for the new section
-import { Settings, Users, UserPlus, LineChart, Plus, Calculator, Percent, Landmark, Replace, Briefcase, ListChecks } from 'lucide-react'; // Added Briefcase, ListChecks
+import { cn } from '@/lib/utils';
+import { useIsMobile } from '@/hooks/use-is-mobile';
+import { Settings, Users, UserPlus, LineChart, Plus, Calculator, Percent, Landmark, Replace, Briefcase, ListChecks } from 'lucide-react';
 import { dbManager } from '@/lib/db';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { useNavigate } from 'react-router-dom';
-// Import placeholder components (will be created next)
-import TaxCalculator from '@/components/calculations/TaxCalculator';
-import InterestCalculator from '@/components/calculations/InterestCalculator';
-import CurrencyConverter from '@/components/calculations/CurrencyConverter';
-// Import the new Daily Transactions Log component
-import DailyTransactionsLog from '@/components/tab-contents/DailyTransactionsLog';
 
 interface Buyer {
   id: string;
@@ -58,10 +53,7 @@ const Index = () => {
   
   const navigate = useNavigate();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [businessName, setBusinessName] = useState('TransactLy'); // Keep for Header display
-  // Remove state related to name editing dialog
-  // const [isNameDialogOpen, setIsNameDialogOpen] = useState(false); 
-  // const [newBusinessName, setNewBusinessName] = useState('');
+  const [businessName, setBusinessName] = useState('TransactLy');
   const [isBuyerDialogOpen, setIsBuyerDialogOpen] = useState(false);
   const [isSellerDialogOpen, setIsSellerDialogOpen] = useState(false);
   const [buyers, setBuyers] = useState<Buyer[]>([]);
@@ -101,11 +93,6 @@ const Index = () => {
       console.error('Failed to load business name:', error);
     }
   };
-
-  // Remove saveBusinessName function
-  /*
-  const saveBusinessName = async () => { ... };
-  */
 
   const loadBuyersAndSellers = async () => {
     try {
@@ -218,6 +205,8 @@ const Index = () => {
     navigate('/new-transaction');
   };
 
+  const isMobile = useIsMobile();
+
   useEffect(() => {
     loadBusinessName();
     loadBuyersAndSellers();
@@ -229,39 +218,39 @@ const Index = () => {
       animate={{ opacity: 1 }}
       className="min-h-screen flex flex-col"
     >
-      {/* Remove onEditName prop from Header */}
       <Header onExport={handleExport} businessName={businessName} /> 
       
       <Tabs defaultValue="dashboard" className="w-full">
-        {/* Update grid columns to 5 */}
-        <TabsList className="w-full max-w-4xl mx-auto mb-6 grid grid-cols-5">
+        <TabsList className={cn(
+          "w-full max-w-4xl mx-auto mb-6",
+          isMobile ? "grid grid-cols-2 gap-2" : "grid grid-cols-5"
+        )}>
           <TabsTrigger value="dashboard">
             <LineChart className="w-4 h-4 mr-2" />
-            Dashboard
+            <span className={isMobile ? "line-clamp-1" : ""}>Dashboard</span>
           </TabsTrigger>
-          {/* New Transactions Tab */}
           <TabsTrigger value="transactions">
             <ListChecks className="w-4 h-4 mr-2" />
-            Transactions
+            <span className={isMobile ? "line-clamp-1" : ""}>Transactions</span>
           </TabsTrigger>
-          {/* Calculations Tab */}
           <TabsTrigger value="calculations">
             <Calculator className="w-4 h-4 mr-2" />
-            Calculations
+            <span className={isMobile ? "line-clamp-1" : ""}>Calculations</span>
           </TabsTrigger>
-          {/* Combined Clients & Vendors Tab */}
           <TabsTrigger value="clients-vendors">
             <Briefcase className="w-4 h-4 mr-2" />
-            Clients & Vendors
+            <span className={isMobile ? "line-clamp-1" : ""}>Clients</span>
           </TabsTrigger>
-          {/* Settings button remains the same (navigates) */}
           <Button 
             variant="ghost" 
-            className="flex items-center justify-center text-muted-foreground data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm" // Mimic TabsTrigger style
+            className={cn(
+              "flex items-center justify-center text-muted-foreground data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm",
+              isMobile ? "flex-col py-2" : ""
+            )}
             onClick={() => navigate('/settings')}
           >
             <Settings className="w-4 h-4 mr-2" />
-            Settings
+            <span className={isMobile ? "line-clamp-1 text-xs" : ""}>Settings</span>
           </Button>
         </TabsList>
         
@@ -337,7 +326,6 @@ const Index = () => {
           </AnimatePresence>
         </TabsContent>
 
-        {/* Combined Clients & Vendors Content */}
         <TabsContent value="clients-vendors" className="container mx-auto px-4 py-8">
           <Tabs defaultValue="buyers" className="w-full">
             <TabsList className="grid w-full grid-cols-2 mb-4">
@@ -352,191 +340,187 @@ const Index = () => {
               <Card>
                 <CardHeader>
                   <CardTitle>Buyers Management</CardTitle>
-              <CardDescription>Add and manage your buyers in one place</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {buyers.length === 0 ? (
-                <div className="text-center py-6 text-muted-foreground">
-                  No buyers added yet. Add your first buyer.
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {buyers.map(buyer => (
-                    <div key={buyer.id} className="border rounded-lg p-4 hover:bg-accent/5 transition-colors">
-                      <div className="flex flex-col md:flex-row justify-between">
-                        <div>
-                          <h3 className="font-medium">{buyer.name}</h3>
-                          <p className="text-sm text-muted-foreground">{buyer.phone}</p>
-                          {buyer.email && <p className="text-sm text-muted-foreground">{buyer.email}</p>}
+                  <CardDescription>Add and manage your buyers in one place</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {buyers.length === 0 ? (
+                    <div className="text-center py-6 text-muted-foreground">
+                      No buyers added yet. Add your first buyer.
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {buyers.map(buyer => (
+                        <div key={buyer.id} className="border rounded-lg p-4 hover:bg-accent/5 transition-colors">
+                          <div className="flex flex-col md:flex-row justify-between">
+                            <div>
+                              <h3 className="font-medium">{buyer.name}</h3>
+                              <p className="text-sm text-muted-foreground">{buyer.phone}</p>
+                              {buyer.email && <p className="text-sm text-muted-foreground">{buyer.email}</p>}
+                            </div>
+                            <div className="text-sm text-right mt-2 md:mt-0">
+                              <p className="text-muted-foreground">Added on {new Date(buyer.date).toLocaleDateString()}</p>
+                            </div>
+                          </div>
                         </div>
-                        <div className="text-sm text-right mt-2 md:mt-0">
-                          <p className="text-muted-foreground">Added on {new Date(buyer.date).toLocaleDateString()}</p>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+                <CardFooter className="flex justify-end">
+                  <Dialog open={isBuyerDialogOpen} onOpenChange={setIsBuyerDialogOpen}>
+                    <DialogTrigger asChild>
+                      <Button>
+                        <Plus className="h-4 w-4 mr-2" />
+                        Add New Buyer
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>Add New Buyer</DialogTitle>
+                        <DialogDescription>
+                          Enter the details of the new buyer to add them to your system.
+                        </DialogDescription>
+                      </DialogHeader>
+                      <div className="grid gap-4 py-4">
+                        <div className="grid grid-cols-4 items-center gap-4">
+                          <Label htmlFor="buyerName" className="text-right">Name</Label>
+                          <Input 
+                            id="buyerName" 
+                            name="name"
+                            className="col-span-3" 
+                            placeholder="Enter buyer name" 
+                            value={newBuyer.name}
+                            onChange={handleBuyerInputChange}
+                          />
+                        </div>
+                        <div className="grid grid-cols-4 items-center gap-4">
+                          <Label htmlFor="buyerEmail" className="text-right">Email</Label>
+                          <Input 
+                            id="buyerEmail" 
+                            name="email"
+                            className="col-span-3" 
+                            placeholder="Enter buyer email" 
+                            value={newBuyer.email}
+                            onChange={handleBuyerInputChange}
+                          />
+                        </div>
+                        <div className="grid grid-cols-4 items-center gap-4">
+                          <Label htmlFor="buyerPhone" className="text-right">Phone</Label>
+                          <Input 
+                            id="buyerPhone" 
+                            name="phone"
+                            className="col-span-3" 
+                            placeholder="Enter buyer phone" 
+                            value={newBuyer.phone}
+                            onChange={handleBuyerInputChange}
+                          />
                         </div>
                       </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-            <CardFooter className="flex justify-end">
-              <Dialog open={isBuyerDialogOpen} onOpenChange={setIsBuyerDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button>
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add New Buyer
-                  </Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>Add New Buyer</DialogTitle>
-                    <DialogDescription>
-                      Enter the details of the new buyer to add them to your system.
-                    </DialogDescription>
-                  </DialogHeader>
-                  <div className="grid gap-4 py-4">
-                    <div className="grid grid-cols-4 items-center gap-4">
-                      <Label htmlFor="buyerName" className="text-right">Name</Label>
-                      <Input 
-                        id="buyerName" 
-                        name="name"
-                        className="col-span-3" 
-                        placeholder="Enter buyer name" 
-                        value={newBuyer.name}
-                        onChange={handleBuyerInputChange}
-                      />
-                    </div>
-                    <div className="grid grid-cols-4 items-center gap-4">
-                      <Label htmlFor="buyerEmail" className="text-right">Email</Label>
-                      <Input 
-                        id="buyerEmail" 
-                        name="email"
-                        className="col-span-3" 
-                        placeholder="Enter buyer email" 
-                        value={newBuyer.email}
-                        onChange={handleBuyerInputChange}
-                      />
-                    </div>
-                    <div className="grid grid-cols-4 items-center gap-4">
-                      <Label htmlFor="buyerPhone" className="text-right">Phone</Label>
-                      <Input 
-                        id="buyerPhone" 
-                        name="phone"
-                        className="col-span-3" 
-                        placeholder="Enter buyer phone" 
-                        value={newBuyer.phone}
-                        onChange={handleBuyerInputChange}
-                      />
-                    </div>
-                  </div>
-                  <DialogFooter>
-                    <Button variant="outline" onClick={() => setIsBuyerDialogOpen(false)}>Cancel</Button>
-                    <Button type="button" onClick={handleAddBuyer}>Add Buyer</Button>
-                  </DialogFooter>
-                </DialogContent>
-              </Dialog>
-            </CardFooter>
-              {/* Removed extra </CardFooter> here */}
+                      <DialogFooter>
+                        <Button variant="outline" onClick={() => setIsBuyerDialogOpen(false)}>Cancel</Button>
+                        <Button type="button" onClick={handleAddBuyer}>Add Buyer</Button>
+                      </DialogFooter>
+                    </DialogContent>
+                  </Dialog>
+                </CardFooter>
               </Card>
             </TabsContent>
             <TabsContent value="sellers">
               <Card>
                 <CardHeader>
                   <CardTitle>Sellers Management</CardTitle>
-              <CardDescription>Add and manage your sellers in one place</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {sellers.length === 0 ? (
-                <div className="text-center py-6 text-muted-foreground">
-                  No sellers added yet. Add your first seller.
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {sellers.map(seller => (
-                    <div key={seller.id} className="border rounded-lg p-4 hover:bg-accent/5 transition-colors">
-                      <div className="flex flex-col md:flex-row justify-between">
-                        <div>
-                          <h3 className="font-medium">{seller.name}</h3>
-                          <p className="text-sm text-muted-foreground">{seller.phone}</p>
-                          {seller.email && <p className="text-sm text-muted-foreground">{seller.email}</p>}
+                  <CardDescription>Add and manage your sellers in one place</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {sellers.length === 0 ? (
+                    <div className="text-center py-6 text-muted-foreground">
+                      No sellers added yet. Add your first seller.
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {sellers.map(seller => (
+                        <div key={seller.id} className="border rounded-lg p-4 hover:bg-accent/5 transition-colors">
+                          <div className="flex flex-col md:flex-row justify-between">
+                            <div>
+                              <h3 className="font-medium">{seller.name}</h3>
+                              <p className="text-sm text-muted-foreground">{seller.phone}</p>
+                              {seller.email && <p className="text-sm text-muted-foreground">{seller.email}</p>}
+                            </div>
+                            <div className="text-sm text-right mt-2 md:mt-0">
+                              <p className="text-muted-foreground">Added on {new Date(seller.date).toLocaleDateString()}</p>
+                            </div>
+                          </div>
                         </div>
-                        <div className="text-sm text-right mt-2 md:mt-0">
-                          <p className="text-muted-foreground">Added on {new Date(seller.date).toLocaleDateString()}</p>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+                <CardFooter className="flex justify-end">
+                  <Dialog open={isSellerDialogOpen} onOpenChange={setIsSellerDialogOpen}>
+                    <DialogTrigger asChild>
+                      <Button>
+                        <Plus className="h-4 w-4 mr-2" />
+                        Add New Seller
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>Add New Seller</DialogTitle>
+                        <DialogDescription>
+                          Enter the details of the new seller to add them to your system.
+                        </DialogDescription>
+                      </DialogHeader>
+                      <div className="grid gap-4 py-4">
+                        <div className="grid grid-cols-4 items-center gap-4">
+                          <Label htmlFor="sellerName" className="text-right">Name</Label>
+                          <Input 
+                            id="sellerName" 
+                            name="name"
+                            className="col-span-3" 
+                            placeholder="Enter seller name" 
+                            value={newSeller.name}
+                            onChange={handleSellerInputChange}
+                          />
+                        </div>
+                        <div className="grid grid-cols-4 items-center gap-4">
+                          <Label htmlFor="sellerEmail" className="text-right">Email</Label>
+                          <Input 
+                            id="sellerEmail" 
+                            name="email"
+                            className="col-span-3" 
+                            placeholder="Enter seller email" 
+                            value={newSeller.email}
+                            onChange={handleSellerInputChange}
+                          />
+                        </div>
+                        <div className="grid grid-cols-4 items-center gap-4">
+                          <Label htmlFor="sellerPhone" className="text-right">Phone</Label>
+                          <Input 
+                            id="sellerPhone" 
+                            name="phone"
+                            className="col-span-3" 
+                            placeholder="Enter seller phone" 
+                            value={newSeller.phone}
+                            onChange={handleSellerInputChange}
+                          />
                         </div>
                       </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-            <CardFooter className="flex justify-end">
-              <Dialog open={isSellerDialogOpen} onOpenChange={setIsSellerDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button>
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add New Seller
-                  </Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>Add New Seller</DialogTitle>
-                    <DialogDescription>
-                      Enter the details of the new seller to add them to your system.
-                    </DialogDescription>
-                  </DialogHeader>
-                  <div className="grid gap-4 py-4">
-                    <div className="grid grid-cols-4 items-center gap-4">
-                      <Label htmlFor="sellerName" className="text-right">Name</Label>
-                      <Input 
-                        id="sellerName" 
-                        name="name"
-                        className="col-span-3" 
-                        placeholder="Enter seller name" 
-                        value={newSeller.name}
-                        onChange={handleSellerInputChange}
-                      />
-                    </div>
-                    <div className="grid grid-cols-4 items-center gap-4">
-                      <Label htmlFor="sellerEmail" className="text-right">Email</Label>
-                      <Input 
-                        id="sellerEmail" 
-                        name="email"
-                        className="col-span-3" 
-                        placeholder="Enter seller email" 
-                        value={newSeller.email}
-                        onChange={handleSellerInputChange}
-                      />
-                    </div>
-                    <div className="grid grid-cols-4 items-center gap-4">
-                      <Label htmlFor="sellerPhone" className="text-right">Phone</Label>
-                      <Input 
-                        id="sellerPhone" 
-                        name="phone"
-                        className="col-span-3" 
-                        placeholder="Enter seller phone" 
-                        value={newSeller.phone}
-                        onChange={handleSellerInputChange}
-                      />
-                    </div>
-                  </div>
-                  <DialogFooter>
-                    <Button variant="outline" onClick={() => setIsSellerDialogOpen(false)}>Cancel</Button>
-                    <Button type="button" onClick={handleAddSeller}>Add Seller</Button>
-                  </DialogFooter>
-                </DialogContent>
-              </Dialog>
-            </CardFooter>
-              {/* Removed extra </CardFooter> here */}
+                      <DialogFooter>
+                        <Button variant="outline" onClick={() => setIsSellerDialogOpen(false)}>Cancel</Button>
+                        <Button type="button" onClick={handleAddSeller}>Add Seller</Button>
+                      </DialogFooter>
+                    </DialogContent>
+                  </Dialog>
+                </CardFooter>
               </Card>
             </TabsContent>
-          </Tabs> {/* Closing tag for nested Tabs */}
-        </TabsContent> {/* Closing tag for clients-vendors TabsContent */}
+          </Tabs>
+        </TabsContent>
 
-        {/* New Transactions Content Area - Now using the dedicated component */}
         <TabsContent value="transactions" className="container mx-auto px-4 py-8">
           <DailyTransactionsLog />
         </TabsContent>
 
-        {/* Calculations Content */}
         <TabsContent value="calculations" className="container mx-auto px-4 py-8">
           <Card>
             <CardHeader>
@@ -544,7 +528,6 @@ const Index = () => {
               <CardDescription>Tools for tax, interest, and currency conversion.</CardDescription>
             </CardHeader>
             <CardContent>
-              {/* Nested Tabs for Calculation Types */}
               <Tabs defaultValue="tax" className="w-full">
                 <TabsList className="grid w-full grid-cols-3 mb-4">
                   <TabsTrigger value="tax">
@@ -570,12 +553,7 @@ const Index = () => {
             </CardContent>
           </Card>
         </TabsContent>
-        
       </Tabs>
-      
-      {/* Remove Business Name Dialog */}
-      {/* <Dialog open={isNameDialogOpen} onOpenChange={setIsNameDialogOpen}> ... </Dialog> */}
-      
     </motion.div>
   );
 };

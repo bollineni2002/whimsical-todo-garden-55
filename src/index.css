@@ -122,4 +122,53 @@
   .tab-transition {
     transition: all 0.3s ease;
   }
+  
+  /* Add new mobile-friendly utility classes */
+  .scrollbar-none {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;
+  }
+  
+  /* Improved tab animations */
+  .tab-slide-in {
+    animation: tab-slide-in 0.3s ease-out forwards;
+  }
+  
+  .tab-slide-out {
+    animation: tab-slide-out 0.3s ease-out forwards;
+  }
+  
+  @keyframes tab-slide-in {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  @keyframes tab-slide-out {
+    from {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    to {
+      opacity: 0;
+      transform: translateY(-10px);
+    }
+  }
+  
+  /* Ensure line clamp works */
+  .line-clamp-1 {
+    display: -webkit-box;
+    -webkit-line-clamp: 1;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
 }
