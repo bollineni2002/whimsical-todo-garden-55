@@ -75,52 +75,65 @@ const TabNavigation = ({ activeTab, onTabChange, disabledTabs = [] }: TabNavigat
   
   return (
     <div className="flex flex-col w-full h-full bg-background border-r border-border">
-      <div className={cn("px-4 py-6", isMobile && "py-4")}>
-        <h2 className={cn("text-xl font-medium", isMobile && "text-lg")}>Transaction Details</h2>
+      <div className={cn("px-4 py-4", isMobile ? "py-3" : "py-6")}>
+        <h2 className={cn("font-medium", isMobile ? "text-lg" : "text-xl")}>Transaction Details</h2>
       </div>
       
       <nav className={cn(
-        "flex flex-col gap-1 px-3 pb-6",
-        isMobile && "gap-0.5 pb-4"
+        "flex flex-col gap-1 px-2 pb-6",
+        isMobile && "gap-0.5 pb-3"
       )}>
-        {tabs.map((tab) => (
-          <button
-            key={tab.key}
-            onClick={() => onTabChange(tab.key)}
-            className={cn(
-              "flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-medium transition-all",
-              "relative overflow-hidden",
-              activeTab === tab.key
-                ? "bg-primary/10 text-primary"
-                : "text-muted-foreground hover:text-foreground hover:bg-accent",
-              isMobile && activeTab !== tab.key && "px-2 py-2 justify-center"
-            )}
-            disabled={disabledTabs.includes(tab.key)}
-          >
-            {activeTab === tab.key && (
-              <motion.div
-                layoutId="activeTab"
-                className="absolute left-0 top-0 bottom-0 w-1 bg-primary"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.2 }}
-              />
-            )}
-            <span className={cn(
-              "relative z-10 flex items-center",
-              isMobile && activeTab !== tab.key ? "gap-0" : "gap-3"
-            )}>
-              {tab.icon}
+        {tabs.map((tab) => {
+          const isActive = activeTab === tab.key;
+          const isDisabled = disabledTabs.includes(tab.key);
+          
+          return (
+            <button
+              key={tab.key}
+              onClick={() => onTabChange(tab.key)}
+              className={cn(
+                "flex items-center rounded-lg text-sm font-medium transition-all",
+                "relative overflow-hidden",
+                isActive
+                  ? "bg-primary/10 text-primary"
+                  : "text-muted-foreground hover:text-foreground hover:bg-accent",
+                isMobile
+                  ? isActive
+                    ? "px-3 py-2.5"
+                    : "px-2 py-2.5 justify-center"
+                  : "px-3 py-3 gap-3",
+                isDisabled && "opacity-50 pointer-events-none"
+              )}
+              disabled={isDisabled}
+            >
+              {isActive && (
+                <motion.div
+                  layoutId="activeTab"
+                  className="absolute left-0 top-0 bottom-0 w-1 bg-primary"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.2 }}
+                />
+              )}
               <span className={cn(
-                "transition-all duration-300",
-                isMobile && activeTab !== tab.key ? "w-0 opacity-0 absolute" : "w-auto opacity-100"
+                "relative z-10 flex items-center",
+                isMobile && !isActive ? "gap-0" : "gap-2 md:gap-3"
               )}>
-                {tab.label}
+                {tab.icon}
+                <span className={cn(
+                  "transition-all duration-200 whitespace-nowrap",
+                  isMobile && !isActive 
+                    ? "w-0 opacity-0 absolute" 
+                    : "w-auto opacity-100",
+                  isMobile && "text-sm"
+                )}>
+                  {tab.label}
+                </span>
               </span>
-            </span>
-          </button>
-        ))}
+            </button>
+          );
+        })}
       </nav>
     </div>
   );
