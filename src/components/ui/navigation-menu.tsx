@@ -82,7 +82,12 @@ const NavigationMenuTrigger = React.forwardRef<
       {...props}
     >
       {icon}
-      {children}{" "}
+      <span className={cn(
+        "transition-all duration-200",
+        isMobile && !icon ? "text-xs" : ""
+      )}>
+        {children}
+      </span>
       <ChevronDown
         className="relative top-[1px] ml-1 h-3 w-3 transition duration-200 group-data-[state=open]:rotate-180"
         aria-hidden="true"

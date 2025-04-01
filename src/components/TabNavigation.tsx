@@ -79,7 +79,7 @@ const TabNavigation = ({ activeTab, onTabChange, disabledTabs = [] }: TabNavigat
       isMobile ? "overflow-x-auto scrollbar-hide" : ""
     )}>
       <div className={cn(
-        "px-4 py-4", 
+        "px-4", 
         isMobile ? "py-3" : "py-6"
       )}>
         <h2 className={cn(
@@ -89,7 +89,7 @@ const TabNavigation = ({ activeTab, onTabChange, disabledTabs = [] }: TabNavigat
       </div>
       
       <nav className={cn(
-        "flex px-2 pb-0 mb-4 overflow-x-auto scrollbar-hide",
+        "flex px-2 pb-0 mb-4 overflow-x-auto scrollbar-hide transaction-tabs",
         isMobile ? "gap-0.5" : "gap-1"
       )}>
         {tabs.map((tab) => {
@@ -101,7 +101,7 @@ const TabNavigation = ({ activeTab, onTabChange, disabledTabs = [] }: TabNavigat
               key={tab.key}
               onClick={() => onTabChange(tab.key)}
               className={cn(
-                "flex items-center rounded-lg text-sm font-medium transition-all flex-shrink-0",
+                "flex items-center rounded-lg text-sm font-medium transition-all flex-shrink-0 transaction-tab",
                 "relative overflow-hidden",
                 isActive
                   ? "bg-primary/10 text-primary"
@@ -109,7 +109,7 @@ const TabNavigation = ({ activeTab, onTabChange, disabledTabs = [] }: TabNavigat
                 isMobile
                   ? isActive
                     ? "px-3 py-2"
-                    : "px-2 py-2 justify-center"
+                    : "px-2 py-2"
                   : "px-3 py-3 gap-3",
                 isDisabled && "opacity-50 pointer-events-none"
               )}
@@ -120,7 +120,7 @@ const TabNavigation = ({ activeTab, onTabChange, disabledTabs = [] }: TabNavigat
                   layoutId="activeTab"
                   className={cn(
                     "absolute bg-primary",
-                    "left-0 right-0 bottom-0 h-0.5" // Changed to bottom indicator for horizontal tabs
+                    "left-0 right-0 bottom-0 h-0.5" // Horizontal indicator for tabs
                   )}
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
@@ -128,16 +128,11 @@ const TabNavigation = ({ activeTab, onTabChange, disabledTabs = [] }: TabNavigat
                   transition={{ duration: 0.2 }}
                 />
               )}
-              <span className={cn(
-                "relative z-10 flex items-center",
-                isMobile && !isActive ? "gap-0" : "gap-2 md:gap-3"
-              )}>
+              <span className="flex items-center gap-2">
                 {tab.icon}
                 <span className={cn(
-                  "transition-all duration-200 whitespace-nowrap",
-                  isMobile && !isActive 
-                    ? "w-0 opacity-0 absolute" 
-                    : "w-auto opacity-100",
+                  "whitespace-nowrap",
+                  isMobile && !isActive ? "sr-only" : "inline-block",
                   isMobile && "text-sm"
                 )}>
                   {tab.label}

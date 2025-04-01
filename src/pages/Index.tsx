@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -252,7 +253,6 @@ const Index = () => {
           <TabsTrigger
             value="settings"
             icon={<Settings className="w-4 h-4" />}
-            onClick={() => navigate('/settings')}
           >
             Settings
           </TabsTrigger>
