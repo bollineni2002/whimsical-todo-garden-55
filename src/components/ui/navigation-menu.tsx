@@ -54,23 +54,34 @@ const navigationMenuTriggerStyle = cva(
       mobile: {
         true: "text-xs px-2 py-1.5 h-8",
         false: ""
+      },
+      icon: {
+        true: "gap-2 [&_svg]:size-4 [&_svg]:shrink-0",
+        false: ""
       }
+    },
+    defaultVariants: {
+      mobile: false,
+      icon: false
     }
   }
 )
 
 const NavigationMenuTrigger = React.forwardRef<
   React.ElementRef<typeof NavigationMenuPrimitive.Trigger>,
-  React.ComponentPropsWithoutRef<typeof NavigationMenuPrimitive.Trigger>
->(({ className, children, ...props }, ref) => {
+  React.ComponentPropsWithoutRef<typeof NavigationMenuPrimitive.Trigger> & {
+    icon?: React.ReactNode
+  }
+>(({ className, children, icon, ...props }, ref) => {
   const isMobile = useIsMobile()
   
   return (
     <NavigationMenuPrimitive.Trigger
       ref={ref}
-      className={cn(navigationMenuTriggerStyle({ mobile: isMobile }), "group", className)}
+      className={cn(navigationMenuTriggerStyle({ mobile: isMobile, icon: !!icon }), "group", className)}
       {...props}
     >
+      {icon}
       {children}{" "}
       <ChevronDown
         className="relative top-[1px] ml-1 h-3 w-3 transition duration-200 group-data-[state=open]:rotate-180"

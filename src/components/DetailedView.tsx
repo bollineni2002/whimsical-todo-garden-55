@@ -1,3 +1,4 @@
+
 import { useState, useCallback, useEffect } from 'react';
 import { TabKey, Transaction } from '@/lib/types';
 import TabNavigation from './TabNavigation';
@@ -89,13 +90,6 @@ const DetailedView = ({ transaction, refreshTransaction: externalRefresh }: Deta
     }
   };
 
-  // All tabs should always be navigatable, we'll handle the empty state in each component
-  const shouldShowTab = (tabKey: TabKey) => {
-    // For new transactions, we need to ensure all sections can be opened
-    // Even if they're undefined, the components will handle the empty state
-    return true;
-  };
-
   return (
     <div className="flex flex-col h-full w-full overflow-hidden">
       {/* Transaction action header */}
@@ -135,22 +129,22 @@ const DetailedView = ({ transaction, refreshTransaction: externalRefresh }: Deta
         </Dialog>
       </div>
       
-      <div className="flex flex-col md:flex-row flex-1 overflow-hidden">
-        <div className="w-full md:w-1/4 min-w-[240px] flex-shrink-0 border-b md:border-b-0 border-border">
-          <TabNavigation 
-            activeTab={activeTab} 
-            onTabChange={setActiveTab}
-            disabledTabs={[]} // No disabled tabs, allow access to all tabs
-          />
-        </div>
+      {/* Horizontal Tab Navigation */}
+      <div className="w-full border-b border-border">
+        <TabNavigation 
+          activeTab={activeTab} 
+          onTabChange={setActiveTab}
+          disabledTabs={[]} 
+        />
+      </div>
         
-        <div className="flex-1 overflow-auto">
-          <TabContent 
-            transaction={currentTransaction} 
-            activeTab={activeTab} 
-            refreshTransaction={refreshTransaction} 
-          />
-        </div>
+      {/* Tab Content */}
+      <div className="flex-1 overflow-auto px-4">
+        <TabContent 
+          transaction={currentTransaction} 
+          activeTab={activeTab} 
+          refreshTransaction={refreshTransaction} 
+        />
       </div>
     </div>
   );

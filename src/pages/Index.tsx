@@ -249,14 +249,13 @@ const Index = () => {
           >
             Clients & Vendors
           </TabsTrigger>
-          <Button 
-            variant="ghost" 
-            className="flex items-center justify-center text-muted-foreground data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm" // Mimic TabsTrigger style
+          <TabsTrigger
+            value="settings"
+            icon={<Settings className="w-4 h-4" />}
             onClick={() => navigate('/settings')}
           >
-            <Settings className="w-4 h-4 mr-2" />
             Settings
-          </Button>
+          </TabsTrigger>
         </TabsList>
         
         <TabsContent value="dashboard" className="container mx-auto px-4 py-8">

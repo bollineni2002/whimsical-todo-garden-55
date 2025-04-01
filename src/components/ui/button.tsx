@@ -26,10 +26,32 @@ const buttonVariants = cva(
         lg: "h-10 rounded-md px-6 sm:h-11 sm:px-8",
         icon: "h-9 w-9 sm:h-10 sm:w-10",
       },
+      hasIcon: {
+        true: "",
+        false: "",
+      }
     },
+    compoundVariants: [
+      {
+        hasIcon: true,
+        size: "default",
+        className: "gap-2",
+      },
+      {
+        hasIcon: true,
+        size: "sm",
+        className: "gap-1.5",
+      },
+      {
+        hasIcon: true,
+        size: "lg",
+        className: "gap-2.5",
+      },
+    ],
     defaultVariants: {
       variant: "default",
       size: "default",
+      hasIcon: false,
     },
   }
 )
@@ -37,16 +59,41 @@ const buttonVariants = cva(
 export interface ButtonProps
   extends React.ButtonHTMLAttributes<HTMLButtonElement>,
     VariantProps<typeof buttonVariants> {
-  asChild?: boolean
+  asChild?: boolean;
+  hasIcon?: boolean;
 }
 
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className, variant, size, asChild = false, ...props }, ref) => {
+  ({ className, variant, size, hasIcon, asChild = false, ...props }, ref) => {
+    // Check if the button has svg children to auto-detect icons
+    const buttonRef = React.useRef<HTMLButtonElement>(null);
+    const [autoDetectedHasIcon, setAutoDetectedHasIcon] = React.useState(false);
+
+    React.useEffect(() => {
+      if (buttonRef.current) {
+        const hasSvg = buttonRef.current.querySelector('svg') !== null;
+        setAutoDetectedHasIcon(hasSvg);
+      }
+    }, [props.children]);
+    
     const Comp = asChild ? Slot : "button"
     return (
       <Comp
-        className={cn(buttonVariants({ variant, size, className }))}
-        ref={ref}
+        className={cn(buttonVariants({ 
+          variant, 
+          size, 
+          hasIcon: hasIcon !== undefined ? hasIcon : autoDetectedHasIcon,
+          className 
+        }))}
+        ref={(node) => {
+          // Assign both refs
+          if (typeof ref === 'function') {
+            ref(node);
+          } else if (ref) {
+            ref.current = node;
+          }
+          buttonRef.current = node;
+        }}
         {...props}
       />
     )

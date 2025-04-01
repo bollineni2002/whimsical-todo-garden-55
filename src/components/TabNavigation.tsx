@@ -74,14 +74,23 @@ const TabNavigation = ({ activeTab, onTabChange, disabledTabs = [] }: TabNavigat
   const isMobile = useIsMobile();
   
   return (
-    <div className="flex flex-col w-full h-full bg-background border-r border-border">
-      <div className={cn("px-4 py-4", isMobile ? "py-3" : "py-6")}>
-        <h2 className={cn("font-medium", isMobile ? "text-lg" : "text-xl")}>Transaction Details</h2>
+    <div className={cn(
+      "w-full bg-background",
+      isMobile ? "overflow-x-auto scrollbar-hide" : ""
+    )}>
+      <div className={cn(
+        "px-4 py-4", 
+        isMobile ? "py-3" : "py-6"
+      )}>
+        <h2 className={cn(
+          "font-medium", 
+          isMobile ? "text-lg" : "text-xl"
+        )}>Transaction Details</h2>
       </div>
       
       <nav className={cn(
-        "flex flex-col gap-1 px-2 pb-6",
-        isMobile && "gap-0.5 pb-3"
+        "flex px-2 pb-0 mb-4 overflow-x-auto scrollbar-hide",
+        isMobile ? "gap-0.5" : "gap-1"
       )}>
         {tabs.map((tab) => {
           const isActive = activeTab === tab.key;
@@ -92,15 +101,15 @@ const TabNavigation = ({ activeTab, onTabChange, disabledTabs = [] }: TabNavigat
               key={tab.key}
               onClick={() => onTabChange(tab.key)}
               className={cn(
-                "flex items-center rounded-lg text-sm font-medium transition-all",
+                "flex items-center rounded-lg text-sm font-medium transition-all flex-shrink-0",
                 "relative overflow-hidden",
                 isActive
                   ? "bg-primary/10 text-primary"
                   : "text-muted-foreground hover:text-foreground hover:bg-accent",
                 isMobile
                   ? isActive
-                    ? "px-3 py-2.5"
-                    : "px-2 py-2.5 justify-center"
+                    ? "px-3 py-2"
+                    : "px-2 py-2 justify-center"
                   : "px-3 py-3 gap-3",
                 isDisabled && "opacity-50 pointer-events-none"
               )}
@@ -109,7 +118,10 @@ const TabNavigation = ({ activeTab, onTabChange, disabledTabs = [] }: TabNavigat
               {isActive && (
                 <motion.div
                   layoutId="activeTab"
-                  className="absolute left-0 top-0 bottom-0 w-1 bg-primary"
+                  className={cn(
+                    "absolute bg-primary",
+                    "left-0 right-0 bottom-0 h-0.5" // Changed to bottom indicator for horizontal tabs
+                  )}
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
