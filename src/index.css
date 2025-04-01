@@ -122,4 +122,29 @@
   .tab-transition {
     transition: all 0.3s ease;
   }
+  
+  /* Added for mobile optimizations */
+  .scrollbar-hide {
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
+  }
+  
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;  /* Chrome, Safari, Opera */
+  }
+  
+  @media (max-width: 640px) {
+    .tabs-container {
+      gap: 0.25rem;
+    }
+    
+    .tab-icon-only {
+      padding: 0.5rem;
+      justify-content: center;
+    }
+    
+    .tab-with-text {
+      padding: 0.5rem 1rem;
+    }
+  }
 }

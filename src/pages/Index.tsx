@@ -59,9 +59,6 @@ const Index = () => {
   const navigate = useNavigate();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [businessName, setBusinessName] = useState('TransactLy'); // Keep for Header display
-  // Remove state related to name editing dialog
-  // const [isNameDialogOpen, setIsNameDialogOpen] = useState(false); 
-  // const [newBusinessName, setNewBusinessName] = useState('');
   const [isBuyerDialogOpen, setIsBuyerDialogOpen] = useState(false);
   const [isSellerDialogOpen, setIsSellerDialogOpen] = useState(false);
   const [buyers, setBuyers] = useState<Buyer[]>([]);
@@ -101,11 +98,6 @@ const Index = () => {
       console.error('Failed to load business name:', error);
     }
   };
-
-  // Remove saveBusinessName function
-  /*
-  const saveBusinessName = async () => { ... };
-  */
 
   const loadBuyersAndSellers = async () => {
     try {
@@ -229,32 +221,34 @@ const Index = () => {
       animate={{ opacity: 1 }}
       className="min-h-screen flex flex-col"
     >
-      {/* Remove onEditName prop from Header */}
       <Header onExport={handleExport} businessName={businessName} /> 
       
       <Tabs defaultValue="dashboard" className="w-full">
-        {/* Update grid columns to 5 */}
-        <TabsList className="w-full max-w-4xl mx-auto mb-6 grid grid-cols-5">
-          <TabsTrigger value="dashboard">
-            <LineChart className="w-4 h-4 mr-2" />
+        <TabsList className="w-full max-w-4xl mx-auto mb-6 grid grid-cols-5 overflow-x-auto scrollbar-hide">
+          <TabsTrigger 
+            value="dashboard"
+            icon={<LineChart className="w-4 h-4" />}
+          >
             Dashboard
           </TabsTrigger>
-          {/* New Transactions Tab */}
-          <TabsTrigger value="transactions">
-            <ListChecks className="w-4 h-4 mr-2" />
+          <TabsTrigger 
+            value="transactions"
+            icon={<ListChecks className="w-4 h-4" />}
+          >
             Transactions
           </TabsTrigger>
-          {/* Calculations Tab */}
-          <TabsTrigger value="calculations">
-            <Calculator className="w-4 h-4 mr-2" />
+          <TabsTrigger 
+            value="calculations"
+            icon={<Calculator className="w-4 h-4" />}
+          >
             Calculations
           </TabsTrigger>
-          {/* Combined Clients & Vendors Tab */}
-          <TabsTrigger value="clients-vendors">
-            <Briefcase className="w-4 h-4 mr-2" />
+          <TabsTrigger 
+            value="clients-vendors"
+            icon={<Briefcase className="w-4 h-4" />}
+          >
             Clients & Vendors
           </TabsTrigger>
-          {/* Settings button remains the same (navigates) */}
           <Button 
             variant="ghost" 
             className="flex items-center justify-center text-muted-foreground data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm" // Mimic TabsTrigger style
@@ -337,7 +331,6 @@ const Index = () => {
           </AnimatePresence>
         </TabsContent>
 
-        {/* Combined Clients & Vendors Content */}
         <TabsContent value="clients-vendors" className="container mx-auto px-4 py-8">
           <Tabs defaultValue="buyers" className="w-full">
             <TabsList className="grid w-full grid-cols-2 mb-4">
@@ -435,7 +428,6 @@ const Index = () => {
                 </DialogContent>
               </Dialog>
             </CardFooter>
-              {/* Removed extra </CardFooter> here */}
               </Card>
             </TabsContent>
             <TabsContent value="sellers">
@@ -525,18 +517,15 @@ const Index = () => {
                 </DialogContent>
               </Dialog>
             </CardFooter>
-              {/* Removed extra </CardFooter> here */}
               </Card>
             </TabsContent>
-          </Tabs> {/* Closing tag for nested Tabs */}
-        </TabsContent> {/* Closing tag for clients-vendors TabsContent */}
+          </Tabs>
+        </TabsContent>
 
-        {/* New Transactions Content Area - Now using the dedicated component */}
         <TabsContent value="transactions" className="container mx-auto px-4 py-8">
           <DailyTransactionsLog />
         </TabsContent>
 
-        {/* Calculations Content */}
         <TabsContent value="calculations" className="container mx-auto px-4 py-8">
           <Card>
             <CardHeader>
@@ -544,7 +533,6 @@ const Index = () => {
               <CardDescription>Tools for tax, interest, and currency conversion.</CardDescription>
             </CardHeader>
             <CardContent>
-              {/* Nested Tabs for Calculation Types */}
               <Tabs defaultValue="tax" className="w-full">
                 <TabsList className="grid w-full grid-cols-3 mb-4">
                   <TabsTrigger value="tax">
@@ -572,9 +560,6 @@ const Index = () => {
         </TabsContent>
         
       </Tabs>
-      
-      {/* Remove Business Name Dialog */}
-      {/* <Dialog open={isNameDialogOpen} onOpenChange={setIsNameDialogOpen}> ... </Dialog> */}
       
     </motion.div>
   );

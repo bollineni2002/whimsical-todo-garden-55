@@ -3,6 +3,7 @@ import { TabKey } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
 import { TabNavigationProps } from '@/types/component-types';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 const tabs: Array<{ key: TabKey; label: string; icon: React.ReactNode }> = [
   {
@@ -70,13 +71,18 @@ const tabs: Array<{ key: TabKey; label: string; icon: React.ReactNode }> = [
 ];
 
 const TabNavigation = ({ activeTab, onTabChange, disabledTabs = [] }: TabNavigationProps) => {
+  const isMobile = useIsMobile();
+  
   return (
     <div className="flex flex-col w-full h-full bg-background border-r border-border">
-      <div className="px-4 py-6">
-        <h2 className="text-xl font-medium">Transaction Details</h2>
+      <div className={cn("px-4 py-6", isMobile && "py-4")}>
+        <h2 className={cn("text-xl font-medium", isMobile && "text-lg")}>Transaction Details</h2>
       </div>
       
-      <nav className="flex flex-col gap-1 px-3 pb-6">
+      <nav className={cn(
+        "flex flex-col gap-1 px-3 pb-6",
+        isMobile && "gap-0.5 pb-4"
+      )}>
         {tabs.map((tab) => (
           <button
             key={tab.key}
@@ -86,7 +92,8 @@ const TabNavigation = ({ activeTab, onTabChange, disabledTabs = [] }: TabNavigat
               "relative overflow-hidden",
               activeTab === tab.key
                 ? "bg-primary/10 text-primary"
-                : "text-muted-foreground hover:text-foreground hover:bg-accent"
+                : "text-muted-foreground hover:text-foreground hover:bg-accent",
+              isMobile && activeTab !== tab.key && "px-2 py-2 justify-center"
             )}
             disabled={disabledTabs.includes(tab.key)}
           >
@@ -100,9 +107,17 @@ const TabNavigation = ({ activeTab, onTabChange, disabledTabs = [] }: TabNavigat
                 transition={{ duration: 0.2 }}
               />
             )}
-            <span className="relative z-10 flex items-center gap-3">
+            <span className={cn(
+              "relative z-10 flex items-center",
+              isMobile && activeTab !== tab.key ? "gap-0" : "gap-3"
+            )}>
               {tab.icon}
-              {tab.label}
+              <span className={cn(
+                "transition-all duration-300",
+                isMobile && activeTab !== tab.key ? "w-0 opacity-0 absolute" : "w-auto opacity-100"
+              )}>
+                {tab.label}
+              </span>
             </span>
           </button>
         ))}
