@@ -36,6 +36,8 @@ const TransactionDetail = () => {
           payments: data.payments || [],
           notes: data.notes || [],
           attachments: data.attachments || [],
+          buyers: data.buyers || [], // Ensure buyers array is initialized
+          suppliers: data.suppliers || [], // Ensure suppliers array is initialized
         };
         setTransaction(updatedTransaction);
       } else {

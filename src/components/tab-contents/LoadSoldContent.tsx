@@ -25,26 +25,54 @@ const LoadSoldContent: React.FC<LoadSoldContentProps> = ({
   const { toast } = useToast();
   const [isAddingBuyer, setIsAddingBuyer] = useState(false);
 
-  const handleAddBuyer = async (buyer: Buyer) => {
+  // Renamed from handleAddBuyer
+  const handleFormSubmit = async (formData: Buyer) => {
     try {
-      const newBuyers = [...(transaction.buyers || []), buyer];
-      
-      await dbManager.updateTransaction({
-        ...transaction,
-        buyers: newBuyers,
-        updatedAt: new Date().toISOString()
-      });
-      
+      let updatedTransaction: Transaction;
+      let successMessage: string;
+
+      if (!transaction.loadSold) {
+        // Create the primary LoadSold object
+        const newLoadSold: LoadSold = {
+          buyerName: formData.name,
+          buyerContact: formData.contact,
+          quantitySold: formData.quantitySold,
+          saleRate: formData.saleRate,
+          totalSaleAmount: formData.totalSaleAmount,
+          amountReceived: formData.amountReceived,
+          pendingBalance: formData.pendingBalance,
+          paymentDueDate: formData.paymentDueDate,
+          paymentFrequency: formData.paymentFrequency,
+        };
+        updatedTransaction = {
+          ...transaction,
+          loadSold: newLoadSold, // Set the primary loadSold
+          updatedAt: new Date().toISOString()
+        };
+        successMessage = "Sale information added successfully";
+      } else {
+        // Add to the buyers array (existing logic)
+        const newBuyers = [...(transaction.buyers || []), formData];
+        updatedTransaction = {
+          ...transaction,
+          buyers: newBuyers,
+          updatedAt: new Date().toISOString()
+        };
+        successMessage = "Additional buyer added successfully";
+      }
+
+      await dbManager.updateTransaction(updatedTransaction);
       await refreshTransaction();
-      
+
       toast({
         title: "Success",
-        description: "Buyer added successfully"
+        description: successMessage
       });
-      
-      setIsAddingBuyer(false);
+
+      setIsAddingBuyer(false); // Close dialog
+
     } catch (error) {
-      console.error('Error adding buyer:', error);
+      console.error('Error processing buyer form:', error);
       toast({
         title: "Error",
         description: "Failed to add buyer",
@@ -70,7 +98,7 @@ const LoadSoldContent: React.FC<LoadSoldContentProps> = ({
               <DialogHeader>
                 <DialogTitle>Add Buyer</DialogTitle>
               </DialogHeader>
-              <BuyerForm onSubmit={handleAddBuyer} onCancel={() => setIsAddingBuyer(false)} />
+              <BuyerForm onSubmit={handleFormSubmit} onCancel={() => setIsAddingBuyer(false)} />
             </DialogContent>
           </Dialog>
         </div>
@@ -170,7 +198,7 @@ const LoadSoldContent: React.FC<LoadSoldContentProps> = ({
           <DialogHeader>
             <DialogTitle>Add Buyer</DialogTitle>
           </DialogHeader>
-          <BuyerForm onSubmit={handleAddBuyer} onCancel={() => setIsAddingBuyer(false)} />
+          <BuyerForm onSubmit={handleFormSubmit} onCancel={() => setIsAddingBuyer(false)} />
         </DialogContent>
       </Dialog>
     </div>

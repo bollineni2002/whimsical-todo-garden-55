@@ -25,26 +25,55 @@ const LoadBuyContent: React.FC<LoadBuyContentProps> = ({
   const { toast } = useToast();
   const [isAddingSupplier, setIsAddingSupplier] = useState(false);
 
-  const handleAddSupplier = async (supplier: Supplier) => {
+  // Renamed from handleAddSupplier
+  const handleFormSubmit = async (formData: Supplier) => {
     try {
-      const newSuppliers = [...(transaction.suppliers || []), supplier];
-      
-      await dbManager.updateTransaction({
-        ...transaction,
-        suppliers: newSuppliers,
-        updatedAt: new Date().toISOString()
-      });
-      
+      let updatedTransaction: Transaction;
+      let successMessage: string;
+
+      if (!transaction.loadBuy) {
+        // Create the primary LoadBuy object
+        const newLoadBuy: LoadBuy = {
+          supplierName: formData.name,
+          supplierContact: formData.contact,
+          goodsName: formData.goodsName,
+          quantity: formData.quantity,
+          purchaseRate: formData.purchaseRate,
+          totalCost: formData.totalCost,
+          amountPaid: formData.amountPaid,
+          balance: formData.balance,
+          paymentDueDate: formData.paymentDueDate,
+          paymentFrequency: formData.paymentFrequency,
+        };
+        updatedTransaction = {
+          ...transaction,
+          loadBuy: newLoadBuy, // Set the primary loadBuy
+          updatedAt: new Date().toISOString()
+        };
+        successMessage = "Purchase information added successfully";
+      } else {
+        // Add to the suppliers array (existing logic)
+        const newSuppliers = [...(transaction.suppliers || []), formData];
+        updatedTransaction = {
+          ...transaction,
+          suppliers: newSuppliers,
+          updatedAt: new Date().toISOString()
+        };
+        successMessage = "Additional supplier added successfully";
+      }
+
+      await dbManager.updateTransaction(updatedTransaction);
       await refreshTransaction();
       
       toast({
         title: "Success",
-        description: "Supplier added successfully"
+        description: successMessage
       });
-      
-      setIsAddingSupplier(false);
+
+      setIsAddingSupplier(false); // Close dialog
+
     } catch (error) {
-      console.error('Error adding supplier:', error);
+      console.error('Error processing supplier form:', error);
       toast({
         title: "Error",
         description: "Failed to add supplier",
@@ -70,7 +99,7 @@ const LoadBuyContent: React.FC<LoadBuyContentProps> = ({
               <DialogHeader>
                 <DialogTitle>Add Supplier</DialogTitle>
               </DialogHeader>
-              <SupplierForm onSubmit={handleAddSupplier} onCancel={() => setIsAddingSupplier(false)} />
+              <SupplierForm onSubmit={handleFormSubmit} onCancel={() => setIsAddingSupplier(false)} />
             </DialogContent>
           </Dialog>
         </div>
@@ -172,7 +201,7 @@ const LoadBuyContent: React.FC<LoadBuyContentProps> = ({
           <DialogHeader>
             <DialogTitle>Add Supplier</DialogTitle>
           </DialogHeader>
-          <SupplierForm onSubmit={handleAddSupplier} onCancel={() => setIsAddingSupplier(false)} />
+          <SupplierForm onSubmit={handleFormSubmit} onCancel={() => setIsAddingSupplier(false)} />
         </DialogContent>
       </Dialog>
     </div>
