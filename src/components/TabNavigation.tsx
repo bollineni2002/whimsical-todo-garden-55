@@ -129,9 +129,11 @@ const TabNavigation = ({ activeTab, onTabChange, disabledTabs = [] }: TabNavigat
                 />
               )}
               <span className="flex items-center gap-2">
-                {tab.icon}
+                <span className="tab-icon">
+                  {tab.icon}
+                </span>
                 <span className={cn(
-                  "whitespace-nowrap",
+                  "whitespace-nowrap tab-label",
                   isMobile && !isActive ? "sr-only" : "inline-block",
                   isMobile && "text-sm"
                 )}>

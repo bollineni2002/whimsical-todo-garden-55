@@ -74,7 +74,7 @@ const NavigationMenuTrigger = React.forwardRef<
   }
 >(({ className, children, icon, ...props }, ref) => {
   const isMobile = useIsMobile()
-  const isActive = props["data-active"] === "true"
+  const isActive = props["data-active"] === "true" || props["data-state"] === "open"
   
   return (
     <NavigationMenuPrimitive.Trigger

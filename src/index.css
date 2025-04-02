@@ -207,5 +207,32 @@
       width: auto;
       margin-left: 0.5rem;
     }
+    
+    /* Fix for tab label visibility */
+    .tab-label {
+      transition: opacity 0.2s, width 0.2s;
+    }
+    
+    /* Animation for tab icons */
+    .tab-icon {
+      transition: margin-right 0.2s;
+    }
+    
+    /* Adding indicator for active tabs */
+    .tab-active-indicator {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background-color: currentColor;
+      transform-origin: left;
+      transform: scaleX(0);
+      transition: transform 0.2s ease;
+    }
+    
+    [data-state="active"] .tab-active-indicator {
+      transform: scaleX(1);
+    }
   }
 }

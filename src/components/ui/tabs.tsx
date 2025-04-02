@@ -50,7 +50,7 @@ const TabsTrigger = React.forwardRef<
       {icon && (
         <span className={cn(
           "transition-all duration-200",
-          isActive ? "mr-2" : isMobile ? "mr-0" : "mr-2"
+          isActive || !isMobile ? "mr-2" : "mr-0"
         )}>
           {icon}
         </span>
