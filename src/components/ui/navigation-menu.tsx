@@ -74,6 +74,7 @@ const NavigationMenuTrigger = React.forwardRef<
   }
 >(({ className, children, icon, ...props }, ref) => {
   const isMobile = useIsMobile()
+  const isActive = props["data-active"] === "true"
   
   return (
     <NavigationMenuPrimitive.Trigger
@@ -81,10 +82,17 @@ const NavigationMenuTrigger = React.forwardRef<
       className={cn(navigationMenuTriggerStyle({ mobile: isMobile, icon: !!icon }), "group", className)}
       {...props}
     >
-      {icon}
+      {icon && (
+        <span className={cn(
+          "transition-all duration-200",
+          isActive || !isMobile ? "mr-2" : "mr-0"
+        )}>
+          {icon}
+        </span>
+      )}
       <span className={cn(
         "transition-all duration-200",
-        isMobile && !icon ? "text-xs" : ""
+        isMobile && !isActive && icon ? "sr-only" : "inline-block"
       )}>
         {children}
       </span>

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -333,11 +332,11 @@ const Index = () => {
         <TabsContent value="clients-vendors" className="container mx-auto px-4 py-8">
           <Tabs defaultValue="buyers" className="w-full">
             <TabsList className="grid w-full grid-cols-2 mb-4">
-              <TabsTrigger value="buyers">
-                <UserPlus className="w-4 h-4 mr-2" /> Buyers
+              <TabsTrigger value="buyers" icon={<UserPlus className="w-4 h-4" />}>
+                Buyers
               </TabsTrigger>
-              <TabsTrigger value="sellers">
-                <Users className="w-4 h-4 mr-2" /> Sellers
+              <TabsTrigger value="sellers" icon={<Users className="w-4 h-4" />}>
+                Sellers
               </TabsTrigger>
             </TabsList>
             <TabsContent value="buyers">
@@ -534,14 +533,14 @@ const Index = () => {
             <CardContent>
               <Tabs defaultValue="tax" className="w-full">
                 <TabsList className="grid w-full grid-cols-3 mb-4">
-                  <TabsTrigger value="tax">
-                    <Percent className="w-4 h-4 mr-2" /> Tax
+                  <TabsTrigger value="tax" icon={<Percent className="w-4 h-4" />}>
+                    Tax
                   </TabsTrigger>
-                  <TabsTrigger value="interest">
-                    <Landmark className="w-4 h-4 mr-2" /> Interest
+                  <TabsTrigger value="interest" icon={<Landmark className="w-4 h-4" />}>
+                    Interest
                   </TabsTrigger>
-                  <TabsTrigger value="currency">
-                    <Replace className="w-4 h-4 mr-2" /> Currency
+                  <TabsTrigger value="currency" icon={<Replace className="w-4 h-4" />}>
+                    Currency
                   </TabsTrigger>
                 </TabsList>
                 <TabsContent value="tax">

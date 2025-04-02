@@ -179,6 +179,7 @@
       overflow-x: auto;
       white-space: nowrap;
       padding-bottom: 0.5rem;
+      -webkit-overflow-scrolling: touch; /* Better scroll on iOS */
     }
 
     .transaction-tab {
@@ -186,12 +187,25 @@
       display: flex;
       align-items: center;
       justify-content: center;
+      position: relative;
     }
 
     /* Fix Settings button icon display on mobile */
     .settings-button-icon {
       display: inline-flex !important;
       margin-right: 0.5rem;
+    }
+    
+    /* Fix for consistent tab styling when active/inactive */
+    [data-state="active"] svg {
+      opacity: 1;
+      visibility: visible;
+    }
+    
+    [data-state="active"] span:not(.sr-only) {
+      visibility: visible;
+      width: auto;
+      margin-left: 0.5rem;
     }
   }
 }
