@@ -7,9 +7,7 @@ import {
   ShoppingCart, 
   CreditCard, 
   FileText, 
-  Paperclip, 
-  Users,
-  Store
+  Paperclip
 } from 'lucide-react';
 import { ExtendedTabKey } from './TabContent';
 
@@ -33,16 +31,7 @@ const TabNavigation: React.FC<TabNavigationProps> = ({
           icon={<Package className="h-4 w-4" />}
           className="transaction-tab"
         >
-          Single Supplier
-        </TabsTrigger>
-        
-        <TabsTrigger 
-          value={ExtendedTabKey.MULTIPLE_SUPPLIERS} 
-          disabled={disabledTabs.includes(ExtendedTabKey.MULTIPLE_SUPPLIERS)}
-          icon={<Store className="h-4 w-4" />}
-          className="transaction-tab"
-        >
-          Multiple Suppliers
+          Purchase
         </TabsTrigger>
         
         <TabsTrigger 
@@ -60,16 +49,7 @@ const TabNavigation: React.FC<TabNavigationProps> = ({
           icon={<ShoppingCart className="h-4 w-4" />}
           className="transaction-tab"
         >
-          Single Buyer
-        </TabsTrigger>
-        
-        <TabsTrigger 
-          value={ExtendedTabKey.MULTIPLE_BUYERS} 
-          disabled={disabledTabs.includes(ExtendedTabKey.MULTIPLE_BUYERS)}
-          icon={<Users className="h-4 w-4" />}
-          className="transaction-tab"
-        >
-          Multiple Buyers
+          Sale
         </TabsTrigger>
         
         <TabsTrigger 

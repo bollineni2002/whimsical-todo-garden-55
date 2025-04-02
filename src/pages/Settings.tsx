@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -22,6 +22,7 @@ const Settings = () => {
   const { toast } = useToast();
   const { user, signOut } = useAuth();
   const [activeTab, setActiveTab] = useState("general");
+  const [isLoading, setIsLoading] = useState(true);
 
   const [settings, setSettings] = useState({
     darkMode: true,
@@ -32,8 +33,25 @@ const Settings = () => {
     dateFormat: "DD/MM/YYYY",
   });
 
+  // Load settings from localStorage on component mount
+  useEffect(() => {
+    const savedSettings = localStorage.getItem('userSettings');
+    if (savedSettings) {
+      try {
+        const parsedSettings = JSON.parse(savedSettings);
+        setSettings(prevSettings => ({
+          ...prevSettings,
+          ...parsedSettings
+        }));
+      } catch (error) {
+        console.error('Failed to parse settings:', error);
+      }
+    }
+    setIsLoading(false);
+  }, []);
+
   const handleSaveSettings = () => {
-    // Save settings to localStorage or context
+    // Save settings to localStorage
     localStorage.setItem('userSettings', JSON.stringify(settings));
     
     toast({
@@ -58,6 +76,19 @@ const Settings = () => {
       });
     }
   };
+
+  if (isLoading) {
+    return (
+      <div className="container mx-auto p-4 max-w-4xl flex items-center justify-center min-h-screen">
+        <div className="animate-pulse-subtle">
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-muted-foreground" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="10"></circle>
+            <path d="M12 6v6l4 2"></path>
+          </svg>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto p-4 max-w-4xl">

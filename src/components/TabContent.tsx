@@ -37,7 +37,8 @@ const TabContent: React.FC<TabContentProps> = ({ activeTab, transaction, refresh
           <LoadBuyContent 
             data={transaction.loadBuy} 
             transaction={transaction} 
-            refreshTransaction={refreshTransaction} 
+            refreshTransaction={refreshTransaction}
+            suppliers={transaction.suppliers || []}
           />
         );
         
@@ -57,7 +58,8 @@ const TabContent: React.FC<TabContentProps> = ({ activeTab, transaction, refresh
           <LoadSoldContent 
             data={transaction.loadSold} 
             transaction={transaction} 
-            refreshTransaction={refreshTransaction} 
+            refreshTransaction={refreshTransaction}
+            buyers={transaction.buyers || []}
           />
         );
         

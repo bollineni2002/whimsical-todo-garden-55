@@ -16,7 +16,7 @@ export interface Transaction {
   updatedAt?: string; // Timestamp of last update
   user_id?: string; // User ID for cloud storage
   
-  // New fields for multiple buyers and sellers
+  // Fields for multiple buyers and sellers
   buyers?: Buyer[];
   suppliers?: Supplier[];
 }
@@ -42,7 +42,7 @@ export interface Transportation {
   origin: string;
   destination: string;
   charges: number;
-  notes?: string; // New field for transportation notes
+  notes?: string;
   departureDate?: string;
   departureTime?: string;
   arrivalDate?: string;
@@ -61,7 +61,7 @@ export interface LoadSold {
   paymentFrequency?: 'one-time' | 'weekly' | 'monthly' | 'quarterly';
 }
 
-// New interfaces for multiple buyers and sellers
+// Interfaces for multiple buyers and sellers
 export interface Buyer {
   name: string;
   contact: string;

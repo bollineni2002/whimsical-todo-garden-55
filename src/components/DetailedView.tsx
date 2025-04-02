@@ -17,7 +17,8 @@ interface DetailedViewProps {
 }
 
 const DetailedView = ({ transaction, refreshTransaction: externalRefresh }: DetailedViewProps) => {
-  const [activeTab, setActiveTab] = useState<TabKey | ExtendedTabKey>(ExtendedTabKey.MULTIPLE_SUPPLIERS);
+  // Use the first tab as the default active tab
+  const [activeTab, setActiveTab] = useState<TabKey | ExtendedTabKey>(TabKey.LOAD_BUY);
   const [currentTransaction, setCurrentTransaction] = useState<Transaction>(transaction);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const navigate = useNavigate();
