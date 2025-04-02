@@ -190,22 +190,18 @@
       position: relative;
     }
 
-    /* Fix Settings button icon display on mobile */
-    .settings-button-icon {
-      display: inline-flex !important;
-      margin-right: 0.5rem;
+    /* Global tab styling for mobile */
+    [data-state="active"] svg,
+    [data-active="true"] svg {
+      opacity: 1 !important;
+      visibility: visible !important;
     }
     
-    /* Fix for consistent tab styling when active/inactive */
-    [data-state="active"] svg {
-      opacity: 1;
-      visibility: visible;
-    }
-    
-    [data-state="active"] span:not(.sr-only) {
-      visibility: visible;
-      width: auto;
-      margin-left: 0.5rem;
+    [data-state="active"] span:not(.sr-only),
+    [data-active="true"] span:not(.sr-only) {
+      visibility: visible !important;
+      width: auto !important;
+      opacity: 1 !important;
     }
     
     /* Fix for tab label visibility */
@@ -227,12 +223,14 @@
       height: 2px;
       background-color: currentColor;
       transform-origin: left;
-      transform: scaleX(0);
+      transform: scaleX(1);
       transition: transform 0.2s ease;
     }
     
-    [data-state="active"] .tab-active-indicator {
-      transform: scaleX(1);
+    /* Fix Settings button icon display on mobile */
+    .settings-button-icon {
+      display: inline-flex !important;
+      margin-right: 0.5rem;
     }
   }
 }

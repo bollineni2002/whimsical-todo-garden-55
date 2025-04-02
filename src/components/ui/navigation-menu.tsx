@@ -79,7 +79,7 @@ const NavigationMenuTrigger = React.forwardRef<
   return (
     <NavigationMenuPrimitive.Trigger
       ref={ref}
-      className={cn(navigationMenuTriggerStyle({ mobile: isMobile, icon: !!icon }), "group", className)}
+      className={cn(navigationMenuTriggerStyle({ mobile: isMobile, icon: !!icon }), "relative group", className)}
       {...props}
     >
       {icon && (
@@ -100,6 +100,11 @@ const NavigationMenuTrigger = React.forwardRef<
         className="relative top-[1px] ml-1 h-3 w-3 transition duration-200 group-data-[state=open]:rotate-180"
         aria-hidden="true"
       />
+      
+      {/* Add active indicator for consistency */}
+      {isActive && isMobile && (
+        <span className="tab-active-indicator absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />
+      )}
     </NavigationMenuPrimitive.Trigger>
   )
 })
