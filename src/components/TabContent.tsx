@@ -7,9 +7,23 @@ import LoadSoldContent from './tab-contents/LoadSoldContent';
 import PaymentsContent from './tab-contents/PaymentsContent';
 import NotesContent from './tab-contents/NotesContent';
 import AttachmentsContent from './tab-contents/AttachmentsContent';
+import MultipleSuppliersContent from './tab-contents/MultipleSuppliersContent';
+import MultipleBuyersContent from './tab-contents/MultipleBuyersContent';
+
+// Extended TabKey enum to include the new tabs
+export enum ExtendedTabKey {
+  LOAD_BUY = 'loadBuy',
+  TRANSPORTATION = 'transportation',
+  LOAD_SOLD = 'loadSold',
+  PAYMENTS = 'payments',
+  NOTES = 'notes',
+  ATTACHMENTS = 'attachments',
+  MULTIPLE_SUPPLIERS = 'multipleSuppliers',
+  MULTIPLE_BUYERS = 'multipleBuyers'
+}
 
 interface TabContentProps {
-  activeTab: TabKey;
+  activeTab: TabKey | ExtendedTabKey;
   transaction: Transaction;
   refreshTransaction: () => Promise<void>;
 }
@@ -18,6 +32,7 @@ const TabContent: React.FC<TabContentProps> = ({ activeTab, transaction, refresh
   const renderTabContent = () => {
     switch(activeTab) {
       case TabKey.LOAD_BUY:
+      case ExtendedTabKey.LOAD_BUY:
         return (
           <LoadBuyContent 
             data={transaction.loadBuy} 
@@ -27,6 +42,7 @@ const TabContent: React.FC<TabContentProps> = ({ activeTab, transaction, refresh
         );
         
       case TabKey.TRANSPORTATION:
+      case ExtendedTabKey.TRANSPORTATION:
         return (
           <TransportationContent 
             data={transaction.transportation} 
@@ -36,6 +52,7 @@ const TabContent: React.FC<TabContentProps> = ({ activeTab, transaction, refresh
         );
         
       case TabKey.LOAD_SOLD:
+      case ExtendedTabKey.LOAD_SOLD:
         return (
           <LoadSoldContent 
             data={transaction.loadSold} 
@@ -45,6 +62,7 @@ const TabContent: React.FC<TabContentProps> = ({ activeTab, transaction, refresh
         );
         
       case TabKey.PAYMENTS:
+      case ExtendedTabKey.PAYMENTS:
         return (
           <PaymentsContent 
             payments={transaction.payments || []} 
@@ -54,6 +72,7 @@ const TabContent: React.FC<TabContentProps> = ({ activeTab, transaction, refresh
         );
         
       case TabKey.NOTES:
+      case ExtendedTabKey.NOTES:
         return (
           <NotesContent 
             notes={transaction.notes || []} 
@@ -63,9 +82,28 @@ const TabContent: React.FC<TabContentProps> = ({ activeTab, transaction, refresh
         );
         
       case TabKey.ATTACHMENTS:
+      case ExtendedTabKey.ATTACHMENTS:
         return (
           <AttachmentsContent 
             attachments={transaction.attachments || []} 
+            transaction={transaction} 
+            refreshTransaction={refreshTransaction} 
+          />
+        );
+      
+      case ExtendedTabKey.MULTIPLE_SUPPLIERS:
+        return (
+          <MultipleSuppliersContent 
+            suppliers={transaction.suppliers || []} 
+            transaction={transaction} 
+            refreshTransaction={refreshTransaction} 
+          />
+        );
+        
+      case ExtendedTabKey.MULTIPLE_BUYERS:
+        return (
+          <MultipleBuyersContent 
+            buyers={transaction.buyers || []} 
             transaction={transaction} 
             refreshTransaction={refreshTransaction} 
           />

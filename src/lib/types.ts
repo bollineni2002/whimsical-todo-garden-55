@@ -1,7 +1,7 @@
 
 export interface Transaction {
   id: string;
-  name: string; // New field for transaction name
+  name: string; 
   date: string;
   totalAmount: number;
   status: 'completed' | 'pending' | 'cancelled';
@@ -15,6 +15,10 @@ export interface Transaction {
   syncedAt?: string; // Timestamp of last sync
   updatedAt?: string; // Timestamp of last update
   user_id?: string; // User ID for cloud storage
+  
+  // New fields for multiple buyers and sellers
+  buyers?: Buyer[];
+  suppliers?: Supplier[];
 }
 
 export interface LoadBuy {
@@ -53,6 +57,32 @@ export interface LoadSold {
   totalSaleAmount: number;
   amountReceived: number;
   pendingBalance: number;
+  paymentDueDate?: string;
+  paymentFrequency?: 'one-time' | 'weekly' | 'monthly' | 'quarterly';
+}
+
+// New interfaces for multiple buyers and sellers
+export interface Buyer {
+  name: string;
+  contact: string;
+  quantitySold: number;
+  saleRate: number;
+  totalSaleAmount: number;
+  amountReceived: number;
+  pendingBalance: number;
+  paymentDueDate?: string;
+  paymentFrequency?: 'one-time' | 'weekly' | 'monthly' | 'quarterly';
+}
+
+export interface Supplier {
+  name: string;
+  contact: string;
+  goodsName: string;
+  quantity: number;
+  purchaseRate: number;
+  totalCost: number;
+  amountPaid: number;
+  balance: number;
   paymentDueDate?: string;
   paymentFrequency?: 'one-time' | 'weekly' | 'monthly' | 'quarterly';
 }

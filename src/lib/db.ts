@@ -112,6 +112,8 @@ export const dbManager = {
         payments: transaction.payments || [],
         notes: transaction.notes || [],
         attachments: transaction.attachments || [],
+        suppliers: transaction.suppliers || [],
+        buyers: transaction.buyers || [],
         updatedAt: new Date().toISOString()
       };
       
@@ -131,6 +133,8 @@ export const dbManager = {
         payments: transaction.payments || [],
         notes: transaction.notes || [],
         attachments: transaction.attachments || [],
+        suppliers: transaction.suppliers || [],
+        buyers: transaction.buyers || [],
         updatedAt: new Date().toISOString()
       };
       

@@ -9,7 +9,75 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      transactions: {
+        Row: {
+          attachments: Json | null
+          business_name: string | null
+          buyers: Database["public"]["CompositeTypes"]["buyer_type"][] | null
+          created_at: string | null
+          date: string
+          id: string
+          load_buy: Json | null
+          load_sold: Json | null
+          name: string
+          notes: Json | null
+          payments: Json | null
+          status: string | null
+          suppliers:
+            | Database["public"]["CompositeTypes"]["supplier_type"][]
+            | null
+          synced_at: string | null
+          total_amount: number | null
+          transportation: Json | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          attachments?: Json | null
+          business_name?: string | null
+          buyers?: Database["public"]["CompositeTypes"]["buyer_type"][] | null
+          created_at?: string | null
+          date: string
+          id: string
+          load_buy?: Json | null
+          load_sold?: Json | null
+          name: string
+          notes?: Json | null
+          payments?: Json | null
+          status?: string | null
+          suppliers?:
+            | Database["public"]["CompositeTypes"]["supplier_type"][]
+            | null
+          synced_at?: string | null
+          total_amount?: number | null
+          transportation?: Json | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          attachments?: Json | null
+          business_name?: string | null
+          buyers?: Database["public"]["CompositeTypes"]["buyer_type"][] | null
+          created_at?: string | null
+          date?: string
+          id?: string
+          load_buy?: Json | null
+          load_sold?: Json | null
+          name?: string
+          notes?: Json | null
+          payments?: Json | null
+          status?: string | null
+          suppliers?:
+            | Database["public"]["CompositeTypes"]["supplier_type"][]
+            | null
+          synced_at?: string | null
+          total_amount?: number | null
+          transportation?: Json | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -21,7 +89,29 @@ export type Database = {
       [_ in never]: never
     }
     CompositeTypes: {
-      [_ in never]: never
+      buyer_type: {
+        name: string | null
+        contact: string | null
+        quantitysold: number | null
+        salerate: number | null
+        totalsaleamount: number | null
+        amountreceived: number | null
+        pendingbalance: number | null
+        paymentduedate: string | null
+        paymentfrequency: string | null
+      }
+      supplier_type: {
+        name: string | null
+        contact: string | null
+        goodsname: string | null
+        quantity: number | null
+        purchaserate: number | null
+        totalcost: number | null
+        amountpaid: number | null
+        balance: number | null
+        paymentduedate: string | null
+        paymentfrequency: string | null
+      }
     }
   }
 }

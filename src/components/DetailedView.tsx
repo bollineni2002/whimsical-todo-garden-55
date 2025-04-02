@@ -2,7 +2,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { TabKey, Transaction } from '@/lib/types';
 import TabNavigation from './TabNavigation';
-import TabContent from './TabContent';
+import TabContent, { ExtendedTabKey } from './TabContent';
 import { dbManager } from '@/lib/db';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose, DialogTrigger } from '@/components/ui/dialog';
@@ -17,7 +17,7 @@ interface DetailedViewProps {
 }
 
 const DetailedView = ({ transaction, refreshTransaction: externalRefresh }: DetailedViewProps) => {
-  const [activeTab, setActiveTab] = useState<TabKey>(TabKey.LOAD_BUY);
+  const [activeTab, setActiveTab] = useState<TabKey | ExtendedTabKey>(ExtendedTabKey.MULTIPLE_SUPPLIERS);
   const [currentTransaction, setCurrentTransaction] = useState<Transaction>(transaction);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const navigate = useNavigate();
