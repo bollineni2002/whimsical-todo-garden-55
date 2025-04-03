@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -226,10 +225,9 @@ const Index = () => {
       
       <div className="flex-1 overflow-auto">
         <Tabs defaultValue="dashboard" className="w-full flex flex-col h-[calc(100vh-64px)]">
-          <TabsContent value="dashboard" className="container mx-auto px-4 py-8 flex-1 overflow-auto">
-            <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-8 gap-4">
+          <TabsContent value="dashboard" className="container mx-auto px-4 py-4 flex-1 overflow-auto">
+            <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-4 gap-4">
               <div className="w-full md:w-auto">
-                <h2 className="text-xl font-medium mb-2">Recent Transactions</h2>
                 <div className="flex flex-col md:flex-row gap-4">
                   <SearchBar 
                     searchQuery={searchQuery}
@@ -586,15 +584,6 @@ const Index = () => {
                 <div className="flex flex-col items-center">
                   <Briefcase className="w-5 h-5" />
                   <span className="text-xs mt-1">Clients</span>
-                </div>
-              </TabsTrigger>
-              <TabsTrigger
-                value="settings"
-                className="flex-1 py-3"
-              >
-                <div className="flex flex-col items-center">
-                  <Settings className="w-5 h-5" />
-                  <span className="text-xs mt-1">Settings</span>
                 </div>
               </TabsTrigger>
             </TabsList>
