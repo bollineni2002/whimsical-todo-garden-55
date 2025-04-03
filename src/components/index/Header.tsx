@@ -39,9 +39,10 @@ import {
 interface HeaderProps {
   onExport: (format: ExportFormat) => void;
   businessName: string;
+  onBusinessNameEdit?: () => void;  // Added onBusinessNameEdit as optional prop
 }
 
-const Header = ({ onExport, businessName }: HeaderProps) => {
+const Header = ({ onExport, businessName, onBusinessNameEdit }: HeaderProps) => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user, signOut } = useAuth();
@@ -109,7 +110,7 @@ const Header = ({ onExport, businessName }: HeaderProps) => {
           <div className="flex items-center">
             <h1 
               className="text-2xl font-bold cursor-pointer" 
-              onClick={() => setIsBusinessNameDialogOpen(true)}
+              onClick={onBusinessNameEdit || (() => setIsBusinessNameDialogOpen(true))}
             >
               {businessName}
             </h1>
