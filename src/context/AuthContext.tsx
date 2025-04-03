@@ -13,7 +13,8 @@ interface AuthContextType {
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
   updatePassword: (password: string) => Promise<void>;
-  updateProfile: (profile: { name?: string; email?: string; phone?: string }) => Promise<void>;
+  // Allow updating name, phone, or business_name in metadata
+  updateProfile: (profile: { name?: string; phone?: string; business_name?: string; email?: string }) => Promise<void>;
   signInWithPhone: (phone: string) => Promise<void>;
   verifyOTP: (phone: string, token: string) => Promise<void>;
   resendOTP: (phone: string) => Promise<void>;
@@ -205,21 +206,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const updateProfile = async (profile: { name?: string; email?: string; phone?: string }) => {
+  // Updated to handle business_name as well
+  const updateProfile = async (profile: { name?: string; phone?: string; business_name?: string; email?: string }) => {
     try {
       setIsLoading(true);
-      
+
       const updates: any = {};
-      
-      // Update user metadata if name or phone is provided
-      if (profile.name || profile.phone) {
-        updates.data = {
-          ...(profile.name && { full_name: profile.name }),
-          ...(profile.phone && { phone: profile.phone }),
-        };
+      const metadataUpdates: any = {};
+
+      // Prepare metadata updates
+      if (profile.name) metadataUpdates.full_name = profile.name;
+      if (profile.phone) metadataUpdates.phone = profile.phone;
+      if (profile.business_name) metadataUpdates.business_name = profile.business_name;
+
+      if (Object.keys(metadataUpdates).length > 0) {
+        // Merge with existing metadata to avoid overwriting unrelated fields
+        const currentMetadata = user?.user_metadata || {};
+        updates.data = { ...currentMetadata, ...metadataUpdates };
       }
-      
-      // Update email if provided
+
+      // Update email if provided (handle with caution - requires verification flow usually)
       if (profile.email) {
         updates.email = profile.email;
       }

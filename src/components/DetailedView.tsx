@@ -1,4 +1,3 @@
-
 import { useState, useCallback, useEffect } from 'react';
 import { TabKey, Transaction } from '@/lib/types';
 import TabNavigation from './TabNavigation';
@@ -6,10 +5,12 @@ import TabContent, { ExtendedTabKey } from './TabContent';
 import { dbManager } from '@/lib/db';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose, DialogTrigger } from '@/components/ui/dialog';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
-import { Trash2 } from 'lucide-react';
+import { Trash2, MoreVertical } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface DetailedViewProps {
   transaction: Transaction;
@@ -24,6 +25,7 @@ const DetailedView = ({ transaction, refreshTransaction: externalRefresh }: Deta
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user } = useAuth();
+  const isMobile = useIsMobile();
 
   const internalRefreshTransaction = useCallback(async () => {
     try {
@@ -105,14 +107,35 @@ const DetailedView = ({ transaction, refreshTransaction: externalRefresh }: Deta
             {currentTransaction.status.charAt(0).toUpperCase() + currentTransaction.status.slice(1)}
           </span>
         </h2>
-        
+
+        {/* Actions: More Options Dropdown on Mobile, Button on Desktop */}
         <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-          <DialogTrigger asChild>
-            <Button variant="destructive" size="sm">
-              <Trash2 className="h-4 w-4 mr-2" />
-              Delete Transaction
-            </Button>
-          </DialogTrigger>
+          {isMobile ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon">
+                  <MoreVertical className="h-5 w-5" />
+                  <span className="sr-only">More options</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DialogTrigger asChild>
+                  <DropdownMenuItem className="text-destructive focus:text-destructive focus:bg-destructive/10">
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    Delete Transaction
+                  </DropdownMenuItem>
+                </DialogTrigger>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
+            <DialogTrigger asChild>
+              <Button variant="destructive" size="sm">
+                <Trash2 className="h-4 w-4 mr-2" />
+                Delete Transaction
+              </Button>
+            </DialogTrigger>
+          )}
+          {/* Shared Dialog Content */}
           <DialogContent>
             <DialogHeader>
               <DialogTitle>Are you sure?</DialogTitle>
@@ -129,18 +152,19 @@ const DetailedView = ({ transaction, refreshTransaction: externalRefresh }: Deta
           </DialogContent>
         </Dialog>
       </div>
-      
+
       {/* Horizontal Tab Navigation */}
-      <div className="w-full border-b border-border">
+      <div className={`w-full border-b border-border ${isMobile ? 'px-2 py-1' : ''}`}>
         <TabNavigation 
           activeTab={activeTab} 
           onTabChange={setActiveTab}
           disabledTabs={[]} 
+          isMobile={isMobile} // Pass isMobile prop
         />
       </div>
         
       {/* Tab Content */}
-      <div className="flex-1 overflow-auto px-4">
+      <div className={`flex-1 overflow-auto ${isMobile ? 'p-2' : 'px-4'}`}>
         <TabContent 
           transaction={currentTransaction} 
           activeTab={activeTab} 

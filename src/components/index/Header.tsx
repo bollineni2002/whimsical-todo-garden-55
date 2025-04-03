@@ -11,16 +11,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/AuthContext';
 import ThemeToggle from '@/components/ThemeToggle';
@@ -39,15 +29,12 @@ import {
 interface HeaderProps {
   onExport: (format: ExportFormat) => void;
   businessName: string;
-  onBusinessNameEdit?: () => void;  // Added onBusinessNameEdit as optional prop
 }
 
-const Header = ({ onExport, businessName, onBusinessNameEdit }: HeaderProps) => {
+const Header = ({ onExport, businessName }: HeaderProps) => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user, signOut } = useAuth();
-  const [isBusinessNameDialogOpen, setIsBusinessNameDialogOpen] = useState(false);
-  const [newBusinessName, setNewBusinessName] = useState(businessName);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   // Helper function to get user's display name or email
@@ -85,32 +72,13 @@ const Header = ({ onExport, businessName, onBusinessNameEdit }: HeaderProps) => 
     }
   };
 
-  const handleSaveBusinessName = async () => {
-    try {
-      await localStorage.setItem('businessName', newBusinessName);
-      toast({
-        title: 'Success',
-        description: 'Business name updated successfully.',
-      });
-      setIsBusinessNameDialogOpen(false);
-      window.location.reload(); // Refresh to show the new name
-    } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'Failed to update business name.',
-        variant: 'destructive',
-      });
-    }
-  };
-
   return (
     <header className="glass border-b sticky top-0 z-10">
       <div className="container mx-auto px-4 py-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center">
             <h1 
-              className="text-2xl font-bold cursor-pointer" 
-              onClick={onBusinessNameEdit || (() => setIsBusinessNameDialogOpen(true))}
+              className="text-2xl font-bold" 
             >
               {businessName}
             </h1>
@@ -253,37 +221,6 @@ const Header = ({ onExport, businessName, onBusinessNameEdit }: HeaderProps) => 
           </div>
         )}
       </div>
-
-      {/* Business Name Dialog */}
-      <Dialog open={isBusinessNameDialogOpen} onOpenChange={setIsBusinessNameDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Update Business Name</DialogTitle>
-            <DialogDescription>
-              Change the name of your business that appears in the header.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="businessName" className="text-right">
-                Name
-              </Label>
-              <Input
-                id="businessName"
-                value={newBusinessName}
-                onChange={(e) => setNewBusinessName(e.target.value)}
-                className="col-span-3"
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsBusinessNameDialogOpen(false)}>
-              Cancel
-            </Button>
-            <Button onClick={handleSaveBusinessName}>Save Changes</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </header>
   );
 };

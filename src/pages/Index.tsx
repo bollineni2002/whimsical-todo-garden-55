@@ -65,7 +65,6 @@ const Index = () => {
   const [sellers, setSellers] = useState<Seller[]>([]);
   const [newBuyer, setNewBuyer] = useState({ name: '', email: '', phone: '' });
   const [newSeller, setNewSeller] = useState({ name: '', email: '', phone: '' });
-  const [isBusinessNameDialogOpen, setIsBusinessNameDialogOpen] = useState(false);
   const { toast } = useToast();
 
   const handleExport = async (format: ExportFormat) => {
@@ -225,45 +224,7 @@ const Index = () => {
       <Header 
         onExport={handleExport} 
         businessName={businessName} 
-        onBusinessNameEdit={() => setIsBusinessNameDialogOpen(true)}
       /> 
-
-      <Dialog open={isBusinessNameDialogOpen} onOpenChange={setIsBusinessNameDialogOpen}>
-        <DialogTrigger asChild>
-          <Button onClick={() => setIsBusinessNameDialogOpen(true)}>
-            <Plus className="h-4 w-4 mr-2" />
-            Change Business Name
-          </Button>
-        </DialogTrigger>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Change Business Name</DialogTitle>
-            <DialogDescription>
-              Enter the new name for your business.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="businessName" className="text-right">Name</Label>
-              <Input 
-                id="businessName" 
-                name="name"
-                className="col-span-3" 
-                placeholder="Enter business name" 
-                value={businessName}
-                onChange={(e) => setBusinessName(e.target.value)}
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsBusinessNameDialogOpen(false)}>Cancel</Button>
-            <Button type="button" onClick={() => {
-              localStorage.setItem('businessName', businessName);
-              setIsBusinessNameDialogOpen(false);
-            }}>Save</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
 
       <div className="flex-1 overflow-auto">
         <Tabs defaultValue="dashboard" className="w-full flex flex-col h-[calc(100vh-64px)]">
@@ -577,12 +538,7 @@ const Index = () => {
                   <div>
                     <h3 className="text-lg font-medium">Business Information</h3>
                     <p className="text-sm text-muted-foreground mb-2">Update your business details</p>
-                    <Button 
-                      variant="outline" 
-                      onClick={() => setIsBusinessNameDialogOpen(true)}
-                    >
-                      Change Business Name
-                    </Button>
+                    {/* Removed Change Business Name button */}
                   </div>
                 </div>
               </CardContent>

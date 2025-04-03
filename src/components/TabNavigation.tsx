@@ -1,6 +1,5 @@
-
 import { TabKey } from '@/lib/types';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ExtendedTabKey } from './TabContent';
 import { 
   Package, 
   Truck, 
@@ -9,77 +8,49 @@ import {
   FileText, 
   Paperclip
 } from 'lucide-react';
-import { ExtendedTabKey } from './TabContent';
 
 interface TabNavigationProps {
   activeTab: TabKey | ExtendedTabKey;
   onTabChange: (tab: TabKey | ExtendedTabKey) => void;
-  disabledTabs?: (TabKey | ExtendedTabKey)[];
+  disabledTabs: TabKey[];
+  isMobile?: boolean; // Add isMobile prop
 }
 
 const TabNavigation: React.FC<TabNavigationProps> = ({ 
   activeTab, 
   onTabChange, 
-  disabledTabs = [] 
+  disabledTabs, 
+  isMobile 
 }) => {
+  const tabs = [
+    { key: TabKey.LOAD_BUY, label: 'Purchase', icon: <Package className="h-4 w-4" /> },
+    { key: TabKey.TRANSPORTATION, label: 'Transportation', icon: <Truck className="h-4 w-4" /> },
+    { key: TabKey.LOAD_SOLD, label: 'Sale', icon: <ShoppingCart className="h-4 w-4" /> },
+    { key: TabKey.PAYMENTS, label: 'Payments', icon: <CreditCard className="h-4 w-4" /> },
+    { key: TabKey.NOTES, label: 'Notes', icon: <FileText className="h-4 w-4" /> },
+    { key: TabKey.ATTACHMENTS, label: 'Attachments', icon: <Paperclip className="h-4 w-4" /> },
+  ];
+
   return (
-    <Tabs value={activeTab} onValueChange={onTabChange as (value: string) => void} className="w-full">
-      <TabsList className="transaction-tabs w-full justify-start mb-0 overflow-x-auto">
-        <TabsTrigger 
-          value={TabKey.LOAD_BUY} 
-          disabled={disabledTabs.includes(TabKey.LOAD_BUY)}
-          icon={<Package className="h-4 w-4" />}
-          className="transaction-tab"
+    <div className={`flex ${isMobile ? 'justify-around' : 'justify-start'} items-center`}>
+      {tabs.map((tab) => (
+        <button
+          key={tab.key}
+          onClick={() => onTabChange(tab.key)}
+          disabled={disabledTabs.includes(tab.key)}
+          className={`flex items-center px-3 py-2 text-sm font-medium ${
+            activeTab === tab.key
+              ? 'text-primary border-b-2 border-primary'
+              : 'text-muted'
+          } ${isMobile ? 'flex-col' : ''}`}
         >
-          Purchase
-        </TabsTrigger>
-        
-        <TabsTrigger 
-          value={TabKey.TRANSPORTATION} 
-          disabled={disabledTabs.includes(TabKey.TRANSPORTATION)}
-          icon={<Truck className="h-4 w-4" />}
-          className="transaction-tab"
-        >
-          Transportation
-        </TabsTrigger>
-        
-        <TabsTrigger 
-          value={TabKey.LOAD_SOLD} 
-          disabled={disabledTabs.includes(TabKey.LOAD_SOLD)}
-          icon={<ShoppingCart className="h-4 w-4" />}
-          className="transaction-tab"
-        >
-          Sale
-        </TabsTrigger>
-        
-        <TabsTrigger 
-          value={TabKey.PAYMENTS} 
-          disabled={disabledTabs.includes(TabKey.PAYMENTS)}
-          icon={<CreditCard className="h-4 w-4" />}
-          className="transaction-tab"
-        >
-          Payments
-        </TabsTrigger>
-        
-        <TabsTrigger 
-          value={TabKey.NOTES} 
-          disabled={disabledTabs.includes(TabKey.NOTES)}
-          icon={<FileText className="h-4 w-4" />}
-          className="transaction-tab"
-        >
-          Notes
-        </TabsTrigger>
-        
-        <TabsTrigger 
-          value={TabKey.ATTACHMENTS} 
-          disabled={disabledTabs.includes(TabKey.ATTACHMENTS)}
-          icon={<Paperclip className="h-4 w-4" />}
-          className="transaction-tab"
-        >
-          Attachments
-        </TabsTrigger>
-      </TabsList>
-    </Tabs>
+          {tab.icon}
+          <span className={`${isMobile ? 'mt-1 text-xs' : 'ml-2'} ${activeTab === tab.key ? '' : 'hidden md:inline'}`}>
+            {tab.label}
+          </span>
+        </button>
+      ))}
+    </div>
   );
 };
 
