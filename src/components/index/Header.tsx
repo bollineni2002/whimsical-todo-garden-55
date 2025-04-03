@@ -1,109 +1,270 @@
-
-import { Link } from 'react-router-dom';
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/context/AuthContext';
 import ThemeToggle from '@/components/ThemeToggle';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Download, ChevronDown } from 'lucide-react';
 import { ExportFormat } from '@/lib/exportUtils';
-import AuthHeader from '../AuthHeader';
-import { AuthHeaderProps } from '@/types/component-types';
+import { 
+  FileText, 
+  Download, 
+  Settings, 
+  LogOut, 
+  User, 
+  ChevronDown, 
+  Menu,
+  X
+} from 'lucide-react';
 
 interface HeaderProps {
-  onExport: (format: ExportFormat) => Promise<void>;
-  businessName?: string;
-  // onEditName?: () => void; // Remove prop
+  onExport: (format: ExportFormat) => void;
+  businessName: string;
 }
 
-// Remove onEditName from destructuring
-const Header = ({ onExport, businessName = 'TransactLy' }: HeaderProps) => { 
-  // Remove handleEditName logic
-  // const handleEditName = onEditName ? onEditName : () => {}; 
-  
+const Header = ({ onExport, businessName }: HeaderProps) => {
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const { user, signOut } = useAuth();
+  const [isBusinessNameDialogOpen, setIsBusinessNameDialogOpen] = useState(false);
+  const [newBusinessName, setNewBusinessName] = useState(businessName);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+      toast({
+        title: 'Logged Out',
+        description: 'You have been logged out successfully.',
+      });
+      navigate('/auth');
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to log out. Please try again.',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleSaveBusinessName = async () => {
+    try {
+      await localStorage.setItem('businessName', newBusinessName);
+      toast({
+        title: 'Success',
+        description: 'Business name updated successfully.',
+      });
+      setIsBusinessNameDialogOpen(false);
+      window.location.reload(); // Refresh to show the new name
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to update business name.',
+        variant: 'destructive',
+      });
+    }
+  };
+
   return (
-    // Remove onEditName prop from AuthHeader
-    <AuthHeader 
-      businessName={businessName} 
-      onExport={onExport}
-    >
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="outline" size="sm" className="hidden md:flex">
-            <Download className="h-4 w-4 mr-2" />
-            Export Data
-            <ChevronDown className="h-4 w-4 ml-1" />
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end">
-          <DropdownMenuItem onClick={() => onExport('csv')}>
-            <svg 
-              xmlns="http://www.w3.org/2000/svg" 
-              className="h-4 w-4 mr-2" 
-              viewBox="0 0 24 24" 
-              fill="none" 
-              stroke="currentColor" 
-              strokeWidth="2" 
-              strokeLinecap="round" 
-              strokeLinejoin="round"
+    <header className="glass border-b sticky top-0 z-10">
+      <div className="container mx-auto px-4 py-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center">
+            <h1 
+              className="text-2xl font-bold cursor-pointer" 
+              onClick={() => setIsBusinessNameDialogOpen(true)}
             >
-              <path d="M14 2H6a2 2 0 0 0-2 2v16c0 1.1.9 2 2 2h12a2 2 0 0 0 2-2V8l-6-6z" />
-              <path d="M14 3v5h5M9 17v-8M12 12v5M15 17v-3" />
-            </svg>
-            Export as CSV
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => onExport('json')}>
-            <svg 
-              xmlns="http://www.w3.org/2000/svg" 
-              className="h-4 w-4 mr-2" 
-              viewBox="0 0 24 24" 
-              fill="none" 
-              stroke="currentColor" 
-              strokeWidth="2" 
-              strokeLinecap="round" 
-              strokeLinejoin="round"
-            >
-              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6z" />
-              <path d="M14 2v6h6" />
-              <path d="M10 12a1 1 0 0 0-1 1v1a1 1 0 0 1-1 1 1 1 0 0 1 1 1v1a1 1 0 0 0 1 1M14 18a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1 1 1 0 0 1-1-1v-1a1 1 0 0 0-1-1" />
-            </svg>
-            Export as JSON
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => onExport('pdf')}>
-            <svg 
-              xmlns="http://www.w3.org/2000/svg" 
-              className="h-4 w-4 mr-2" 
-              viewBox="0 0 24 24" 
-              fill="none" 
-              stroke="currentColor" 
-              strokeWidth="2" 
-              strokeLinecap="round" 
-              strokeLinejoin="round"
-            >
-              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6z" />
-              <path d="M14 2v6h6" />
-              <path d="M9 15v-4M12 15V8M15 15v-2" />
-            </svg>
-            Export as PDF
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => onExport('excel')}>
-            <svg 
-              xmlns="http://www.w3.org/2000/svg" 
-              className="h-4 w-4 mr-2" 
-              viewBox="0 0 24 24" 
-              fill="none" 
-              stroke="currentColor" 
-              strokeWidth="2" 
-              strokeLinecap="round" 
-              strokeLinejoin="round"
-            >
-              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6z" />
-              <path d="M14 2v6h6" />
-              <polyline points="8 16 10 18 16 12" />
-            </svg>
-            Export as Excel
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
-    </AuthHeader>
+              {businessName}
+            </h1>
+          </div>
+
+          {/* Desktop Navigation */}
+          <div className="hidden md:flex items-center space-x-4">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm">
+                  <FileText className="h-4 w-4 mr-2" />
+                  Export
+                  <ChevronDown className="h-4 w-4 ml-2" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuLabel>Export Options</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => onExport('csv')}>
+                  <Download className="h-4 w-4 mr-2" />
+                  Export as CSV
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => onExport('json')}>
+                  <Download className="h-4 w-4 mr-2" />
+                  Export as JSON
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            <ThemeToggle />
+
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="sm" className="relative h-8 w-8 rounded-full">
+                  <Avatar className="h-8 w-8">
+                    <AvatarImage src={user?.photoURL || ''} alt={user?.displayName || 'User'} />
+                    <AvatarFallback>{user?.email?.charAt(0).toUpperCase() || 'U'}</AvatarFallback>
+                  </Avatar>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuLabel>{user?.displayName || user?.email || 'User'}</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => navigate('/profile')}>
+                  <User className="h-4 w-4 mr-2" />
+                  Profile
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate('/settings')}>
+                  <Settings className="h-4 w-4 mr-2" />
+                  Settings
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleSignOut}>
+                  <LogOut className="h-4 w-4 mr-2" />
+                  Sign out
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+
+          {/* Mobile Menu Button */}
+          <div className="md:hidden">
+            <Button variant="ghost" size="sm" onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}>
+              {isMobileMenuOpen ? (
+                <X className="h-6 w-6" />
+              ) : (
+                <Menu className="h-6 w-6" />
+              )}
+            </Button>
+          </div>
+        </div>
+
+        {/* Mobile Navigation */}
+        {isMobileMenuOpen && (
+          <div className="md:hidden mt-4 pb-2 space-y-2">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center">
+                <Avatar className="h-8 w-8 mr-2">
+                  <AvatarImage src={user?.photoURL || ''} alt={user?.displayName || 'User'} />
+                  <AvatarFallback>{user?.email?.charAt(0).toUpperCase() || 'U'}</AvatarFallback>
+                </Avatar>
+                <span className="text-sm font-medium">{user?.displayName || user?.email || 'User'}</span>
+              </div>
+              <ThemeToggle />
+            </div>
+            
+            <div className="space-y-1 pt-2">
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="w-full justify-start" 
+                onClick={() => navigate('/profile')}
+              >
+                <User className="h-4 w-4 mr-2" />
+                Profile
+              </Button>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="w-full justify-start" 
+                onClick={() => navigate('/settings')}
+              >
+                <Settings className="h-4 w-4 mr-2" />
+                Settings
+              </Button>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="w-full justify-start" 
+                onClick={() => {
+                  setIsMobileMenuOpen(false);
+                  onExport('csv');
+                }}
+              >
+                <Download className="h-4 w-4 mr-2" />
+                Export as CSV
+              </Button>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="w-full justify-start" 
+                onClick={() => {
+                  setIsMobileMenuOpen(false);
+                  onExport('json');
+                }}
+              >
+                <Download className="h-4 w-4 mr-2" />
+                Export as JSON
+              </Button>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="w-full justify-start text-red-500 hover:text-red-600 hover:bg-red-50" 
+                onClick={handleSignOut}
+              >
+                <LogOut className="h-4 w-4 mr-2" />
+                Sign out
+              </Button>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Business Name Dialog */}
+      <Dialog open={isBusinessNameDialogOpen} onOpenChange={setIsBusinessNameDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Update Business Name</DialogTitle>
+            <DialogDescription>
+              Change the name of your business that appears in the header.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="businessName" className="text-right">
+                Name
+              </Label>
+              <Input
+                id="businessName"
+                value={newBusinessName}
+                onChange={(e) => setNewBusinessName(e.target.value)}
+                className="col-span-3"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsBusinessNameDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleSaveBusinessName}>Save Changes</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </header>
   );
 };
 

@@ -35,19 +35,24 @@ const Settings = () => {
 
   // Load settings from localStorage on component mount
   useEffect(() => {
-    const savedSettings = localStorage.getItem('userSettings');
-    if (savedSettings) {
+    const loadSettings = () => {
       try {
-        const parsedSettings = JSON.parse(savedSettings);
-        setSettings(prevSettings => ({
-          ...prevSettings,
-          ...parsedSettings
-        }));
+        const savedSettings = localStorage.getItem('userSettings');
+        if (savedSettings) {
+          const parsedSettings = JSON.parse(savedSettings);
+          setSettings(prevSettings => ({
+            ...prevSettings,
+            ...parsedSettings
+          }));
+        }
+        setIsLoading(false);
       } catch (error) {
         console.error('Failed to parse settings:', error);
+        setIsLoading(false);
       }
-    }
-    setIsLoading(false);
+    };
+    
+    loadSettings();
   }, []);
 
   const handleSaveSettings = () => {
