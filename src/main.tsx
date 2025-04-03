@@ -4,9 +4,9 @@ import { createRoot } from 'react-dom/client';
 import App from './App.tsx';
 import './index.css';
 import { AuthProvider } from './context/AuthContext';
-import { LanguageProvider } from './lib/languages';
+import { LanguageProvider } from './context/LanguageContext';
 import { ThemeProvider } from './context/ThemeContext';
-import { CurrencyProvider } from './context/CurrencyContext'; // Import CurrencyProvider
+import { CurrencyProvider } from './context/CurrencyContext';
 
 const root = createRoot(document.getElementById('root')!);
 
@@ -15,7 +15,7 @@ root.render(
     <LanguageProvider>
       <ThemeProvider>
         <AuthProvider>
-          <CurrencyProvider> {/* Wrap App with CurrencyProvider */}
+          <CurrencyProvider>
             <App />
           </CurrencyProvider>
         </AuthProvider>

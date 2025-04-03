@@ -39,10 +39,10 @@ import {
 interface HeaderProps {
   onExport: (format: ExportFormat) => void;
   businessName: string;
-  onBusinessNameEdit?: () => void;  // Added onBusinessNameEdit as optional prop
+  onBusinessNameEdit?: () => void;  // Kept as optional prop for backward compatibility
 }
 
-const Header = ({ onExport, businessName, onBusinessNameEdit }: HeaderProps) => {
+const Header = ({ onExport, businessName }: HeaderProps) => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user, signOut } = useAuth();
@@ -108,10 +108,7 @@ const Header = ({ onExport, businessName, onBusinessNameEdit }: HeaderProps) => 
       <div className="container mx-auto px-4 py-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center">
-            <h1 
-              className="text-2xl font-bold cursor-pointer" 
-              onClick={onBusinessNameEdit || (() => setIsBusinessNameDialogOpen(true))}
-            >
+            <h1 className="text-2xl font-bold">
               {businessName}
             </h1>
           </div>
@@ -254,7 +251,7 @@ const Header = ({ onExport, businessName, onBusinessNameEdit }: HeaderProps) => 
         )}
       </div>
 
-      {/* Business Name Dialog */}
+      {/* Business Name Dialog - kept but not directly accessible from the header anymore */}
       <Dialog open={isBusinessNameDialogOpen} onOpenChange={setIsBusinessNameDialogOpen}>
         <DialogContent>
           <DialogHeader>
