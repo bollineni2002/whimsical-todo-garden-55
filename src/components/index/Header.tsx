@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -47,6 +48,24 @@ const Header = ({ onExport, businessName }: HeaderProps) => {
   const [isBusinessNameDialogOpen, setIsBusinessNameDialogOpen] = useState(false);
   const [newBusinessName, setNewBusinessName] = useState(businessName);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  // Helper function to get user's display name or email
+  const getUserDisplayName = () => {
+    if (!user) return 'User';
+    return user.user_metadata?.full_name || user.email || 'User';
+  };
+
+  // Helper function to get avatar initials
+  const getAvatarInitials = () => {
+    if (!user) return 'U';
+    const name = user.user_metadata?.full_name || user.email || '';
+    return name.charAt(0).toUpperCase();
+  };
+
+  // Helper function to get avatar image URL
+  const getAvatarUrl = () => {
+    return user?.user_metadata?.avatar_url || '';
+  };
 
   const handleSignOut = async () => {
     try {
@@ -126,13 +145,13 @@ const Header = ({ onExport, businessName }: HeaderProps) => {
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="sm" className="relative h-8 w-8 rounded-full">
                   <Avatar className="h-8 w-8">
-                    <AvatarImage src={user?.photoURL || ''} alt={user?.displayName || 'User'} />
-                    <AvatarFallback>{user?.email?.charAt(0).toUpperCase() || 'U'}</AvatarFallback>
+                    <AvatarImage src={getAvatarUrl()} alt={getUserDisplayName()} />
+                    <AvatarFallback>{getAvatarInitials()}</AvatarFallback>
                   </Avatar>
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuLabel>{user?.displayName || user?.email || 'User'}</DropdownMenuLabel>
+                <DropdownMenuLabel>{getUserDisplayName()}</DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={() => navigate('/profile')}>
                   <User className="h-4 w-4 mr-2" />
@@ -169,10 +188,10 @@ const Header = ({ onExport, businessName }: HeaderProps) => {
             <div className="flex items-center justify-between">
               <div className="flex items-center">
                 <Avatar className="h-8 w-8 mr-2">
-                  <AvatarImage src={user?.photoURL || ''} alt={user?.displayName || 'User'} />
-                  <AvatarFallback>{user?.email?.charAt(0).toUpperCase() || 'U'}</AvatarFallback>
+                  <AvatarImage src={getAvatarUrl()} alt={getUserDisplayName()} />
+                  <AvatarFallback>{getAvatarInitials()}</AvatarFallback>
                 </Avatar>
-                <span className="text-sm font-medium">{user?.displayName || user?.email || 'User'}</span>
+                <span className="text-sm font-medium">{getUserDisplayName()}</span>
               </div>
               <ThemeToggle />
             </div>
