@@ -1,33 +1,25 @@
 
 import React from 'react';
-import ReactDOM from 'react-dom/client';
-import { BrowserRouter } from 'react-router-dom';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { ThemeProvider } from '@/context/ThemeContext';
-import { AuthProvider } from '@/context/AuthContext';
-import { CurrencyProvider } from '@/context/CurrencyContext';
-import { LanguageProvider } from '@/context/LanguageContext';
-import { Toaster } from '@/components/ui/toaster';
-import App from './App';
+import { createRoot } from 'react-dom/client';
+import App from './App.tsx';
 import './index.css';
+import { AuthProvider } from './context/AuthContext';
+import { LanguageProvider } from './lib/languages';
+import { ThemeProvider } from './context/ThemeContext';
+import { CurrencyProvider } from './context/CurrencyContext'; // Import CurrencyProvider
 
-const queryClient = new QueryClient();
+const root = createRoot(document.getElementById('root')!);
 
-ReactDOM.createRoot(document.getElementById('root')!).render(
+root.render(
   <React.StrictMode>
-    <BrowserRouter>
-      <QueryClientProvider client={queryClient}>
-        <ThemeProvider>
-          <AuthProvider>
-            <CurrencyProvider>
-              <LanguageProvider>
-                <App />
-                <Toaster />
-              </LanguageProvider>
-            </CurrencyProvider>
-          </AuthProvider>
-        </ThemeProvider>
-      </QueryClientProvider>
-    </BrowserRouter>
-  </React.StrictMode>,
+    <LanguageProvider>
+      <ThemeProvider>
+        <AuthProvider>
+          <CurrencyProvider> {/* Wrap App with CurrencyProvider */}
+            <App />
+          </CurrencyProvider>
+        </AuthProvider>
+      </ThemeProvider>
+    </LanguageProvider>
+  </React.StrictMode>
 );
