@@ -75,6 +75,7 @@ import {
   Coffee
 } from 'lucide-react';
 import SettingsHeader from '@/components/settings/SettingsHeader';
+import ProfileSettings from '@/components/settings/ProfileSettings';
 
 const profileSchema = z.object({
   fullName: z.string().min(1, { message: "Full name is required." }),
@@ -349,75 +350,7 @@ const Settings = () => {
           </TabsList>
 
           <TabsContent value="profile" className="space-y-6 animate-in slide-in-from-left-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>Profile Information</CardTitle>
-                <CardDescription>Update your personal details.</CardDescription>
-              </CardHeader>
-              <Form {...profileForm}>
-                <form onSubmit={profileForm.handleSubmit(handleProfileUpdate)}>
-                  <CardContent className="space-y-4">
-                    <FormField
-                      control={profileForm.control}
-                      name="email"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Email Address</FormLabel>
-                          <FormControl>
-                            <Input {...field} type="email" disabled placeholder="Your email address" />
-                          </FormControl>
-                          <FormDescription>
-                            Email address cannot be changed here.
-                          </FormDescription>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={profileForm.control}
-                      name="fullName"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Full Name</FormLabel>
-                          <FormControl>
-                            <Input {...field} placeholder="Your full name" />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={profileForm.control}
-                      name="phoneNumber"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Phone Number (Optional)</FormLabel>
-                          <FormControl>
-                            <Input {...field} type="tel" placeholder="Your phone number" />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </CardContent>
-                  <CardFooter>
-                    <Button type="submit" disabled={isUpdatingProfile}>
-                      {isUpdatingProfile ? (
-                        <>
-                          <Save className="mr-2 h-4 w-4 animate-spin" />
-                          Saving...
-                        </>
-                      ) : (
-                        <>
-                          <Save className="mr-2 h-4 w-4" />
-                          Save Changes
-                        </>
-                      )}
-                    </Button>
-                  </CardFooter>
-                </form>
-              </Form>
-            </Card>
+            <ProfileSettings />
           </TabsContent>
 
           <TabsContent value="password" className="space-y-6 animate-in slide-in-from-left-4">
