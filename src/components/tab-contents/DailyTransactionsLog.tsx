@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react'; // Import useMemo
+import React, { useState, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -7,10 +7,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'; // Import ToggleGroup
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { Plus } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { cn } from '@/lib/utils'; // Import cn for conditional classes
+import { cn } from '@/lib/utils';
 import { 
   isToday, 
   isYesterday, 
@@ -18,9 +18,8 @@ import {
   isThisMonth, 
   parseISO, 
   isValid as isValidDate 
-} from 'date-fns'; // Import date-fns functions
+} from 'date-fns';
 
-// Define a type for validation errors
 type ValidationErrors = {
   recipient?: string;
   amount?: string;
@@ -28,55 +27,51 @@ type ValidationErrors = {
   thirdPartyName?: string;
 };
 
-// Define type for time filter values
 type TimeFilter = 'all' | 'today' | 'yesterday' | 'thisWeek' | 'thisMonth';
 
-// Define the structure for a daily transaction
 interface DailyTransaction {
   id: string;
   type: 'upi' | 'cash' | 'bank_transfer' | 'other';
-  date: string; // Store as ISO string or YYYY-MM-DD
+  date: string;
   recipient: string;
   amount: number;
-  note?: string; // Renamed from cashNote, now for all types
+  note?: string;
   paymentDestination: 'direct_seller' | 'third_party';
-  thirdPartyName?: string; // Name if destination is third_party
-  direction: 'incoming' | 'outgoing'; // To capture received or paid
-  attachment?: { name: string }; // Basic attachment info (name for now)
+  thirdPartyName?: string;
+  direction: 'incoming' | 'outgoing';
+  attachment?: { name: string };
 }
 
 const DailyTransactionsLog: React.FC = () => {
   const [transactions, setTransactions] = useState<DailyTransaction[]>([]);
   const [newTransaction, setNewTransaction] = useState<Omit<DailyTransaction, 'id'>>({
     type: 'upi',
-    date: new Date().toISOString().split('T')[0], // Default to today
+    date: new Date().toISOString().split('T')[0],
     recipient: '',
     amount: 0,
     paymentDestination: 'direct_seller',
-    direction: 'outgoing', // Default to outgoing
-    note: '', // Renamed from cashNote
+    direction: 'outgoing',
+    note: '',
     thirdPartyName: '',
-    // attachment state will be handled separately if needed for preview etc.
   });
   const [showForm, setShowForm] = useState(false);
-  const [thirdPartyNameInput, setThirdPartyNameInput] = useState(''); // Separate state for the input
+  const [thirdPartyNameInput, setThirdPartyNameInput] = useState('');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [validationErrors, setValidationErrors] = useState<ValidationErrors>({}); // State for errors
-  const [timeFilter, setTimeFilter] = useState<TimeFilter>('all'); // State for time filter
+  const [validationErrors, setValidationErrors] = useState<ValidationErrors>({});
+  const [timeFilter, setTimeFilter] = useState<TimeFilter>('all');
   const { toast } = useToast();
 
-  // Memoized filtered transactions based on timeFilter
   const filteredTransactions = useMemo(() => {
     if (timeFilter === 'all') {
       return transactions;
     }
     
-    const now = new Date(); // Use a consistent 'now' for comparisons within the filter run
+    const now = new Date();
 
     return transactions.filter(tx => {
       try {
-        const txDate = parseISO(tx.date); // Assumes date is stored as 'YYYY-MM-DD'
-        if (!isValidDate(txDate)) return false; // Skip invalid dates
+        const txDate = parseISO(tx.date);
+        if (!isValidDate(txDate)) return false;
 
         switch (timeFilter) {
           case 'today':
@@ -84,52 +79,44 @@ const DailyTransactionsLog: React.FC = () => {
           case 'yesterday':
             return isYesterday(txDate);
           case 'thisWeek':
-            // Assuming week starts on Sunday by default for isThisWeek
-            // Add { weekStartsOn: 1 } if Monday start is needed: isThisWeek(txDate, { weekStartsOn: 1 })
-            return isThisWeek(txDate); 
+            return isThisWeek(txDate);
           case 'thisMonth':
             return isThisMonth(txDate);
           default:
-            return true; // Should not happen if filter is 'all', but good fallback
+            return true;
         }
       } catch (error) {
         console.error("Error parsing date for filtering:", tx.date, error);
-        return false; // Exclude transactions with date parsing errors
+        return false;
       }
     });
   }, [transactions, timeFilter]);
 
-
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    // Clear validation error for the field being changed
     const { name } = e.target;
     if (validationErrors[name as keyof ValidationErrors]) {
       setValidationErrors(prev => ({ ...prev, [name]: undefined }));
     }
-    // We already destructured name and value above, reuse them
-    const { value } = e.target; 
+    const { value } = e.target;
     
-    // Update the main transaction state
     setNewTransaction(prev => ({
       ...prev,
       [name]: name === 'amount' ? parseFloat(value) || 0 : value,
     }));
 
-    // Note: Input change doesn't handle paymentDestination directly here, 
-    // that's handled by handleSelectChange and handleRadioChange.
-    // The previous logic for clearing thirdPartyNameInput here was incorrect.
+    if (name === 'paymentDestination' && value !== 'third_party') {
+      setThirdPartyNameInput('');
+    }
+    if (name === 'direction' && value === 'incoming') {
+      setThirdPartyNameInput('');
+    }
   };
 
   const handleSelectChange = (name: keyof Omit<DailyTransaction, 'id'>) => (value: string) => {
-    // Update the transaction state for the select input
     setNewTransaction(prev => ({ ...prev, [name]: value }));
-
-    // Clear third party name input if switching away from third_party destination via Select
-    // (Though paymentDestination is usually a RadioGroup, handling here for robustness if UI changes)
     if (name === 'paymentDestination' && value !== 'third_party') {
-       setThirdPartyNameInput('');
+      setThirdPartyNameInput('');
     }
-    // Also clear if changing direction to incoming
     if (name === 'direction' && value === 'incoming') {
       setThirdPartyNameInput('');
     }
@@ -138,7 +125,6 @@ const DailyTransactionsLog: React.FC = () => {
   const handleRadioChange = (value: string) => {
     const destination = value as 'direct_seller' | 'third_party';
     setNewTransaction(prev => ({ ...prev, paymentDestination: destination }));
-    // Clear third party name if switching back to direct seller
     if (destination === 'direct_seller') {
       setThirdPartyNameInput('');
     }
@@ -148,29 +134,23 @@ const DailyTransactionsLog: React.FC = () => {
     const errors: ValidationErrors = {};
     let isValid = true;
 
-    // Clear previous errors
     setValidationErrors({});
 
-    // Validate Recipient/Source Name
     if (!newTransaction.recipient.trim()) {
       errors.recipient = 'Recipient/Source name is required.';
       isValid = false;
     }
 
-    // Validate Amount
     if (newTransaction.amount <= 0) {
       errors.amount = 'Amount must be greater than zero.';
       isValid = false;
     }
 
-    // Validate Date
     if (!newTransaction.date) {
-      // Basic check, could add format validation if needed
       errors.date = 'Date is required.';
       isValid = false;
     }
 
-    // Validate Third Party Name (conditionally)
     if (newTransaction.direction === 'outgoing' && newTransaction.paymentDestination === 'third_party' && !thirdPartyNameInput.trim()) {
       errors.thirdPartyName = 'Third-party name is required for this destination.';
       isValid = false;
@@ -186,17 +166,15 @@ const DailyTransactionsLog: React.FC = () => {
       return;
     }
 
-    // If validation passes:
     const transactionToAdd: DailyTransaction = {
       ...newTransaction,
-      id: `dt-${Date.now()}`, // Simple unique ID
+      id: `dt-${Date.now()}`,
       thirdPartyName: newTransaction.paymentDestination === 'third_party' ? thirdPartyNameInput.trim() : undefined,
       attachment: selectedFile ? { name: selectedFile.name } : undefined,
     };
 
-    setTransactions(prev => [transactionToAdd, ...prev]); // Add to the top of the list
+    setTransactions(prev => [transactionToAdd, ...prev]);
 
-    // Reset form (consider extracting form state reset logic)
     setNewTransaction({
       type: 'upi',
       date: new Date().toISOString().split('T')[0],
@@ -204,38 +182,31 @@ const DailyTransactionsLog: React.FC = () => {
       amount: 0,
       paymentDestination: 'direct_seller',
       direction: 'outgoing',
-      note: '', // Renamed
+      note: '',
       thirdPartyName: '',
     });
-    setThirdPartyNameInput(''); // Reset third party name input
-    setSelectedFile(null); // Reset file input
-    // Clear the file input visually (requires accessing the DOM element, often via a ref)
+    setThirdPartyNameInput('');
+    setSelectedFile(null);
     const fileInput = document.getElementById('attachment') as HTMLInputElement;
     if (fileInput) {
-      fileInput.value = ''; 
+      fileInput.value = '';
     }
-    setShowForm(false); // Hide form after adding
+    setShowForm(false);
 
     toast({
       title: 'Success',
       description: 'Transaction logged successfully.',
     });
-    
-    // TODO: Persist transactions (e.g., localStorage or database)
   };
 
   return (
-    <Card>
+    <Card className="relative pb-16">
       <CardHeader>
         <div className="flex justify-between items-center">
           <div>
             <CardTitle>Daily Business Transactions Log</CardTitle>
             <CardDescription>Log all incoming and outgoing money transactions.</CardDescription>
           </div>
-          <Button onClick={() => setShowForm(!showForm)} variant="outline" size="sm">
-            <Plus className="h-4 w-4 mr-2" />
-            {showForm ? 'Cancel' : 'Add Transaction'}
-          </Button>
         </div>
       </CardHeader>
       <CardContent>
@@ -243,7 +214,6 @@ const DailyTransactionsLog: React.FC = () => {
           <div className="space-y-4 mb-6 p-4 border rounded-md">
             <h3 className="text-lg font-medium mb-3">New Transaction Details</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* Transaction Direction */}
               <div>
                 <Label htmlFor="direction">Direction</Label>
                 <Select 
@@ -260,7 +230,6 @@ const DailyTransactionsLog: React.FC = () => {
                   </SelectContent>
                 </Select>
               </div>
-              {/* Transaction Type */}
               <div>
                 <Label htmlFor="type">Type</Label>
                 <Select 
@@ -279,7 +248,6 @@ const DailyTransactionsLog: React.FC = () => {
                   </SelectContent>
                 </Select>
               </div>
-              {/* Date */}
               <div>
                 <Label htmlFor="date">Date</Label>
                 <Input 
@@ -292,7 +260,6 @@ const DailyTransactionsLog: React.FC = () => {
                 />
                 {validationErrors.date && <p className="text-sm text-red-600 mt-1">{validationErrors.date}</p>}
               </div>
-              {/* Recipient/Source Name */}
               <div>
                 <Label htmlFor="recipient">{newTransaction.direction === 'outgoing' ? 'Recipient Name' : 'Source Name'}</Label>
                 <Input 
@@ -305,7 +272,6 @@ const DailyTransactionsLog: React.FC = () => {
                 />
                 {validationErrors.recipient && <p className="text-sm text-red-600 mt-1">{validationErrors.recipient}</p>}
               </div>
-              {/* Amount */}
               <div>
                 <Label htmlFor="amount">Amount</Label>
                 <Input 
@@ -321,7 +287,6 @@ const DailyTransactionsLog: React.FC = () => {
                 />
                 {validationErrors.amount && <p className="text-sm text-red-600 mt-1">{validationErrors.amount}</p>}
               </div>
-              {/* Payment Destination (Only for Outgoing) */}
               {newTransaction.direction === 'outgoing' && (
                 <div>
                   <Label>Payment Destination</Label>
@@ -341,9 +306,8 @@ const DailyTransactionsLog: React.FC = () => {
                   </RadioGroup>
                 </div>
               )}
-               {/* Third Party Name Input (Conditional) */}
               {newTransaction.paymentDestination === 'third_party' && (
-                 <div>
+                <div>
                   <Label htmlFor="thirdPartyName">Third-Party Name</Label>
                   <Input 
                     id="thirdPartyName" 
@@ -352,7 +316,6 @@ const DailyTransactionsLog: React.FC = () => {
                     value={thirdPartyNameInput} 
                     onChange={(e) => {
                       setThirdPartyNameInput(e.target.value);
-                      // Clear validation error on input change
                       if (validationErrors.thirdPartyName) {
                         setValidationErrors(prev => ({ ...prev, thirdPartyName: undefined }));
                       }
@@ -363,18 +326,16 @@ const DailyTransactionsLog: React.FC = () => {
                 </div>
               )}
             </div>
-             {/* Note - Now always visible */}
             <div className="mt-4">
               <Label htmlFor="note">Note (Optional)</Label>
               <Textarea 
                 id="note" 
-                name="note" // Ensure name matches state key
+                name="note" 
                 placeholder="Add any relevant notes..." 
                 value={newTransaction.note} 
                 onChange={handleInputChange} 
               />
             </div>
-             {/* Attachment Input */}
             <div className="mt-4">
               <Label htmlFor="attachment">Attachment (Optional)</Label>
               <Input 
@@ -393,14 +354,13 @@ const DailyTransactionsLog: React.FC = () => {
           </div>
         )}
 
-        {/* Transaction List Filters */}
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-medium">Logged Transactions</h3>
           <ToggleGroup 
             type="single" 
             defaultValue="all" 
             value={timeFilter} 
-            onValueChange={(value) => setTimeFilter((value as TimeFilter) || 'all')} // Ensure 'all' if empty
+            onValueChange={(value) => setTimeFilter((value as TimeFilter) || 'all')}
             aria-label="Filter transactions by time"
             size="sm"
           >
@@ -412,7 +372,6 @@ const DailyTransactionsLog: React.FC = () => {
           </ToggleGroup>
         </div>
 
-        {/* Transaction List Table */}
         {filteredTransactions.length === 0 ? (
           <div className="text-center py-6 text-muted-foreground">
             {transactions.length === 0 
@@ -434,7 +393,6 @@ const DailyTransactionsLog: React.FC = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {/* Map over filteredTransactions */}
               {filteredTransactions.map((tx) => ( 
                 <TableRow key={tx.id}>
                   <TableCell>{new Date(tx.date).toLocaleDateString()}</TableCell> 
@@ -444,7 +402,6 @@ const DailyTransactionsLog: React.FC = () => {
                   <TableCell className="capitalize">{tx.type.replace('_', ' ')}</TableCell>
                   <TableCell>{tx.recipient}</TableCell>
                   <TableCell className="text-right font-mono">
-                    {/* TODO: Add currency formatting */}
                     {tx.amount.toFixed(2)} 
                   </TableCell>
                   <TableCell className="capitalize">
@@ -462,10 +419,21 @@ const DailyTransactionsLog: React.FC = () => {
           </Table>
         )}
       </CardContent>
-      {/* Footer can be used for summary or actions if needed later */}
-      {/* <CardFooter>
-        <p>Total Logged: {transactions.length}</p>
-      </CardFooter> */}
+      <div className="absolute bottom-6 right-6">
+        <Button 
+          onClick={() => setShowForm(!showForm)} 
+          size="icon" 
+          className="h-12 w-12 rounded-full shadow-lg"
+        >
+          {showForm ? (
+            <svg width="15" height="15" viewBox="0 0 15 15" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-5 w-5">
+              <path d="M11.7816 4.03157C12.0062 3.80702 12.0062 3.44295 11.7816 3.2184C11.5571 2.99385 11.193 2.99385 10.9685 3.2184L7.50005 6.68682L4.03164 3.2184C3.80708 2.99385 3.44301 2.99385 3.21846 3.2184C2.99391 3.44295 2.99391 3.80702 3.21846 4.03157L6.68688 7.49999L3.21846 10.9684C2.99391 11.193 2.99391 11.557 3.21846 11.7816C3.44301 12.0061 3.80708 12.0061 4.03164 11.7816L7.50005 8.31316L10.9685 11.7816C11.193 12.0061 11.5571 12.0061 11.7816 11.7816C12.0062 11.557 12.0062 11.193 11.7816 10.9684L8.31322 7.49999L11.7816 4.03157Z" fill="currentColor" fillRule="evenodd" clipRule="evenodd"></path>
+            </svg>
+          ) : (
+            <Plus className="h-5 w-5" />
+          )}
+        </Button>
+      </div>
     </Card>
   );
 };
