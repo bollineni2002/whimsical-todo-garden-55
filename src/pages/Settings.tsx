@@ -219,7 +219,7 @@ const Settings = () => {
   const handlePasswordUpdate = async (data: PasswordFormValues) => {
     try {
       setIsUpdatingPassword(true);
-      await updatePassword(data.currentPassword, data.newPassword);
+      await updatePassword(data.newPassword);
       passwordForm.reset();
       toast({
         title: "Password Updated",
