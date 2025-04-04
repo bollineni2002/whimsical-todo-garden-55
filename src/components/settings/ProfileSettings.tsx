@@ -1,126 +1,127 @@
 
-import React, { useEffect } from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
-import { useAuth } from '@/context/AuthContext';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Loader2, Save } from 'lucide-react';
+import { Label } from '@/components/ui/label';
+import { Separator } from '@/components/ui/separator';
+import { User } from '@/integrations/supabase/types';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
-// Define the validation schema using Zod
-const profileSchema = z.object({
-  fullName: z.string().min(1, { message: "Full name is required." }),
-  email: z.string().email().optional(), // Email is read-only, but include for structure
-  phoneNumber: z.string().optional(), // Phone number is optional
-});
+interface ProfileSettingsProps {
+  user: User | null;
+  onUpdate: (profileData: { name: string; phone: string }) => Promise<void>;
+}
 
-type ProfileFormValues = z.infer<typeof profileSchema>;
+const ProfileSettings = ({ user, onUpdate }: ProfileSettingsProps) => {
+  const [name, setName] = useState<string>('');
+  const [email, setEmail] = useState<string>('');
+  const [phone, setPhone] = useState<string>('');
+  const [isLoading, setIsLoading] = useState<boolean>(false);
 
-const ProfileSettings = () => {
-  const { user, updateProfile, isLoading: isAuthLoading } = useAuth();
-
-  const form = useForm<ProfileFormValues>({
-    resolver: zodResolver(profileSchema),
-    defaultValues: {
-      fullName: '',
-      email: '',
-      phoneNumber: '',
-    },
-  });
-
-  // Populate form with user data once available
   useEffect(() => {
     if (user) {
-      form.reset({
-        fullName: user.user_metadata?.full_name || '',
-        email: user.email || '',
-        phoneNumber: user.user_metadata?.phone || '',
-      });
+      setName(user.user_metadata?.full_name || user.user_metadata?.name || '');
+      setEmail(user.email || '');
+      setPhone(user.user_metadata?.phone || '');
     }
-  }, [user, form]);
+  }, [user]);
 
-  const onSubmit = async (data: ProfileFormValues) => {
-    // Only send a single object with both properties
-    await updateProfile({
-      name: data.fullName,
-      phone: data.phoneNumber,
-    });
-    // AuthContext handles success/error toasts
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    
+    try {
+      await onUpdate({ 
+        name,
+        phone
+      });
+    } catch (error) {
+      console.error('Error updating profile:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const getInitials = (name: string) => {
+    return name
+      .split(' ')
+      .map(part => part.charAt(0))
+      .join('')
+      .toUpperCase()
+      .slice(0, 2);
   };
 
   return (
-    <Card className="border-none shadow-sm">
-      <CardHeader className="px-4 sm:px-6">
-        <CardTitle className="text-xl">Profile Information</CardTitle>
-        <CardDescription>Update your personal details.</CardDescription>
-      </CardHeader>
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)}>
-          <CardContent className="space-y-4 px-4 sm:px-6">
-            <FormField
-              control={form.control}
-              name="email"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-sm font-medium">Email Address</FormLabel>
-                  <FormControl>
-                    <Input {...field} type="email" disabled placeholder="Your email address" className="h-9" />
-                  </FormControl>
-                  <FormDescription className="text-xs">
-                    Email address cannot be changed here.
-                  </FormDescription>
-                  <FormMessage className="text-xs" />
-                </FormItem>
-              )}
+    <div className="space-y-6">
+      <div>
+        <h2 className="text-lg font-semibold">Profile</h2>
+        <p className="text-sm text-muted-foreground">
+          Update your personal information.
+        </p>
+      </div>
+      
+      <div className="flex flex-col md:flex-row items-start md:items-center gap-4">
+        <Avatar className="h-16 w-16">
+          <AvatarImage src={user?.user_metadata?.avatar_url || ''} alt={name} />
+          <AvatarFallback className="text-lg">{getInitials(name)}</AvatarFallback>
+        </Avatar>
+        
+        <div className="space-y-1 flex-1">
+          <h3 className="font-medium">{name || 'Your Name'}</h3>
+          <p className="text-sm text-muted-foreground">{email}</p>
+        </div>
+        
+        <Button variant="outline" size="sm" className="mt-2 md:mt-0">
+          Change Avatar
+        </Button>
+      </div>
+      
+      <Separator />
+      
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="name">Full Name</Label>
+            <Input
+              id="name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Enter your full name"
             />
-            <FormField
-              control={form.control}
-              name="fullName"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-sm font-medium">Full Name</FormLabel>
-                  <FormControl>
-                    <Input {...field} placeholder="Your full name" className="h-9" />
-                  </FormControl>
-                  <FormMessage className="text-xs" />
-                </FormItem>
-              )}
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="email">Email</Label>
+            <Input
+              id="email"
+              type="email"
+              value={email}
+              disabled
+              className="bg-muted"
             />
-            <FormField
-              control={form.control}
-              name="phoneNumber"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-sm font-medium">Phone Number (Optional)</FormLabel>
-                  <FormControl>
-                    <Input {...field} type="tel" placeholder="Your phone number" className="h-9" />
-                  </FormControl>
-                  <FormMessage className="text-xs" />
-                </FormItem>
-              )}
+            <p className="text-xs text-muted-foreground">
+              Your email cannot be changed.
+            </p>
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="phone">Phone Number</Label>
+            <Input
+              id="phone"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              placeholder="Enter your phone number"
             />
-          </CardContent>
-          <CardFooter className="px-4 sm:px-6 pb-4 flex justify-end">
-            <Button type="submit" disabled={isAuthLoading} size="sm" className="h-9">
-              {isAuthLoading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Saving...
-                </>
-              ) : (
-                <>
-                  <Save className="mr-2 h-4 w-4" />
-                  Save Changes
-                </>
-              )}
-            </Button>
-          </CardFooter>
-        </form>
-      </Form>
-    </Card>
+          </div>
+        </div>
+        
+        <div className="flex justify-end">
+          <Button type="submit" disabled={isLoading}>
+            {isLoading ? 'Saving...' : 'Save Changes'}
+          </Button>
+        </div>
+      </form>
+    </div>
   );
 };
 

@@ -1,6 +1,7 @@
+
 import React, { useState, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -8,7 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
-import { Plus } from 'lucide-react';
+import { Plus, ArrowUpRight, ArrowDownLeft, AlertCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { 
@@ -19,6 +20,7 @@ import {
   parseISO, 
   isValid as isValidDate 
 } from 'date-fns';
+import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
 
 type ValidationErrors = {
   recipient?: string;
@@ -54,7 +56,7 @@ const DailyTransactionsLog: React.FC = () => {
     note: '',
     thirdPartyName: '',
   });
-  const [showForm, setShowForm] = useState(false);
+  const [isFormOpen, setIsFormOpen] = useState(false);
   const [thirdPartyNameInput, setThirdPartyNameInput] = useState('');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [validationErrors, setValidationErrors] = useState<ValidationErrors>({});
@@ -191,7 +193,7 @@ const DailyTransactionsLog: React.FC = () => {
     if (fileInput) {
       fileInput.value = '';
     }
-    setShowForm(false);
+    setIsFormOpen(false);
 
     toast({
       title: 'Success',
@@ -199,241 +201,270 @@ const DailyTransactionsLog: React.FC = () => {
     });
   };
 
+  // Transaction entry form component
+  const TransactionForm = () => (
+    <div className="space-y-4 mb-4 p-4 border border-border/40 rounded-lg bg-background/50 backdrop-blur-sm">
+      <h3 className="text-base font-medium mb-3">Transaction Details</h3>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <Label htmlFor="direction" className="text-xs text-muted-foreground">Direction</Label>
+          <Select 
+            name="direction" 
+            value={newTransaction.direction} 
+            onValueChange={handleSelectChange('direction')}
+          >
+            <SelectTrigger id="direction" className="h-9">
+              <SelectValue placeholder="Select direction" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="outgoing">Outgoing (Paid)</SelectItem>
+              <SelectItem value="incoming">Incoming (Received)</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div>
+          <Label htmlFor="type" className="text-xs text-muted-foreground">Type</Label>
+          <Select 
+            name="type" 
+            value={newTransaction.type} 
+            onValueChange={handleSelectChange('type')}
+          >
+            <SelectTrigger id="type" className="h-9">
+              <SelectValue placeholder="Select type" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="upi">UPI</SelectItem>
+              <SelectItem value="cash">Cash</SelectItem>
+              <SelectItem value="bank_transfer">Bank Transfer</SelectItem>
+              <SelectItem value="other">Other</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div>
+          <Label htmlFor="date" className="text-xs text-muted-foreground">Date</Label>
+          <Input 
+            id="date" 
+            name="date" 
+            type="date" 
+            value={newTransaction.date} 
+            onChange={handleInputChange}
+            className={cn("h-9", validationErrors.date && 'border-red-500 focus:border-red-500')}
+          />
+          {validationErrors.date && <p className="text-xs text-red-600 mt-1">{validationErrors.date}</p>}
+        </div>
+        <div>
+          <Label htmlFor="recipient" className="text-xs text-muted-foreground">
+            {newTransaction.direction === 'outgoing' ? 'Recipient Name' : 'Source Name'}
+          </Label>
+          <Input 
+            id="recipient" 
+            name="recipient" 
+            placeholder={newTransaction.direction === 'outgoing' ? 'Enter recipient name' : 'Enter source name'}
+            value={newTransaction.recipient} 
+            onChange={handleInputChange}
+            className={cn("h-9", validationErrors.recipient && 'border-red-500 focus:border-red-500')}
+          />
+          {validationErrors.recipient && <p className="text-xs text-red-600 mt-1">{validationErrors.recipient}</p>}
+        </div>
+        <div>
+          <Label htmlFor="amount" className="text-xs text-muted-foreground">Amount</Label>
+          <Input 
+            id="amount" 
+            name="amount" 
+            type="number" 
+            placeholder="Enter amount" 
+            value={newTransaction.amount} 
+            onChange={handleInputChange} 
+            min="0.01" 
+            step="0.01"
+            className={cn("h-9", validationErrors.amount && 'border-red-500 focus:border-red-500')}
+          />
+          {validationErrors.amount && <p className="text-xs text-red-600 mt-1">{validationErrors.amount}</p>}
+        </div>
+        {newTransaction.direction === 'outgoing' && (
+          <div>
+            <Label className="text-xs text-muted-foreground">Payment Destination</Label>
+            <RadioGroup 
+              value={newTransaction.paymentDestination} 
+              onValueChange={handleRadioChange} 
+              className="flex items-center space-x-4 mt-2"
+            >
+              <div className="flex items-center space-x-1">
+                <RadioGroupItem value="direct_seller" id="dest_direct" className="h-3.5 w-3.5" />
+                <Label htmlFor="dest_direct" className="text-xs">Direct to Recipient</Label>
+              </div>
+              <div className="flex items-center space-x-1">
+                <RadioGroupItem value="third_party" id="dest_third_party" className="h-3.5 w-3.5" />
+                <Label htmlFor="dest_third_party" className="text-xs">To Third-Party</Label>
+              </div>
+            </RadioGroup>
+          </div>
+        )}
+        {newTransaction.paymentDestination === 'third_party' && (
+          <div>
+            <Label htmlFor="thirdPartyName" className="text-xs text-muted-foreground">Third-Party Name</Label>
+            <Input 
+              id="thirdPartyName" 
+              name="thirdPartyName" 
+              placeholder="Enter third-party name" 
+              value={thirdPartyNameInput} 
+              onChange={(e) => {
+                setThirdPartyNameInput(e.target.value);
+                if (validationErrors.thirdPartyName) {
+                  setValidationErrors(prev => ({ ...prev, thirdPartyName: undefined }));
+                }
+              }}
+              className={cn("h-9", validationErrors.thirdPartyName && 'border-red-500 focus:border-red-500')}
+            />
+            {validationErrors.thirdPartyName && <p className="text-xs text-red-600 mt-1">{validationErrors.thirdPartyName}</p>}
+          </div>
+        )}
+      </div>
+      <div>
+        <Label htmlFor="note" className="text-xs text-muted-foreground">Note (Optional)</Label>
+        <Textarea 
+          id="note" 
+          name="note" 
+          placeholder="Add any relevant notes..." 
+          value={newTransaction.note} 
+          onChange={handleInputChange} 
+          className="resize-none min-h-[60px]"
+        />
+      </div>
+      <div>
+        <Label htmlFor="attachment" className="text-xs text-muted-foreground">Attachment (Optional)</Label>
+        <Input 
+          id="attachment" 
+          name="attachment" 
+          type="file" 
+          onChange={(e) => setSelectedFile(e.target.files ? e.target.files[0] : null)}
+          className="text-xs mt-1"
+        />
+        {selectedFile && <p className="text-xs text-muted-foreground mt-1">Selected: {selectedFile.name}</p>}
+      </div>
+
+      <div className="flex justify-end mt-4 gap-2">
+        <Button 
+          variant="outline" 
+          size="sm" 
+          onClick={() => setIsFormOpen(false)}
+        >
+          Cancel
+        </Button>
+        <Button 
+          size="sm" 
+          onClick={handleAddTransaction}
+        >
+          Save Transaction
+        </Button>
+      </div>
+    </div>
+  );
+
   return (
-    <Card className="relative pb-16">
-      <CardHeader>
+    <Card className="border-0 shadow-none bg-transparent">
+      <CardHeader className="pb-2">
         <div className="flex justify-between items-center">
           <div>
-            <CardTitle>Daily Business Transactions Log</CardTitle>
-            <CardDescription>Log all incoming and outgoing money transactions.</CardDescription>
+            <CardTitle className="text-xl font-bold">Daily Business Transactions</CardTitle>
+            <CardDescription className="text-muted-foreground">
+              Log all incoming and outgoing money transactions.
+            </CardDescription>
           </div>
         </div>
       </CardHeader>
-      <CardContent>
-        {showForm && (
-          <div className="space-y-4 mb-6 p-4 border rounded-md">
-            <h3 className="text-lg font-medium mb-3">New Transaction Details</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="direction">Direction</Label>
-                <Select 
-                  name="direction" 
-                  value={newTransaction.direction} 
-                  onValueChange={handleSelectChange('direction')}
-                >
-                  <SelectTrigger id="direction">
-                    <SelectValue placeholder="Select direction" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="outgoing">Outgoing (Paid)</SelectItem>
-                    <SelectItem value="incoming">Incoming (Received)</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label htmlFor="type">Type</Label>
-                <Select 
-                  name="type" 
-                  value={newTransaction.type} 
-                  onValueChange={handleSelectChange('type')}
-                >
-                  <SelectTrigger id="type">
-                    <SelectValue placeholder="Select type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="upi">UPI</SelectItem>
-                    <SelectItem value="cash">Cash</SelectItem>
-                    <SelectItem value="bank_transfer">Bank Transfer</SelectItem>
-                    <SelectItem value="other">Other</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label htmlFor="date">Date</Label>
-                <Input 
-                  id="date" 
-                  name="date" 
-                  type="date" 
-                  value={newTransaction.date} 
-                  onChange={handleInputChange}
-                  className={cn(validationErrors.date && 'border-red-500 focus:border-red-500')}
-                />
-                {validationErrors.date && <p className="text-sm text-red-600 mt-1">{validationErrors.date}</p>}
-              </div>
-              <div>
-                <Label htmlFor="recipient">{newTransaction.direction === 'outgoing' ? 'Recipient Name' : 'Source Name'}</Label>
-                <Input 
-                  id="recipient" 
-                  name="recipient" 
-                  placeholder={newTransaction.direction === 'outgoing' ? 'Enter recipient name' : 'Enter source name'}
-                  value={newTransaction.recipient} 
-                  onChange={handleInputChange}
-                  className={cn(validationErrors.recipient && 'border-red-500 focus:border-red-500')}
-                />
-                {validationErrors.recipient && <p className="text-sm text-red-600 mt-1">{validationErrors.recipient}</p>}
-              </div>
-              <div>
-                <Label htmlFor="amount">Amount</Label>
-                <Input 
-                  id="amount" 
-                  name="amount" 
-                  type="number" 
-                  placeholder="Enter amount" 
-                  value={newTransaction.amount} 
-                  onChange={handleInputChange} 
-                  min="0.01" 
-                  step="0.01"
-                  className={cn(validationErrors.amount && 'border-red-500 focus:border-red-500')}
-                />
-                {validationErrors.amount && <p className="text-sm text-red-600 mt-1">{validationErrors.amount}</p>}
-              </div>
-              {newTransaction.direction === 'outgoing' && (
-                <div>
-                  <Label>Payment Destination</Label>
-                  <RadioGroup 
-                    value={newTransaction.paymentDestination} 
-                    onValueChange={handleRadioChange} 
-                    className="flex items-center space-x-4 mt-2"
-                  >
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="direct_seller" id="dest_direct" />
-                      <Label htmlFor="dest_direct">Direct to Seller/Recipient</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="third_party" id="dest_third_party" />
-                      <Label htmlFor="dest_third_party">To Third-Party</Label>
-                    </div>
-                  </RadioGroup>
-                </div>
-              )}
-              {newTransaction.paymentDestination === 'third_party' && (
-                <div>
-                  <Label htmlFor="thirdPartyName">Third-Party Name</Label>
-                  <Input 
-                    id="thirdPartyName" 
-                    name="thirdPartyName" 
-                    placeholder="Enter third-party name" 
-                    value={thirdPartyNameInput} 
-                    onChange={(e) => {
-                      setThirdPartyNameInput(e.target.value);
-                      if (validationErrors.thirdPartyName) {
-                        setValidationErrors(prev => ({ ...prev, thirdPartyName: undefined }));
-                      }
-                    }}
-                    className={cn(validationErrors.thirdPartyName && 'border-red-500 focus:border-red-500')}
-                  />
-                  {validationErrors.thirdPartyName && <p className="text-sm text-red-600 mt-1">{validationErrors.thirdPartyName}</p>}
-                </div>
-              )}
-            </div>
-            <div className="mt-4">
-              <Label htmlFor="note">Note (Optional)</Label>
-              <Textarea 
-                id="note" 
-                name="note" 
-                placeholder="Add any relevant notes..." 
-                value={newTransaction.note} 
-                onChange={handleInputChange} 
-              />
-            </div>
-            <div className="mt-4">
-              <Label htmlFor="attachment">Attachment (Optional)</Label>
-              <Input 
-                id="attachment" 
-                name="attachment" 
-                type="file" 
-                onChange={(e) => setSelectedFile(e.target.files ? e.target.files[0] : null)}
-                className="mt-1"
-              />
-              {selectedFile && <p className="text-sm text-muted-foreground mt-1">Selected: {selectedFile.name}</p>}
-            </div>
+      <CardContent className="p-0">
+        {isFormOpen && <TransactionForm />}
 
-            <div className="flex justify-end mt-4">
-              <Button onClick={handleAddTransaction}>Log Transaction</Button>
-            </div>
-          </div>
-        )}
-
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-medium">Logged Transactions</h3>
+        <div className="flex items-center justify-between mt-2 mb-4">
+          <h3 className="text-base font-medium">Logged Transactions</h3>
           <ToggleGroup 
             type="single" 
             defaultValue="all" 
             value={timeFilter} 
             onValueChange={(value) => setTimeFilter((value as TimeFilter) || 'all')}
-            aria-label="Filter transactions by time"
+            className="bg-muted/20 rounded-lg p-0.5"
             size="sm"
           >
-            <ToggleGroupItem value="all" aria-label="Show all">All</ToggleGroupItem>
-            <ToggleGroupItem value="today" aria-label="Show today">Today</ToggleGroupItem>
-            <ToggleGroupItem value="yesterday" aria-label="Show yesterday">Yesterday</ToggleGroupItem>
-            <ToggleGroupItem value="thisWeek" aria-label="Show this week">This Week</ToggleGroupItem>
-            <ToggleGroupItem value="thisMonth" aria-label="Show this month">This Month</ToggleGroupItem>
+            <ToggleGroupItem value="all" className="text-xs px-2.5 rounded-md" aria-label="Show all">All</ToggleGroupItem>
+            <ToggleGroupItem value="today" className="text-xs px-2.5 rounded-md" aria-label="Show today">Today</ToggleGroupItem>
+            <ToggleGroupItem value="yesterday" className="text-xs px-2.5 rounded-md" aria-label="Show yesterday">Yesterday</ToggleGroupItem>
+            <ToggleGroupItem value="thisWeek" className="text-xs px-2.5 rounded-md" aria-label="Show this week">This Week</ToggleGroupItem>
           </ToggleGroup>
         </div>
 
         {filteredTransactions.length === 0 ? (
-          <div className="text-center py-6 text-muted-foreground">
-            {transactions.length === 0 
-              ? 'No transactions logged yet. Click "Add Transaction" to start.'
-              : `No transactions found for the selected filter (${timeFilter}).`}
+          <div className="text-center py-8 bg-muted/10 rounded-lg">
+            <AlertCircle className="w-8 h-8 text-muted-foreground/50 mx-auto mb-2" />
+            <p className="text-muted-foreground text-sm">
+              {transactions.length === 0 
+                ? 'No transactions logged yet. Click the + button to add one.'
+                : `No transactions found for the selected filter (${timeFilter}).`}
+            </p>
           </div>
         ) : (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Date</TableHead>
-                <TableHead>Direction</TableHead>
-                <TableHead>Type</TableHead>
-                <TableHead>{newTransaction.direction === 'outgoing' ? 'Recipient' : 'Source'}</TableHead>
-                <TableHead className="text-right">Amount</TableHead>
-                <TableHead>Destination</TableHead>
-                <TableHead>Notes</TableHead>
-                <TableHead>Attachment</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredTransactions.map((tx) => ( 
-                <TableRow key={tx.id}>
-                  <TableCell>{new Date(tx.date).toLocaleDateString()}</TableCell> 
-                  <TableCell className={`capitalize font-medium ${tx.direction === 'incoming' ? 'text-green-600' : 'text-red-600'}`}>
-                    {tx.direction}
-                  </TableCell>
-                  <TableCell className="capitalize">{tx.type.replace('_', ' ')}</TableCell>
-                  <TableCell>{tx.recipient}</TableCell>
-                  <TableCell className="text-right font-mono">
-                    {tx.amount.toFixed(2)} 
-                  </TableCell>
-                  <TableCell className="capitalize">
-                    {tx.direction === 'outgoing' 
-                      ? tx.paymentDestination === 'third_party' 
-                        ? `Third Party (${tx.thirdPartyName || 'N/A'})` 
-                        : 'Direct Recipient' 
-                      : 'N/A'}
-                  </TableCell>
-                  <TableCell>{tx.note || 'N/A'}</TableCell>
-                  <TableCell>{tx.attachment ? tx.attachment.name : 'N/A'}</TableCell>
+          <div className="overflow-x-auto -mx-4 px-4">
+            <Table className="min-w-full border border-border/30 rounded-lg overflow-hidden">
+              <TableHeader className="bg-muted/10">
+                <TableRow className="hover:bg-transparent border-border/30">
+                  <TableHead className="w-24 py-2 text-xs">Date</TableHead>
+                  <TableHead className="w-28 py-2 text-xs">Direction</TableHead>
+                  <TableHead className="w-24 py-2 text-xs">Type</TableHead>
+                  <TableHead className="py-2 text-xs">Recipient/Source</TableHead>
+                  <TableHead className="py-2 text-xs text-right">Amount</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {filteredTransactions.map((tx) => ( 
+                  <TableRow key={tx.id} className="border-border/30 hover:bg-muted/5">
+                    <TableCell className="py-2 text-xs">{new Date(tx.date).toLocaleDateString()}</TableCell> 
+                    <TableCell className="py-2 text-xs">
+                      <div className="flex items-center">
+                        {tx.direction === 'incoming' ? (
+                          <ArrowDownLeft className="h-3.5 w-3.5 text-green-500 mr-1.5" />
+                        ) : (
+                          <ArrowUpRight className="h-3.5 w-3.5 text-red-500 mr-1.5" />
+                        )}
+                        <span className={`${tx.direction === 'incoming' ? 'text-green-500' : 'text-red-500'}`}>
+                          {tx.direction === 'incoming' ? 'Received' : 'Paid'}
+                        </span>
+                      </div>
+                    </TableCell>
+                    <TableCell className="py-2 text-xs capitalize">{tx.type.replace('_', ' ')}</TableCell>
+                    <TableCell className="py-2 text-xs font-medium">
+                      {tx.recipient}
+                      {tx.direction === 'outgoing' && tx.paymentDestination === 'third_party' && tx.thirdPartyName && (
+                        <span className="text-muted-foreground ml-2 text-xs">
+                          → {tx.thirdPartyName}
+                        </span>
+                      )}
+                    </TableCell>
+                    <TableCell className="py-2 text-xs font-mono text-right">
+                      {tx.amount.toFixed(2)}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
         )}
       </CardContent>
-      <div className="absolute bottom-6 right-6">
-        <Button 
-          onClick={() => setShowForm(!showForm)} 
-          size="icon" 
-          className="h-12 w-12 rounded-full shadow-lg"
-        >
-          {showForm ? (
-            <svg width="15" height="15" viewBox="0 0 15 15" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-5 w-5">
-              <path d="M11.7816 4.03157C12.0062 3.80702 12.0062 3.44295 11.7816 3.2184C11.5571 2.99385 11.193 2.99385 10.9685 3.2184L7.50005 6.68682L4.03164 3.2184C3.80708 2.99385 3.44301 2.99385 3.21846 3.2184C2.99391 3.44295 2.99391 3.80702 3.21846 4.03157L6.68688 7.49999L3.21846 10.9684C2.99391 11.193 2.99391 11.557 3.21846 11.7816C3.44301 12.0061 3.80708 12.0061 4.03164 11.7816L7.50005 8.31316L10.9685 11.7816C11.193 12.0061 11.5571 12.0061 11.7816 11.7816C12.0062 11.557 12.0062 11.193 11.7816 10.9684L8.31322 7.49999L11.7816 4.03157Z" fill="currentColor" fillRule="evenodd" clipRule="evenodd"></path>
-            </svg>
-          ) : (
+
+      <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
+        <DialogTrigger asChild>
+          <Button 
+            onClick={() => setIsFormOpen(true)} 
+            size="icon" 
+            className="h-12 w-12 rounded-full fixed bottom-24 right-6 shadow-lg z-10"
+          >
             <Plus className="h-5 w-5" />
-          )}
-        </Button>
-      </div>
+          </Button>
+        </DialogTrigger>
+        <DialogContent className="sm:max-w-lg">
+          {/* Form rendered inside the dialog for better mobile experience */}
+          <TransactionForm />
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 };

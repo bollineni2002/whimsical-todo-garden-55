@@ -3,6 +3,7 @@ import { Transaction } from '@/lib/types';
 import TransactionCard from '@/components/TransactionCard';
 import { motion } from 'framer-motion';
 import EmptyTransactionsState from './EmptyTransactionsState';
+import { Loader2 } from 'lucide-react';
 
 interface TransactionListProps {
   transactions: Transaction[];
@@ -19,10 +20,8 @@ const TransactionList = ({
 }: TransactionListProps) => {
   if (loading) {
     return (
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        <div className="text-center">
-          <p>Loading...</p>
-        </div>
+      <div className="flex justify-center items-center py-12">
+        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
       </div>
     );
   }
@@ -32,7 +31,11 @@ const TransactionList = ({
   }
   
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+    <motion.div 
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3"
+    >
       {transactions.map((transaction, index) => (
         <TransactionCard
           key={transaction.id}
@@ -40,7 +43,7 @@ const TransactionList = ({
           index={index}
         />
       ))}
-    </div>
+    </motion.div>
   );
 };
 

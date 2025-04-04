@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useCurrency } from '@/context/CurrencyContext';
 import { Transaction } from '@/lib/types';
 import { motion } from 'framer-motion';
+import { ArrowUpRight, ArrowDownLeft } from 'lucide-react';
 
 interface TransactionCardProps {
   transaction: Transaction;
@@ -31,7 +32,7 @@ const StatusBadge = ({ status }: { status: Transaction['status'] }) => {
   const config = statusConfig[status];
 
   return (
-    <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${config.bg} ${config.text}`}>
+    <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full ${config.bg} ${config.text}`}>
       {config.label}
     </span>
   );
@@ -50,58 +51,52 @@ const TransactionCard = ({ transaction, index }: TransactionCardProps) => {
     navigate(`/transaction/${transaction.id}`);
   };
 
+  const isOutgoing = transaction.loadBuy && !transaction.loadSold;
+  const isIncoming = !transaction.loadBuy && transaction.loadSold;
+
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
+      initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3, delay: index * 0.05 }}
-      whileHover={{ y: -4, transition: { duration: 0.2 } }}
-      className="glass-card rounded-xl p-2 cursor-pointer" // Reduced padding from p-3 to p-2
+      transition={{ duration: 0.2, delay: index * 0.03 }}
+      whileHover={{ y: -2, transition: { duration: 0.2 } }}
+      className="bg-card/50 border border-border/30 shadow-sm rounded-lg p-2 cursor-pointer hover:bg-muted/10 transition-colors"
       onClick={handleCardClick}
     >
-      <div className="flex items-center justify-between mb-0.5"> {/* Reduced margin from mb-1 to mb-0.5 */}
-        <span className="text-xs uppercase tracking-wider text-muted-foreground font-medium">
+      <div className="flex items-center justify-between mb-0.5">
+        <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">
           {formattedDate}
         </span>
         <StatusBadge status={transaction.status} />
       </div>
       
-      <h3 className="text-sm font-medium mb-0.5"> {/* Reduced text size from text-base to text-sm and margin */}
+      <h3 className="text-xs font-medium truncate mb-0.5">
         {transaction.name || `Transaction ${transaction.id.slice(0, 5)}`}
       </h3>
       
-      <div className="grid grid-cols-1 gap-0.5 mt-1 mb-0.5"> {/* Reduced gap and margins */}
-        {transaction.loadBuy && (
-          <div className="text-xs"> 
-            <span className="text-muted-foreground">From: </span>
-            <span className="font-medium">{transaction.loadBuy.supplierName || "N/A"}</span>
-          </div>
+      <div className="flex items-center gap-1 mt-1 mb-0.5 text-[10px] text-muted-foreground">
+        {isOutgoing && (
+          <ArrowUpRight className="h-3 w-3 flex-shrink-0 text-red-500" />
         )}
-        
-        {transaction.loadSold && (
-          <div className="text-xs">
-            <span className="text-muted-foreground">To: </span>
-            <span className="font-medium">{transaction.loadSold.buyerName || "N/A"}</span>
-          </div>
+        {isIncoming && (
+          <ArrowDownLeft className="h-3 w-3 flex-shrink-0 text-green-500" />
         )}
+        <span className="truncate">
+          {transaction.loadBuy ? 
+            `From: ${transaction.loadBuy.supplierName || "N/A"}` :
+            transaction.loadSold ? 
+              `To: ${transaction.loadSold.buyerName || "N/A"}` : 
+              "No supplier/buyer info"}
+        </span>
       </div>
       
-      <div className="flex justify-between items-center mt-0.5 pt-0.5 border-t border-border/30"> {/* Reduced margin and padding */}
-        <div className="text-xs text-muted-foreground">
-          {transaction.loadBuy?.goodsName || ""}
+      <div className="flex justify-between items-center mt-1 pt-0.5 border-t border-border/20">
+        <div className="text-[10px] text-muted-foreground truncate max-w-[60%]">
+          {transaction.loadBuy?.goodsName || transaction.loadSold?.buyerName || ""}
         </div>
         
         <div className="flex items-center">
-          <span className="text-xs font-medium mr-0.5">{formatCurrency(transaction.totalAmount)}</span> {/* Reduced margin */}
-          <svg 
-            className="w-3 h-3 text-muted-foreground"
-            fill="none" 
-            stroke="currentColor" 
-            viewBox="0 0 24 24" 
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-          </svg>
+          <span className="text-xs font-medium">{formatCurrency(transaction.totalAmount)}</span>
         </div>
       </div>
     </motion.div>
