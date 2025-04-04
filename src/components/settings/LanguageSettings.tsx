@@ -1,5 +1,6 @@
+
 import React from 'react';
-import { useLanguage, languages } from '@/lib/languages'; // Import context hook and languages array
+import { useLanguage, languages } from '@/lib/languages';
 import {
   Select,
   SelectContent,
@@ -11,20 +12,20 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Label } from '@/components/ui/label';
 
 const LanguageSettings = () => {
-  const { language, setLanguage, t } = useLanguage(); // Use the language context
+  const { language, setLanguage, t } = useLanguage();
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>{t('language')}</CardTitle> {/* Use translation key */}
+        <CardTitle>{t('language')}</CardTitle>
         <CardDescription>Choose your preferred language for the application.</CardDescription>
       </CardHeader>
       <CardContent>
         <div className="space-y-2">
-          <Label htmlFor="language-select">{t('language')}</Label> {/* Use translation key */}
+          <Label htmlFor="language-select">{t('language')}</Label>
           <Select
             value={language}
-            onValueChange={(value) => setLanguage(value as typeof language)} // Cast value to LanguageCode type
+            onValueChange={(value) => setLanguage(value as typeof language)}
           >
             <SelectTrigger id="language-select" className="w-full md:w-[280px]">
               <SelectValue placeholder="Select Language" />
@@ -39,7 +40,6 @@ const LanguageSettings = () => {
           </Select>
         </div>
       </CardContent>
-      {/* No footer/save button needed as changes apply immediately */}
     </Card>
   );
 };

@@ -9,7 +9,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useTheme } from '@/context/ThemeContext';
-import { useLang } from '@/lib/languages';
+import { useLanguage, languages, LanguageCode } from '@/lib/languages'; // Fixed import
 import { useCurrency } from '@/context/CurrencyContext';
 import {
   Tabs,
@@ -52,14 +52,11 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import { 
-  Input, 
-  Label, 
-  Button, 
-  Separator,
-  RadioGroup,
-  RadioGroupItem,
-} from '@/components/ui/';
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { 
   User, 
   Lock, 
@@ -78,6 +75,7 @@ import {
   TextQuote,
   Coffee
 } from 'lucide-react';
+import SettingsHeader from '@/components/settings/SettingsHeader';
 
 // Schema definitions
 const profileSchema = z.object({
@@ -136,7 +134,7 @@ const Settings = () => {
   const { toast } = useToast();
   const isMobile = useIsMobile();
   const { theme, setTheme } = useTheme();
-  const { language, setLanguage, languages } = useLang();
+  const { language, setLanguage } = useLanguage(); // Fixed hook usage
   const { currency, setCurrency } = useCurrency();
   
   // Local state
@@ -336,13 +334,7 @@ const Settings = () => {
       animate={{ opacity: 1 }}
       className="min-h-screen"
     >
-      <div className="flex items-center mb-6 border-b pb-4">
-        <Button variant="ghost" size="icon" className="mr-4" onClick={() => navigate(-1)}>
-          <ChevronLeft className="h-5 w-5" />
-          <span className="sr-only">Back</span>
-        </Button>
-        <h1 className="text-2xl font-bold tracking-tight">TransactLy Settings</h1>
-      </div>
+      <SettingsHeader />
 
       <div className="container mx-auto p-4 max-w-4xl">
         <Tabs defaultValue="profile" className="w-full mt-6">
@@ -531,7 +523,7 @@ const Settings = () => {
                   <Label htmlFor="language">Select Language</Label>
                   <Select
                     value={language}
-                    onValueChange={(value) => {
+                    onValueChange={(value: LanguageCode) => {
                       setLanguage(value);
                       toast({
                         title: "Language Updated",
@@ -545,8 +537,8 @@ const Settings = () => {
                     <SelectContent>
                       <SelectGroup>
                         <SelectLabel>Available Languages</SelectLabel>
-                        {Object.entries(languages).map(([code, lang]) => (
-                          <SelectItem key={code} value={code}>
+                        {languages.map((lang) => (
+                          <SelectItem key={lang.code} value={lang.code}>
                             {lang.nativeName} ({lang.name})
                           </SelectItem>
                         ))}
