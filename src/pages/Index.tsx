@@ -65,6 +65,7 @@ const Index = () => {
   const [sellers, setSellers] = useState<Seller[]>([]);
   const [newBuyer, setNewBuyer] = useState({ name: '', email: '', phone: '' });
   const [newSeller, setNewSeller] = useState({ name: '', email: '', phone: '' });
+  const [isTransactionLogOpen, setIsTransactionLogOpen] = useState(false);
   const { toast } = useToast();
 
   const handleExport = async (format: ExportFormat) => {
@@ -493,13 +494,20 @@ const Index = () => {
           <TabsContent value="transactions" className="container mx-auto px-4 py-8 flex-1 overflow-auto relative">
             <DailyTransactionsLog />
             
-            <Button 
-              size="icon" 
-              className="h-12 w-12 rounded-full fixed bottom-20 right-6 shadow-lg"
-              onClick={handleCreateTransaction}
-            >
-              <Plus className="h-6 w-6" />
-            </Button>
+            <Dialog open={isTransactionLogOpen} onOpenChange={setIsTransactionLogOpen}>
+              <DialogTrigger asChild>
+                <Button 
+                  size="icon" 
+                  className="h-12 w-12 rounded-full fixed bottom-24 right-6 shadow-lg z-10"
+                  onClick={() => setIsTransactionLogOpen(true)}
+                >
+                  <Plus className="h-5 w-5" />
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-lg">
+                {/* This will automatically render the transaction log form */}
+              </DialogContent>
+            </Dialog>
           </TabsContent>
 
           <TabsContent value="calculations" className="container mx-auto px-4 py-8 flex-1 overflow-auto">

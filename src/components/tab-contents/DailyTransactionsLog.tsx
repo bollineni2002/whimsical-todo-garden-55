@@ -9,7 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
-import { Plus, ArrowUpRight, ArrowDownLeft, AlertCircle } from 'lucide-react';
+import { ArrowUpRight, ArrowDownLeft, AlertCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { 
@@ -20,7 +20,7 @@ import {
   parseISO, 
   isValid as isValidDate 
 } from 'date-fns';
-import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
 
 type ValidationErrors = {
   recipient?: string;
@@ -398,7 +398,7 @@ const DailyTransactionsLog: React.FC = () => {
             <AlertCircle className="w-8 h-8 text-muted-foreground/50 mx-auto mb-2" />
             <p className="text-muted-foreground text-sm">
               {transactions.length === 0 
-                ? 'No transactions logged yet. Click the + button to add one.'
+                ? 'No transactions logged yet. Use the + button to add one.'
                 : `No transactions found for the selected filter (${timeFilter}).`}
             </p>
           </div>
@@ -451,15 +451,6 @@ const DailyTransactionsLog: React.FC = () => {
       </CardContent>
 
       <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
-        <DialogTrigger asChild>
-          <Button 
-            onClick={() => setIsFormOpen(true)} 
-            size="icon" 
-            className="h-12 w-12 rounded-full fixed bottom-24 right-6 shadow-lg z-10"
-          >
-            <Plus className="h-5 w-5" />
-          </Button>
-        </DialogTrigger>
         <DialogContent className="sm:max-w-lg">
           {/* Form rendered inside the dialog for better mobile experience */}
           <TransactionForm />
