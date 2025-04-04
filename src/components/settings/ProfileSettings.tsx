@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Loader2, Save } from 'lucide-react'; // Added Save icon
+import { Loader2, Save } from 'lucide-react';
 
 // Define the validation schema using Zod
 const profileSchema = z.object({
@@ -43,12 +43,10 @@ const ProfileSettings = () => {
   }, [user, form]);
 
   const onSubmit = async (data: ProfileFormValues) => {
-    // Only send name and phone for update
+    // Only send a single object with both properties
     await updateProfile({
       name: data.fullName,
       phone: data.phoneNumber,
-      // We don't update email here as it's more complex (requires verification)
-      // If email update is needed, it should be handled separately
     });
     // AuthContext handles success/error toasts
   };

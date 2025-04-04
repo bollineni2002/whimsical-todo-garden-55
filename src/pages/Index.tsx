@@ -16,7 +16,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 // Import icons for the new section
-import { Settings, Users, UserPlus, LineChart, Plus, Calculator, Percent, Landmark, Replace, Briefcase, ListChecks } from 'lucide-react'; // Added Briefcase, ListChecks
+import { Settings, Users, UserPlus, LineChart, Plus, Calculator, Percent, Landmark, Replace, Briefcase, ListChecks } from 'lucide-react';
 import { dbManager } from '@/lib/db';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -58,7 +58,7 @@ const Index = () => {
   
   const navigate = useNavigate();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [businessName, setBusinessName] = useState('TransactLy'); // Keep for Header display
+  const [businessName, setBusinessName] = useState('TransactLy');
   const [isBuyerDialogOpen, setIsBuyerDialogOpen] = useState(false);
   const [isSellerDialogOpen, setIsSellerDialogOpen] = useState(false);
   const [buyers, setBuyers] = useState<Buyer[]>([]);
@@ -490,8 +490,16 @@ const Index = () => {
             </Tabs>
           </TabsContent>
 
-          <TabsContent value="transactions" className="container mx-auto px-4 py-8 flex-1 overflow-auto">
+          <TabsContent value="transactions" className="container mx-auto px-4 py-8 flex-1 overflow-auto relative">
             <DailyTransactionsLog />
+            
+            <Button 
+              size="icon" 
+              className="h-12 w-12 rounded-full fixed bottom-20 right-6 shadow-lg"
+              onClick={handleCreateTransaction}
+            >
+              <Plus className="h-6 w-6" />
+            </Button>
           </TabsContent>
 
           <TabsContent value="calculations" className="container mx-auto px-4 py-8 flex-1 overflow-auto">
@@ -538,14 +546,12 @@ const Index = () => {
                   <div>
                     <h3 className="text-lg font-medium">Business Information</h3>
                     <p className="text-sm text-muted-foreground mb-2">Update your business details</p>
-                    {/* Removed Change Business Name button */}
                   </div>
                 </div>
               </CardContent>
             </Card>
           </TabsContent>
           
-          {/* Bottom Navigation Bar */}
           <div className="mt-auto sticky bottom-0 z-10">
             <TabsList className="w-full bg-background border-t flex justify-between rounded-none">
               <TabsTrigger 

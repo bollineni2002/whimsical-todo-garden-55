@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
@@ -80,12 +81,6 @@ import {
 import SettingsHeader from '@/components/settings/SettingsHeader';
 import ProfileSettings from '@/components/settings/ProfileSettings';
 
-const profileSchema = z.object({
-  fullName: z.string().min(1, { message: "Full name is required." }),
-  email: z.string().email().optional(),
-  phoneNumber: z.string().optional(),
-});
-
 const passwordSchema = z.object({
   currentPassword: z.string().min(6, { message: "Current password is required." }),
   newPassword: z.string().min(8, { message: "Password must be at least 8 characters." })
@@ -102,7 +97,6 @@ const businessNameSchema = z.object({
   businessName: z.string().min(1, { message: "Business name is required." }),
 });
 
-type ProfileFormValues = z.infer<typeof profileSchema>;
 type PasswordFormValues = z.infer<typeof passwordSchema>;
 type BusinessNameFormValues = z.infer<typeof businessNameSchema>;
 
@@ -136,21 +130,11 @@ const Settings = () => {
   const { currency, setCurrency } = useCurrency();
   
   const [isBusinessNameDialogOpen, setIsBusinessNameDialogOpen] = useState(false);
-  const [isUpdatingProfile, setIsUpdatingProfile] = useState(false);
   const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
   const [businessName, setBusinessName] = useState('TransactLy');
   const [selectedDateFormat, setSelectedDateFormat] = useState('MM/DD/YYYY');
   const [selectedView, setSelectedView] = useState('grid');
   const [fontSize, setFontSize] = useState('medium');
-
-  const profileForm = useForm<ProfileFormValues>({
-    resolver: zodResolver(profileSchema),
-    defaultValues: {
-      fullName: user?.user_metadata?.full_name || '',
-      email: user?.email || '',
-      phoneNumber: user?.user_metadata?.phone || '',
-    }
-  });
 
   const passwordForm = useForm<PasswordFormValues>({
     resolver: zodResolver(passwordSchema),
@@ -196,29 +180,6 @@ const Settings = () => {
       );
     }
   }, []);
-
-  const handleProfileUpdate = async (data: ProfileFormValues) => {
-    setIsUpdatingProfile(true);
-    try {
-      await updateProfile({
-        name: data.fullName,
-        phone: data.phoneNumber,
-      });
-      toast({
-        title: "Profile updated",
-        description: "Your profile has been updated successfully.",
-      });
-    } catch (error) {
-      console.error('Error updating profile:', error);
-      toast({
-        title: "Update failed",
-        description: "Failed to update profile. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsUpdatingProfile(false);
-    }
-  };
 
   const handlePasswordUpdate = async (data: PasswordFormValues) => {
     try {
