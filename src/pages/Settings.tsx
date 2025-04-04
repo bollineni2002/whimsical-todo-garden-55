@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
@@ -9,7 +8,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useTheme } from '@/context/ThemeContext';
-import { useLanguage, languages, LanguageCode } from '@/lib/languages'; // Fixed import
+import { useLanguage, languages, LanguageCode } from '@/lib/languages';
 import { useCurrency } from '@/context/CurrencyContext';
 import {
   Tabs,
@@ -77,7 +76,6 @@ import {
 } from 'lucide-react';
 import SettingsHeader from '@/components/settings/SettingsHeader';
 
-// Schema definitions
 const profileSchema = z.object({
   fullName: z.string().min(1, { message: "Full name is required." }),
   email: z.string().email().optional(),
@@ -100,12 +98,10 @@ const businessNameSchema = z.object({
   businessName: z.string().min(1, { message: "Business name is required." }),
 });
 
-// Form types
 type ProfileFormValues = z.infer<typeof profileSchema>;
 type PasswordFormValues = z.infer<typeof passwordSchema>;
 type BusinessNameFormValues = z.infer<typeof businessNameSchema>;
 
-// Date format options
 const dateFormats = [
   { id: 'MM/DD/YYYY', label: 'MM/DD/YYYY', example: '04/04/2025' },
   { id: 'DD/MM/YYYY', label: 'DD/MM/YYYY', example: '04/04/2025' },
@@ -113,7 +109,6 @@ const dateFormats = [
   { id: 'DD-MMM-YYYY', label: 'DD-MMM-YYYY', example: '04-Apr-2025' },
 ];
 
-// Currency options
 const currencyOptions = [
   { id: 'USD', label: 'USD', symbol: '$' },
   { id: 'EUR', label: 'EUR', symbol: '€' },
@@ -122,7 +117,6 @@ const currencyOptions = [
   { id: 'INR', label: 'INR', symbol: '₹' },
 ];
 
-// View options
 const viewOptions = [
   { id: 'grid', label: 'Grid View', icon: <LayoutGrid className="h-4 w-4" /> },
   { id: 'list', label: 'List View', icon: <TextQuote className="h-4 w-4" /> },
@@ -134,10 +128,9 @@ const Settings = () => {
   const { toast } = useToast();
   const isMobile = useIsMobile();
   const { theme, setTheme } = useTheme();
-  const { language, setLanguage } = useLanguage(); // Fixed hook usage
+  const { language, setLanguage } = useLanguage();
   const { currency, setCurrency } = useCurrency();
   
-  // Local state
   const [isBusinessNameDialogOpen, setIsBusinessNameDialogOpen] = useState(false);
   const [isUpdatingProfile, setIsUpdatingProfile] = useState(false);
   const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
@@ -146,7 +139,6 @@ const Settings = () => {
   const [selectedView, setSelectedView] = useState('grid');
   const [fontSize, setFontSize] = useState('medium');
 
-  // Initialize forms
   const profileForm = useForm<ProfileFormValues>({
     resolver: zodResolver(profileSchema),
     defaultValues: {
@@ -172,7 +164,6 @@ const Settings = () => {
     }
   });
 
-  // Load business name from localStorage
   useState(() => {
     const savedBusinessName = localStorage.getItem('businessName');
     if (savedBusinessName) {
@@ -202,7 +193,6 @@ const Settings = () => {
     }
   }, []);
 
-  // Handle profile update
   const handleProfileUpdate = async (data: ProfileFormValues) => {
     try {
       setIsUpdatingProfile(true);
@@ -226,7 +216,6 @@ const Settings = () => {
     }
   };
 
-  // Handle password update
   const handlePasswordUpdate = async (data: PasswordFormValues) => {
     try {
       setIsUpdatingPassword(true);
@@ -248,7 +237,6 @@ const Settings = () => {
     }
   };
 
-  // Handle business name update
   const handleBusinessNameUpdate = async (data: BusinessNameFormValues) => {
     try {
       setBusinessName(data.businessName);
@@ -268,7 +256,6 @@ const Settings = () => {
     }
   };
 
-  // Handle date format change
   const handleDateFormatChange = (format: string) => {
     setSelectedDateFormat(format);
     localStorage.setItem('dateFormat', format);
@@ -278,7 +265,6 @@ const Settings = () => {
     });
   };
 
-  // Handle default view change
   const handleDefaultViewChange = (view: string) => {
     setSelectedView(view);
     localStorage.setItem('defaultView', view);
@@ -288,12 +274,10 @@ const Settings = () => {
     });
   };
 
-  // Handle font size change
   const handleFontSizeChange = (size: string) => {
     setFontSize(size);
     localStorage.setItem('fontSize', size);
     
-    // Apply the font size to the document
     document.documentElement.classList.remove('text-sm', 'text-base', 'text-lg');
     document.documentElement.classList.add(
       size === 'small' ? 'text-sm' : 
@@ -307,7 +291,6 @@ const Settings = () => {
     });
   };
 
-  // Helper function to format date based on selected format
   const formatDate = (date: Date, format: string) => {
     const day = date.getDate().toString().padStart(2, '0');
     const month = (date.getMonth() + 1).toString().padStart(2, '0');
@@ -365,7 +348,6 @@ const Settings = () => {
             </TabsTrigger>
           </TabsList>
 
-          {/* Profile Tab Content */}
           <TabsContent value="profile" className="space-y-6 animate-in slide-in-from-left-4">
             <Card>
               <CardHeader>
@@ -438,7 +420,6 @@ const Settings = () => {
             </Card>
           </TabsContent>
 
-          {/* Password Tab Content */}
           <TabsContent value="password" className="space-y-6 animate-in slide-in-from-left-4">
             <Card>
               <CardHeader>
@@ -511,7 +492,6 @@ const Settings = () => {
             </Card>
           </TabsContent>
 
-          {/* Language Tab Content */}
           <TabsContent value="language" className="space-y-6 animate-in slide-in-from-left-4">
             <Card>
               <CardHeader>
@@ -553,7 +533,6 @@ const Settings = () => {
             </Card>
           </TabsContent>
 
-          {/* Appearance Tab Content */}
           <TabsContent value="appearance" className="space-y-6 animate-in slide-in-from-left-4">
             <Card>
               <CardHeader>
@@ -666,7 +645,6 @@ const Settings = () => {
                     </div>
                   </RadioGroup>
 
-                  {/* Preview Section */}
                   <div className="mt-6 bg-accent/20 p-4 rounded-md">
                     <h4 className="text-sm font-medium mb-2">Preview</h4>
                     <div className={`${
@@ -683,7 +661,6 @@ const Settings = () => {
             </Card>
           </TabsContent>
 
-          {/* Preferences Tab Content */}
           <TabsContent value="preferences" className="space-y-6 animate-in slide-in-from-left-4">
             <Card>
               <CardHeader>
@@ -830,7 +807,6 @@ const Settings = () => {
           </TabsContent>
         </Tabs>
 
-        {/* Support Section */}
         <Card className="mt-8">
           <CardHeader>
             <CardTitle className="flex items-center">
