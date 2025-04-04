@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -44,7 +43,15 @@ interface DailyTransaction {
   attachment?: { name: string };
 }
 
-const DailyTransactionsLog: React.FC = () => {
+interface DailyTransactionsLogProps {
+  isFormOpen?: boolean;
+  setIsFormOpen?: (open: boolean) => void;
+}
+
+const DailyTransactionsLog: React.FC<DailyTransactionsLogProps> = ({ 
+  isFormOpen: externalIsFormOpen, 
+  setIsFormOpen: externalSetIsFormOpen 
+}) => {
   const [transactions, setTransactions] = useState<DailyTransaction[]>([]);
   const [newTransaction, setNewTransaction] = useState<Omit<DailyTransaction, 'id'>>({
     type: 'upi',
@@ -56,7 +63,11 @@ const DailyTransactionsLog: React.FC = () => {
     note: '',
     thirdPartyName: '',
   });
-  const [isFormOpen, setIsFormOpen] = useState(false);
+  
+  const [internalIsFormOpen, setInternalIsFormOpen] = useState(false);
+  const isFormOpen = externalIsFormOpen !== undefined ? externalIsFormOpen : internalIsFormOpen;
+  const setIsFormOpen = externalSetIsFormOpen || setInternalIsFormOpen;
+  
   const [thirdPartyNameInput, setThirdPartyNameInput] = useState('');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [validationErrors, setValidationErrors] = useState<ValidationErrors>({});
@@ -201,7 +212,6 @@ const DailyTransactionsLog: React.FC = () => {
     });
   };
 
-  // Transaction entry form component
   const TransactionForm = () => (
     <div className="space-y-4 mb-4 p-4 border border-border/40 rounded-lg bg-background/50 backdrop-blur-sm">
       <h3 className="text-base font-medium mb-3">Transaction Details</h3>
@@ -452,7 +462,6 @@ const DailyTransactionsLog: React.FC = () => {
 
       <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
         <DialogContent className="sm:max-w-lg">
-          {/* Form rendered inside the dialog for better mobile experience */}
           <TransactionForm />
         </DialogContent>
       </Dialog>
