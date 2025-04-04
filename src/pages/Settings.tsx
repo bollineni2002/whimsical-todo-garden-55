@@ -197,7 +197,7 @@ const Settings = () => {
   const handleProfileUpdate = async (data: ProfileFormValues) => {
     try {
       setIsUpdatingProfile(true);
-      // Here's the fix: Pass a single object with the profile properties
+      // Fix: Pass a single object to updateProfile instead of separate arguments
       await updateProfile({
         name: data.fullName,
         phone: data.phoneNumber,
