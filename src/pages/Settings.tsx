@@ -13,7 +13,7 @@ import { useToast } from '@/hooks/use-toast';
 
 const Settings = () => {
   const [activeTab, setActiveTab] = useState<string>('profile');
-  const { user, updateProfile } = useAuth();
+  const { user, updateProfile, updatePassword } = useAuth();
   const { toast } = useToast();
   const [businessName, setBusinessName] = useState<string>('TransactLy');
   const [language, setLanguage] = useState<string>('en');
@@ -64,8 +64,10 @@ const Settings = () => {
 
   const handlePasswordChange = async (currentPassword: string, newPassword: string) => {
     try {
-      // Implement password change logic here
-      // Placeholder for future implementation
+      // Implement password change logic
+      // First verify the current password (this would be handled in the PasswordSettings component)
+      // Then update the password
+      await updatePassword(newPassword);
       
       toast({
         title: 'Password Updated',

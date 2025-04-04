@@ -11,8 +11,26 @@ import {
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 
-const LanguageSettings = () => {
+interface LanguageSettingsProps {
+  currentLanguage?: string;
+  onLanguageChange?: (newLanguage: string) => Promise<void>;
+}
+
+const LanguageSettings = ({ currentLanguage, onLanguageChange }: LanguageSettingsProps) => {
   const { language, setLanguage, t } = useLanguage();
+  
+  const handleLanguageChange = async (value: string) => {
+    // If onLanguageChange prop is provided, use it
+    if (onLanguageChange) {
+      await onLanguageChange(value);
+    }
+    
+    // Always update the language in the context
+    setLanguage(value as typeof language);
+  };
+
+  // Use the prop value if provided, otherwise use the context value
+  const displayLanguage = currentLanguage || language;
 
   return (
     <Card>
@@ -24,8 +42,8 @@ const LanguageSettings = () => {
         <div className="space-y-2">
           <Label htmlFor="language-select">{t('language')}</Label>
           <Select
-            value={language}
-            onValueChange={(value) => setLanguage(value as typeof language)}
+            value={displayLanguage}
+            onValueChange={handleLanguageChange}
           >
             <SelectTrigger id="language-select" className="w-full md:w-[280px]">
               <SelectValue placeholder="Select Language" />

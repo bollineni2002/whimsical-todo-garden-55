@@ -3,30 +3,33 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useAuth } from '@/context/AuthContext';
-import { supabase } from '@/integrations/supabase/client'; // Need direct access for verification
+import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Loader2 } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast'; // Use toast directly for verification feedback
+import { useToast } from '@/hooks/use-toast';
 
-// Define the validation schema using Zod
+interface PasswordSettingsProps {
+  onPasswordChange?: (currentPassword: string, newPassword: string) => Promise<void>;
+}
+
 const passwordSchema = z.object({
   currentPassword: z.string().min(1, { message: "Current password is required." }),
   newPassword: z.string().min(8, { message: "New password must be at least 8 characters long." }),
   confirmNewPassword: z.string().min(1, { message: "Please confirm your new password." }),
 }).refine((data) => data.newPassword === data.confirmNewPassword, {
   message: "New passwords don't match.",
-  path: ["confirmNewPassword"], // Point error to the confirmation field
+  path: ["confirmNewPassword"],
 });
 
 type PasswordFormValues = z.infer<typeof passwordSchema>;
 
-const PasswordSettings = () => {
+const PasswordSettings = ({ onPasswordChange }: PasswordSettingsProps) => {
   const { user, updatePassword } = useAuth();
   const { toast } = useToast();
-  const [isVerifying, setIsVerifying] = useState(false); // Local loading state for verification + update
+  const [isVerifying, setIsVerifying] = useState(false);
 
   const form = useForm<PasswordFormValues>({
     resolver: zodResolver(passwordSchema),
@@ -45,29 +48,28 @@ const PasswordSettings = () => {
 
     setIsVerifying(true);
     try {
-      // 1. Verify current password by attempting sign-in
-      const { error: signInError } = await supabase.auth.signInWithPassword({
-        email: user.email,
-        password: data.currentPassword,
-      });
+      if (onPasswordChange) {
+        await onPasswordChange(data.currentPassword, data.newPassword);
+      } else {
+        const { error: signInError } = await supabase.auth.signInWithPassword({
+          email: user.email,
+          password: data.currentPassword,
+        });
 
-      if (signInError) {
-        // Handle incorrect password specifically
-        if (signInError.message.includes('Invalid login credentials')) {
-           toast({ title: "Verification Failed", description: "Incorrect current password.", variant: "destructive" });
-        } else {
-           toast({ title: "Verification Failed", description: signInError.message, variant: "destructive" });
+        if (signInError) {
+          if (signInError.message.includes('Invalid login credentials')) {
+             toast({ title: "Verification Failed", description: "Incorrect current password.", variant: "destructive" });
+          } else {
+             toast({ title: "Verification Failed", description: signInError.message, variant: "destructive" });
+          }
+          return;
         }
-        return; // Stop if verification fails
+
+        await updatePassword(data.newPassword);
       }
-
-      // 2. If verification succeeds, update to the new password
-      // The updatePassword function in AuthContext handles its own toasts
-      await updatePassword(data.newPassword);
-      form.reset(); // Clear form on success
-
+      
+      form.reset();
     } catch (error: any) {
-      // Catch any unexpected errors during the process
       toast({ title: "Error", description: error.message || "An unexpected error occurred.", variant: "destructive" });
     } finally {
       setIsVerifying(false);
