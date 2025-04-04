@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
@@ -197,7 +196,6 @@ const Settings = () => {
   const handleProfileUpdate = async (data: ProfileFormValues) => {
     try {
       setIsUpdatingProfile(true);
-      // Fix: Pass a single object to updateProfile instead of separate arguments
       await updateProfile({
         name: data.fullName,
         phone: data.phoneNumber,
