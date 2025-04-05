@@ -3,11 +3,13 @@ import { useState } from 'react';
 import CalculationsNavigation from '@/components/CalculationsNavigation';
 import { useIsMobile } from '@/hooks/use-mobile';
 import AuthHeader from '@/components/AuthHeader';
+import TaxCalculator from '@/components/calculations/TaxCalculator';
+import InterestCalculator from '@/components/calculations/InterestCalculator';
+import CurrencyConverter from '@/components/calculations/CurrencyConverter';
 
 const Calculations = () => {
   const [activeSection, setActiveSection] = useState('tax');
-  const isMobile = useIsMobile(); // Ensure this hook is working correctly
-  console.log('isMobile:', isMobile); // Debugging line
+  const isMobile = useIsMobile();
 
   return (
     <div className="flex flex-col h-full w-full">
@@ -19,15 +21,15 @@ const Calculations = () => {
         <CalculationsNavigation 
           activeSection={activeSection} 
           onSectionChange={setActiveSection} 
-          isMobile={isMobile} // Pass isMobile prop
+          isMobile={isMobile}
         />
       </div>
 
       {/* Content */}
-      <div className={`flex-1 overflow-auto ${isMobile ? 'p-2' : 'px-4'}`}>
-        {activeSection === 'tax' && <div>Tax Content</div>}
-        {activeSection === 'interest' && <div>Interest Content</div>}
-        {activeSection === 'currency' && <div>Currency Content</div>}
+      <div className={`flex-1 overflow-auto ${isMobile ? 'p-2' : 'px-4 py-4'}`}>
+        {activeSection === 'tax' && <TaxCalculator />}
+        {activeSection === 'interest' && <InterestCalculator />}
+        {activeSection === 'currency' && <CurrencyConverter />}
       </div>
     </div>
   );
