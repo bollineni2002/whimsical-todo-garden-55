@@ -8,10 +8,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useToast } from '@/hooks/use-toast';
 
 interface SupplierFormProps {
-  onSubmit: (supplier: Supplier) => void;
-  onCancel: () => void;
+  onSubmit?: (supplier: Supplier) => void;
+  onCancel?: () => void;
+  onSuccess?: () => void;
   defaultValues?: Partial<Supplier>;
 }
 
@@ -28,7 +30,13 @@ const supplierSchema = z.object({
   paymentFrequency: z.enum(['one-time', 'weekly', 'monthly', 'quarterly']).optional(),
 });
 
-const SupplierForm: React.FC<SupplierFormProps> = ({ onSubmit, onCancel, defaultValues }) => {
+const SupplierForm: React.FC<SupplierFormProps> = ({ 
+  onSubmit, 
+  onCancel, 
+  onSuccess, 
+  defaultValues 
+}) => {
+  const { toast } = useToast();
   const form = useForm<Supplier>({
     resolver: zodResolver(supplierSchema),
     defaultValues: defaultValues || {
@@ -58,7 +66,26 @@ const SupplierForm: React.FC<SupplierFormProps> = ({ onSubmit, onCancel, default
   }, [quantity, purchaseRate, amountPaid, setValue]);
 
   const handleSubmit = (data: Supplier) => {
-    onSubmit(data);
+    if (onSubmit) {
+      onSubmit(data);
+    }
+    
+    toast({
+      title: "Success",
+      description: "Supplier has been added successfully",
+    });
+    
+    if (onSuccess) {
+      onSuccess();
+    }
+  };
+
+  const handleCancel = () => {
+    if (onCancel) {
+      onCancel();
+    } else if (onSuccess) {
+      onSuccess();
+    }
   };
 
   return (
@@ -223,7 +250,7 @@ const SupplierForm: React.FC<SupplierFormProps> = ({ onSubmit, onCancel, default
         </div>
 
         <div className="flex justify-end space-x-2 pt-4">
-          <Button type="button" variant="outline" onClick={onCancel}>
+          <Button type="button" variant="outline" onClick={handleCancel}>
             Cancel
           </Button>
           <Button type="submit">Add Supplier</Button>

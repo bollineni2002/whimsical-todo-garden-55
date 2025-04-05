@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -8,10 +7,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useToast } from '@/hooks/use-toast';
 
 interface BuyerFormProps {
-  onSubmit: (buyer: Buyer) => void;
-  onCancel: () => void;
+  onSubmit?: (buyer: Buyer) => void;
+  onCancel?: () => void;
+  onSuccess?: () => void;
   defaultValues?: Partial<Buyer>;
 }
 
@@ -27,7 +28,13 @@ const buyerSchema = z.object({
   paymentFrequency: z.enum(['one-time', 'weekly', 'monthly', 'quarterly']).optional(),
 });
 
-const BuyerForm: React.FC<BuyerFormProps> = ({ onSubmit, onCancel, defaultValues }) => {
+const BuyerForm: React.FC<BuyerFormProps> = ({ 
+  onSubmit, 
+  onCancel, 
+  onSuccess, 
+  defaultValues 
+}) => {
+  const { toast } = useToast();
   const form = useForm<Buyer>({
     resolver: zodResolver(buyerSchema),
     defaultValues: defaultValues || {
@@ -56,7 +63,26 @@ const BuyerForm: React.FC<BuyerFormProps> = ({ onSubmit, onCancel, defaultValues
   }, [quantitySold, saleRate, amountReceived, setValue]);
 
   const handleSubmit = (data: Buyer) => {
-    onSubmit(data);
+    if (onSubmit) {
+      onSubmit(data);
+    }
+    
+    toast({
+      title: "Success",
+      description: "Buyer has been added successfully",
+    });
+    
+    if (onSuccess) {
+      onSuccess();
+    }
+  };
+
+  const handleCancel = () => {
+    if (onCancel) {
+      onCancel();
+    } else if (onSuccess) {
+      onSuccess();
+    }
   };
 
   return (
@@ -207,7 +233,7 @@ const BuyerForm: React.FC<BuyerFormProps> = ({ onSubmit, onCancel, defaultValues
         </div>
 
         <div className="flex justify-end space-x-2 pt-4">
-          <Button type="button" variant="outline" onClick={onCancel}>
+          <Button type="button" variant="outline" onClick={handleCancel}>
             Cancel
           </Button>
           <Button type="submit">Add Buyer</Button>
