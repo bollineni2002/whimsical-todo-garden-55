@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Trade Book Ledger</string>
+    <string name="title_activity_main">Trade Book Ledger</string>
+    <string name="package_name">com.tradebook.ledger</string>
+    <string name="custom_url_scheme">com.tradebook.ledger</string>
+</resources>
