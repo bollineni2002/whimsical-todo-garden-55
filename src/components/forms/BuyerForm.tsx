@@ -1,245 +1,225 @@
-import React, { useState } from 'react';
-import { z } from 'zod';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { useForm } from 'react-hook-form';
-import { Buyer } from '@/lib/types';
-import { Button } from '@/components/ui/button';
+
+import React, { useState, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Label } from '@/components/ui/label';
+import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useToast } from '@/hooks/use-toast';
+import { Buyer } from '@/lib/types';
 
 interface BuyerFormProps {
-  onSubmit?: (buyer: Buyer) => void;
-  onCancel?: () => void;
-  onSuccess?: () => void;
-  defaultValues?: Partial<Buyer>;
+  onSubmit: (data: Buyer) => void;
+  onCancel: () => void;
+  initialData?: Buyer;
+  isEditing?: boolean;
 }
-
-const buyerSchema = z.object({
-  name: z.string().min(1, { message: 'Buyer name is required' }),
-  contact: z.string().min(1, { message: 'Contact information is required' }),
-  quantitySold: z.coerce.number().positive({ message: 'Quantity must be positive' }),
-  saleRate: z.coerce.number().positive({ message: 'Sale rate must be positive' }),
-  totalSaleAmount: z.coerce.number().positive({ message: 'Total sale amount must be positive' }),
-  amountReceived: z.coerce.number().nonnegative({ message: 'Amount received must be non-negative' }),
-  pendingBalance: z.coerce.number(),
-  paymentDueDate: z.string().optional(),
-  paymentFrequency: z.enum(['one-time', 'weekly', 'monthly', 'quarterly']).optional(),
-});
 
 const BuyerForm: React.FC<BuyerFormProps> = ({ 
   onSubmit, 
   onCancel, 
-  onSuccess, 
-  defaultValues 
+  initialData,
+  isEditing = false
 }) => {
-  const { toast } = useToast();
-  const form = useForm<Buyer>({
-    resolver: zodResolver(buyerSchema),
-    defaultValues: defaultValues || {
-      name: '',
-      contact: '',
-      quantitySold: 0,
-      saleRate: 0,
-      totalSaleAmount: 0,
-      amountReceived: 0,
-      pendingBalance: 0,
-      paymentDueDate: '',
-      paymentFrequency: 'one-time',
-    },
+  const [formData, setFormData] = useState<Buyer>({
+    name: '',
+    contact: '',
+    quantitySold: 0,
+    saleRate: 0,
+    totalSaleAmount: 0,
+    amountReceived: 0,
+    pendingBalance: 0,
+    paymentDueDate: '',
+    paymentFrequency: undefined
   });
 
-  const { watch, setValue } = form;
-  const quantitySold = watch('quantitySold');
-  const saleRate = watch('saleRate');
-  const amountReceived = watch('amountReceived');
+  // Load initial data if provided (for editing)
+  useEffect(() => {
+    if (initialData) {
+      setFormData(initialData);
+    }
+  }, [initialData]);
 
-  // Calculate total sale amount and pending balance whenever quantity or sale rate changes
-  React.useEffect(() => {
-    const totalSaleAmount = quantitySold * saleRate;
-    setValue('totalSaleAmount', totalSaleAmount);
-    setValue('pendingBalance', totalSaleAmount - amountReceived);
-  }, [quantitySold, saleRate, amountReceived, setValue]);
-
-  const handleSubmit = (data: Buyer) => {
-    if (onSubmit) {
-      onSubmit(data);
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    let numValue: number | string = value;
+    
+    // Convert numeric fields
+    if (['quantitySold', 'saleRate', 'amountReceived'].includes(name)) {
+      numValue = parseFloat(value) || 0;
+      
+      if (name === 'quantitySold' || name === 'saleRate') {
+        const quantity = name === 'quantitySold' ? numValue as number : formData.quantitySold;
+        const rate = name === 'saleRate' ? numValue as number : formData.saleRate;
+        const totalSaleAmount = quantity * rate;
+        const pendingBalance = totalSaleAmount - formData.amountReceived;
+        
+        setFormData(prev => ({
+          ...prev,
+          [name]: numValue as number,
+          totalSaleAmount,
+          pendingBalance
+        }));
+        return;
+      }
+      
+      if (name === 'amountReceived') {
+        const received = numValue as number;
+        const pendingBalance = formData.totalSaleAmount - received;
+        
+        setFormData(prev => ({
+          ...prev,
+          amountReceived: received,
+          pendingBalance
+        }));
+        return;
+      }
     }
     
-    toast({
-      title: "Success",
-      description: "Buyer has been added successfully",
-    });
-    
-    if (onSuccess) {
-      onSuccess();
-    }
+    setFormData(prev => ({
+      ...prev,
+      [name]: numValue
+    }));
   };
 
-  const handleCancel = () => {
-    if (onCancel) {
-      onCancel();
-    } else if (onSuccess) {
-      onSuccess();
-    }
+  const handleFrequencyChange = (value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      paymentFrequency: value as 'one-time' | 'weekly' | 'monthly' | 'quarterly' | undefined
+    }));
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    onSubmit(formData);
   };
 
   return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <FormField
-            control={form.control}
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label htmlFor="name">Buyer Name</Label>
+          <Input
+            id="name"
             name="name"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Buyer Name</FormLabel>
-                <FormControl>
-                  <Input placeholder="Buyer name" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
+            placeholder="Enter buyer name"
+            value={formData.name}
+            onChange={handleChange}
+            required
           />
-
-          <FormField
-            control={form.control}
+        </div>
+        
+        <div className="space-y-2">
+          <Label htmlFor="contact">Contact Number</Label>
+          <Input
+            id="contact"
             name="contact"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Contact Information</FormLabel>
-                <FormControl>
-                  <Input placeholder="Phone number or email" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
+            placeholder="Enter contact number"
+            value={formData.contact}
+            onChange={handleChange}
           />
         </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <FormField
-            control={form.control}
+        
+        <div className="space-y-2">
+          <Label htmlFor="quantitySold">Quantity Sold</Label>
+          <Input
+            id="quantitySold"
             name="quantitySold"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Quantity Sold</FormLabel>
-                <FormControl>
-                  <Input type="number" min="0" step="0.01" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
+            type="number"
+            placeholder="Enter quantity"
+            value={formData.quantitySold}
+            onChange={handleChange}
+            required
           />
-
-          <FormField
-            control={form.control}
+        </div>
+        
+        <div className="space-y-2">
+          <Label htmlFor="saleRate">Sale Rate (per unit)</Label>
+          <Input
+            id="saleRate"
             name="saleRate"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Sale Rate (per unit)</FormLabel>
-                <FormControl>
-                  <Input type="number" min="0" step="0.01" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
+            type="number"
+            placeholder="Enter rate per unit"
+            value={formData.saleRate}
+            onChange={handleChange}
+            required
           />
         </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <FormField
-            control={form.control}
+        
+        <div className="space-y-2">
+          <Label htmlFor="totalSaleAmount">Total Sale Amount</Label>
+          <Input
+            id="totalSaleAmount"
             name="totalSaleAmount"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Total Sale Amount</FormLabel>
-                <FormControl>
-                  <Input type="number" disabled {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
+            type="number"
+            value={formData.totalSaleAmount}
+            readOnly
+            className="bg-muted"
           />
-
-          <FormField
-            control={form.control}
+        </div>
+        
+        <div className="space-y-2">
+          <Label htmlFor="amountReceived">Amount Received</Label>
+          <Input
+            id="amountReceived"
             name="amountReceived"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Amount Received</FormLabel>
-                <FormControl>
-                  <Input type="number" min="0" step="0.01" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
+            type="number"
+            placeholder="Enter amount received"
+            value={formData.amountReceived}
+            onChange={handleChange}
+            required
           />
         </div>
-
-        <FormField
-          control={form.control}
-          name="pendingBalance"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Pending Balance</FormLabel>
-              <FormControl>
-                <Input type="number" disabled {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <FormField
-            control={form.control}
+        
+        <div className="space-y-2">
+          <Label htmlFor="pendingBalance">Pending Balance</Label>
+          <Input
+            id="pendingBalance"
+            name="pendingBalance"
+            type="number"
+            value={formData.pendingBalance}
+            readOnly
+            className="bg-muted"
+          />
+        </div>
+        
+        <div className="space-y-2">
+          <Label htmlFor="paymentDueDate">Payment Due Date</Label>
+          <Input
+            id="paymentDueDate"
             name="paymentDueDate"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Payment Due Date (Optional)</FormLabel>
-                <FormControl>
-                  <Input type="date" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="paymentFrequency"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Payment Frequency (Optional)</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select frequency" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    <SelectItem value="one-time">One Time</SelectItem>
-                    <SelectItem value="weekly">Weekly</SelectItem>
-                    <SelectItem value="monthly">Monthly</SelectItem>
-                    <SelectItem value="quarterly">Quarterly</SelectItem>
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
+            type="date"
+            value={formData.paymentDueDate || ''}
+            onChange={handleChange}
           />
         </div>
-
-        <div className="flex justify-end space-x-2 pt-4">
-          <Button type="button" variant="outline" onClick={handleCancel}>
-            Cancel
-          </Button>
-          <Button type="submit">Add Buyer</Button>
+        
+        <div className="space-y-2">
+          <Label htmlFor="paymentFrequency">Payment Frequency</Label>
+          <Select 
+            onValueChange={handleFrequencyChange}
+            value={formData.paymentFrequency}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Select payment frequency" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="one-time">One-time</SelectItem>
+              <SelectItem value="weekly">Weekly</SelectItem>
+              <SelectItem value="monthly">Monthly</SelectItem>
+              <SelectItem value="quarterly">Quarterly</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
-      </form>
-    </Form>
+      </div>
+      
+      <div className="flex justify-end space-x-2 pt-4">
+        <Button type="button" variant="outline" onClick={onCancel}>
+          Cancel
+        </Button>
+        <Button type="submit">
+          {isEditing ? 'Update Buyer' : 'Add Buyer'}
+        </Button>
+      </div>
+    </form>
   );
 };
 

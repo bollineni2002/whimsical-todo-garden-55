@@ -4,7 +4,7 @@ import { LoadBuy, Transaction, Supplier } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { dbManager } from '@/lib/db';
-import { ArrowDownUp, Plus, Users, UserPlus } from 'lucide-react';
+import { ArrowDownUp, Plus, Users, UserPlus, Edit, Save, X } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import SupplierForm from '../forms/SupplierForm';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
@@ -24,6 +24,8 @@ const LoadBuyContent: React.FC<LoadBuyContentProps> = ({
 }) => {
   const { toast } = useToast();
   const [isAddingSupplier, setIsAddingSupplier] = useState(false);
+  const [isEditingPrimary, setIsEditingPrimary] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
 
   // Renamed from handleAddSupplier
   const handleFormSubmit = async (formData: Supplier) => {
@@ -82,26 +84,118 @@ const LoadBuyContent: React.FC<LoadBuyContentProps> = ({
     }
   };
 
+  // New handler for updating the primary supplier info
+  const handleUpdatePrimary = async (formData: Supplier) => {
+    try {
+      if (!transaction.loadBuy) {
+        toast({
+          title: "Error",
+          description: "No supplier information found to update",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      // Create updated LoadBuy object
+      const updatedLoadBuy: LoadBuy = {
+        supplierName: formData.name,
+        supplierContact: formData.contact,
+        goodsName: formData.goodsName,
+        quantity: formData.quantity,
+        purchaseRate: formData.purchaseRate,
+        totalCost: formData.totalCost,
+        amountPaid: formData.amountPaid,
+        balance: formData.balance,
+        paymentDueDate: formData.paymentDueDate,
+        paymentFrequency: formData.paymentFrequency,
+      };
+
+      const updatedTransaction = {
+        ...transaction,
+        loadBuy: updatedLoadBuy,
+        updatedAt: new Date().toISOString()
+      };
+
+      await dbManager.updateTransaction(updatedTransaction);
+      await refreshTransaction();
+      
+      toast({
+        title: "Success",
+        description: "Supplier information updated successfully"
+      });
+
+      setEditDialogOpen(false);
+      setIsEditingPrimary(false);
+    } catch (error) {
+      console.error('Error updating supplier information:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update supplier information",
+        variant: "destructive"
+      });
+    }
+  };
+  
+  // Function to convert LoadBuy to Supplier format for editing
+  const convertLoadBuyToSupplier = (loadBuy: LoadBuy): Supplier => {
+    return {
+      name: loadBuy.supplierName,
+      contact: loadBuy.supplierContact,
+      goodsName: loadBuy.goodsName,
+      quantity: loadBuy.quantity,
+      purchaseRate: loadBuy.purchaseRate,
+      totalCost: loadBuy.totalCost,
+      amountPaid: loadBuy.amountPaid,
+      balance: loadBuy.balance,
+      paymentDueDate: loadBuy.paymentDueDate,
+      paymentFrequency: loadBuy.paymentFrequency,
+    };
+  };
+
   // Show single supplier information
   if (data) {
     return (
       <div className="space-y-6">
         <div className="flex justify-between items-center">
           <h3 className="text-xl font-semibold">Purchase Information</h3>
-          <Dialog open={isAddingSupplier} onOpenChange={setIsAddingSupplier}>
-            <DialogTrigger asChild>
-              <Button variant="outline" size="sm">
-                <UserPlus className="h-4 w-4 mr-2" />
-                Add Another Supplier
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-h-[90vh] overflow-y-auto">
-              <DialogHeader>
-                <DialogTitle>Add Supplier</DialogTitle>
-              </DialogHeader>
-              <SupplierForm onSubmit={handleFormSubmit} onCancel={() => setIsAddingSupplier(false)} />
-            </DialogContent>
-          </Dialog>
+          <div className="space-x-2">
+            <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+              <DialogTrigger asChild>
+                <Button variant="outline" size="sm">
+                  <Edit className="h-4 w-4 mr-2" />
+                  Edit Supplier
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-h-[90vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle>Edit Supplier</DialogTitle>
+                </DialogHeader>
+                {data && (
+                  <SupplierForm 
+                    onSubmit={handleUpdatePrimary} 
+                    onCancel={() => setEditDialogOpen(false)}
+                    initialData={convertLoadBuyToSupplier(data)}
+                    isEditing={true}
+                  />
+                )}
+              </DialogContent>
+            </Dialog>
+            
+            <Dialog open={isAddingSupplier} onOpenChange={setIsAddingSupplier}>
+              <DialogTrigger asChild>
+                <Button variant="outline" size="sm">
+                  <UserPlus className="h-4 w-4 mr-2" />
+                  Add Another Supplier
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-h-[90vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle>Add Supplier</DialogTitle>
+                </DialogHeader>
+                <SupplierForm onSubmit={handleFormSubmit} onCancel={() => setIsAddingSupplier(false)} />
+              </DialogContent>
+            </Dialog>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

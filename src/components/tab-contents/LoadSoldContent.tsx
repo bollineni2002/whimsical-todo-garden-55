@@ -4,7 +4,7 @@ import { LoadSold, Transaction, Buyer } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { dbManager } from '@/lib/db';
-import { ShoppingCart, Plus, Users, UserPlus } from 'lucide-react';
+import { ShoppingCart, Plus, Users, UserPlus, Edit } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import BuyerForm from '../forms/BuyerForm';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
@@ -24,6 +24,8 @@ const LoadSoldContent: React.FC<LoadSoldContentProps> = ({
 }) => {
   const { toast } = useToast();
   const [isAddingBuyer, setIsAddingBuyer] = useState(false);
+  const [isEditingPrimary, setIsEditingPrimary] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
 
   // Renamed from handleAddBuyer
   const handleFormSubmit = async (formData: Buyer) => {
@@ -81,26 +83,116 @@ const LoadSoldContent: React.FC<LoadSoldContentProps> = ({
     }
   };
 
+  // New handler for updating the primary buyer info
+  const handleUpdatePrimary = async (formData: Buyer) => {
+    try {
+      if (!transaction.loadSold) {
+        toast({
+          title: "Error",
+          description: "No buyer information found to update",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      // Create updated LoadSold object
+      const updatedLoadSold: LoadSold = {
+        buyerName: formData.name,
+        buyerContact: formData.contact,
+        quantitySold: formData.quantitySold,
+        saleRate: formData.saleRate,
+        totalSaleAmount: formData.totalSaleAmount,
+        amountReceived: formData.amountReceived,
+        pendingBalance: formData.pendingBalance,
+        paymentDueDate: formData.paymentDueDate,
+        paymentFrequency: formData.paymentFrequency,
+      };
+
+      const updatedTransaction = {
+        ...transaction,
+        loadSold: updatedLoadSold,
+        updatedAt: new Date().toISOString()
+      };
+
+      await dbManager.updateTransaction(updatedTransaction);
+      await refreshTransaction();
+      
+      toast({
+        title: "Success",
+        description: "Buyer information updated successfully"
+      });
+
+      setEditDialogOpen(false);
+      setIsEditingPrimary(false);
+    } catch (error) {
+      console.error('Error updating buyer information:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update buyer information",
+        variant: "destructive"
+      });
+    }
+  };
+  
+  // Function to convert LoadSold to Buyer format for editing
+  const convertLoadSoldToBuyer = (loadSold: LoadSold): Buyer => {
+    return {
+      name: loadSold.buyerName,
+      contact: loadSold.buyerContact,
+      quantitySold: loadSold.quantitySold,
+      saleRate: loadSold.saleRate,
+      totalSaleAmount: loadSold.totalSaleAmount,
+      amountReceived: loadSold.amountReceived,
+      pendingBalance: loadSold.pendingBalance,
+      paymentDueDate: loadSold.paymentDueDate,
+      paymentFrequency: loadSold.paymentFrequency,
+    };
+  };
+
   // Show main buyer information
   if (data) {
     return (
       <div className="space-y-6">
         <div className="flex justify-between items-center">
           <h3 className="text-xl font-semibold">Sale Information</h3>
-          <Dialog open={isAddingBuyer} onOpenChange={setIsAddingBuyer}>
-            <DialogTrigger asChild>
-              <Button variant="outline" size="sm">
-                <UserPlus className="h-4 w-4 mr-2" />
-                Add Another Buyer
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-h-[90vh] overflow-y-auto">
-              <DialogHeader>
-                <DialogTitle>Add Buyer</DialogTitle>
-              </DialogHeader>
-              <BuyerForm onSubmit={handleFormSubmit} onCancel={() => setIsAddingBuyer(false)} />
-            </DialogContent>
-          </Dialog>
+          <div className="space-x-2">
+            <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+              <DialogTrigger asChild>
+                <Button variant="outline" size="sm">
+                  <Edit className="h-4 w-4 mr-2" />
+                  Edit Buyer
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-h-[90vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle>Edit Buyer</DialogTitle>
+                </DialogHeader>
+                {data && (
+                  <BuyerForm 
+                    onSubmit={handleUpdatePrimary} 
+                    onCancel={() => setEditDialogOpen(false)}
+                    initialData={convertLoadSoldToBuyer(data)}
+                    isEditing={true}
+                  />
+                )}
+              </DialogContent>
+            </Dialog>
+            
+            <Dialog open={isAddingBuyer} onOpenChange={setIsAddingBuyer}>
+              <DialogTrigger asChild>
+                <Button variant="outline" size="sm">
+                  <UserPlus className="h-4 w-4 mr-2" />
+                  Add Another Buyer
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-h-[90vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle>Add Buyer</DialogTitle>
+                </DialogHeader>
+                <BuyerForm onSubmit={handleFormSubmit} onCancel={() => setIsAddingBuyer(false)} />
+              </DialogContent>
+            </Dialog>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

@@ -1,262 +1,238 @@
 
-import React, { useState } from 'react';
-import { z } from 'zod';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { useForm } from 'react-hook-form';
-import { Supplier } from '@/lib/types';
-import { Button } from '@/components/ui/button';
+import React, { useState, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Label } from '@/components/ui/label';
+import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useToast } from '@/hooks/use-toast';
+import { Supplier } from '@/lib/types';
 
 interface SupplierFormProps {
-  onSubmit?: (supplier: Supplier) => void;
-  onCancel?: () => void;
-  onSuccess?: () => void;
-  defaultValues?: Partial<Supplier>;
+  onSubmit: (data: Supplier) => void;
+  onCancel: () => void;
+  initialData?: Supplier;
+  isEditing?: boolean;
 }
-
-const supplierSchema = z.object({
-  name: z.string().min(1, { message: 'Supplier name is required' }),
-  contact: z.string().min(1, { message: 'Contact information is required' }),
-  goodsName: z.string().min(1, { message: 'Goods name is required' }),
-  quantity: z.coerce.number().positive({ message: 'Quantity must be positive' }),
-  purchaseRate: z.coerce.number().positive({ message: 'Purchase rate must be positive' }),
-  totalCost: z.coerce.number().positive({ message: 'Total cost must be positive' }),
-  amountPaid: z.coerce.number().nonnegative({ message: 'Amount paid must be non-negative' }),
-  balance: z.coerce.number(),
-  paymentDueDate: z.string().optional(),
-  paymentFrequency: z.enum(['one-time', 'weekly', 'monthly', 'quarterly']).optional(),
-});
 
 const SupplierForm: React.FC<SupplierFormProps> = ({ 
   onSubmit, 
   onCancel, 
-  onSuccess, 
-  defaultValues 
+  initialData,
+  isEditing = false
 }) => {
-  const { toast } = useToast();
-  const form = useForm<Supplier>({
-    resolver: zodResolver(supplierSchema),
-    defaultValues: defaultValues || {
-      name: '',
-      contact: '',
-      goodsName: '',
-      quantity: 0,
-      purchaseRate: 0,
-      totalCost: 0,
-      amountPaid: 0,
-      balance: 0,
-      paymentDueDate: '',
-      paymentFrequency: 'one-time',
-    },
+  const [formData, setFormData] = useState<Supplier>({
+    name: '',
+    contact: '',
+    goodsName: '',
+    quantity: 0,
+    purchaseRate: 0,
+    totalCost: 0,
+    amountPaid: 0,
+    balance: 0,
+    paymentDueDate: '',
+    paymentFrequency: undefined
   });
 
-  const { watch, setValue } = form;
-  const quantity = watch('quantity');
-  const purchaseRate = watch('purchaseRate');
-  const amountPaid = watch('amountPaid');
+  // Load initial data if provided (for editing)
+  useEffect(() => {
+    if (initialData) {
+      setFormData(initialData);
+    }
+  }, [initialData]);
 
-  // Calculate total cost and balance whenever quantity or purchase rate changes
-  React.useEffect(() => {
-    const totalCost = quantity * purchaseRate;
-    setValue('totalCost', totalCost);
-    setValue('balance', totalCost - amountPaid);
-  }, [quantity, purchaseRate, amountPaid, setValue]);
-
-  const handleSubmit = (data: Supplier) => {
-    if (onSubmit) {
-      onSubmit(data);
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    let numValue: number | string = value;
+    
+    // Convert numeric fields
+    if (['quantity', 'purchaseRate', 'amountPaid'].includes(name)) {
+      numValue = parseFloat(value) || 0;
+      
+      if (name === 'quantity' || name === 'purchaseRate') {
+        const quantity = name === 'quantity' ? numValue as number : formData.quantity;
+        const rate = name === 'purchaseRate' ? numValue as number : formData.purchaseRate;
+        const totalCost = quantity * rate;
+        const balance = totalCost - formData.amountPaid;
+        
+        setFormData(prev => ({
+          ...prev,
+          [name]: numValue as number,
+          totalCost,
+          balance
+        }));
+        return;
+      }
+      
+      if (name === 'amountPaid') {
+        const paid = numValue as number;
+        const balance = formData.totalCost - paid;
+        
+        setFormData(prev => ({
+          ...prev,
+          amountPaid: paid,
+          balance
+        }));
+        return;
+      }
     }
     
-    toast({
-      title: "Success",
-      description: "Supplier has been added successfully",
-    });
-    
-    if (onSuccess) {
-      onSuccess();
-    }
+    setFormData(prev => ({
+      ...prev,
+      [name]: numValue
+    }));
   };
 
-  const handleCancel = () => {
-    if (onCancel) {
-      onCancel();
-    } else if (onSuccess) {
-      onSuccess();
-    }
+  const handleFrequencyChange = (value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      paymentFrequency: value as 'one-time' | 'weekly' | 'monthly' | 'quarterly' | undefined
+    }));
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    onSubmit(formData);
   };
 
   return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <FormField
-            control={form.control}
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label htmlFor="name">Supplier Name</Label>
+          <Input
+            id="name"
             name="name"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Supplier Name</FormLabel>
-                <FormControl>
-                  <Input placeholder="Supplier name" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
+            placeholder="Enter supplier name"
+            value={formData.name}
+            onChange={handleChange}
+            required
           />
-
-          <FormField
-            control={form.control}
+        </div>
+        
+        <div className="space-y-2">
+          <Label htmlFor="contact">Contact Number</Label>
+          <Input
+            id="contact"
             name="contact"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Contact Information</FormLabel>
-                <FormControl>
-                  <Input placeholder="Phone number or email" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
+            placeholder="Enter contact number"
+            value={formData.contact}
+            onChange={handleChange}
           />
         </div>
-
-        <FormField
-          control={form.control}
-          name="goodsName"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Goods Name</FormLabel>
-              <FormControl>
-                <Input placeholder="Name of goods" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <FormField
-            control={form.control}
+        
+        <div className="space-y-2">
+          <Label htmlFor="goodsName">Goods Name</Label>
+          <Input
+            id="goodsName"
+            name="goodsName"
+            placeholder="Enter goods name"
+            value={formData.goodsName}
+            onChange={handleChange}
+            required
+          />
+        </div>
+        
+        <div className="space-y-2">
+          <Label htmlFor="quantity">Quantity</Label>
+          <Input
+            id="quantity"
             name="quantity"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Quantity</FormLabel>
-                <FormControl>
-                  <Input type="number" min="0" step="0.01" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
+            type="number"
+            placeholder="Enter quantity"
+            value={formData.quantity}
+            onChange={handleChange}
+            required
           />
-
-          <FormField
-            control={form.control}
+        </div>
+        
+        <div className="space-y-2">
+          <Label htmlFor="purchaseRate">Purchase Rate (per unit)</Label>
+          <Input
+            id="purchaseRate"
             name="purchaseRate"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Purchase Rate (per unit)</FormLabel>
-                <FormControl>
-                  <Input type="number" min="0" step="0.01" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
+            type="number"
+            placeholder="Enter rate per unit"
+            value={formData.purchaseRate}
+            onChange={handleChange}
+            required
           />
         </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <FormField
-            control={form.control}
+        
+        <div className="space-y-2">
+          <Label htmlFor="totalCost">Total Cost</Label>
+          <Input
+            id="totalCost"
             name="totalCost"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Total Cost</FormLabel>
-                <FormControl>
-                  <Input type="number" disabled {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
+            type="number"
+            value={formData.totalCost}
+            readOnly
+            className="bg-muted"
           />
-
-          <FormField
-            control={form.control}
+        </div>
+        
+        <div className="space-y-2">
+          <Label htmlFor="amountPaid">Amount Paid</Label>
+          <Input
+            id="amountPaid"
             name="amountPaid"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Amount Paid</FormLabel>
-                <FormControl>
-                  <Input type="number" min="0" step="0.01" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
+            type="number"
+            placeholder="Enter amount paid"
+            value={formData.amountPaid}
+            onChange={handleChange}
+            required
           />
         </div>
-
-        <FormField
-          control={form.control}
-          name="balance"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Balance Amount</FormLabel>
-              <FormControl>
-                <Input type="number" disabled {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <FormField
-            control={form.control}
+        
+        <div className="space-y-2">
+          <Label htmlFor="balance">Balance Due</Label>
+          <Input
+            id="balance"
+            name="balance"
+            type="number"
+            value={formData.balance}
+            readOnly
+            className="bg-muted"
+          />
+        </div>
+        
+        <div className="space-y-2">
+          <Label htmlFor="paymentDueDate">Payment Due Date</Label>
+          <Input
+            id="paymentDueDate"
             name="paymentDueDate"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Payment Due Date (Optional)</FormLabel>
-                <FormControl>
-                  <Input type="date" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="paymentFrequency"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Payment Frequency (Optional)</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select frequency" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    <SelectItem value="one-time">One Time</SelectItem>
-                    <SelectItem value="weekly">Weekly</SelectItem>
-                    <SelectItem value="monthly">Monthly</SelectItem>
-                    <SelectItem value="quarterly">Quarterly</SelectItem>
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
+            type="date"
+            value={formData.paymentDueDate || ''}
+            onChange={handleChange}
           />
         </div>
-
-        <div className="flex justify-end space-x-2 pt-4">
-          <Button type="button" variant="outline" onClick={handleCancel}>
-            Cancel
-          </Button>
-          <Button type="submit">Add Supplier</Button>
+        
+        <div className="space-y-2">
+          <Label htmlFor="paymentFrequency">Payment Frequency</Label>
+          <Select 
+            onValueChange={handleFrequencyChange}
+            value={formData.paymentFrequency}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Select payment frequency" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="one-time">One-time</SelectItem>
+              <SelectItem value="weekly">Weekly</SelectItem>
+              <SelectItem value="monthly">Monthly</SelectItem>
+              <SelectItem value="quarterly">Quarterly</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
-      </form>
-    </Form>
+      </div>
+      
+      <div className="flex justify-end space-x-2 pt-4">
+        <Button type="button" variant="outline" onClick={onCancel}>
+          Cancel
+        </Button>
+        <Button type="submit">
+          {isEditing ? 'Update Supplier' : 'Add Supplier'}
+        </Button>
+      </div>
+    </form>
   );
 };
 
