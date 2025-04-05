@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -374,11 +373,9 @@ const DailyTransactionsLog: React.FC<DailyTransactionsLogProps> = ({
 
   return (
     <Card className="border-0 shadow-none bg-transparent">
-      <CardHeader className="pb-0 pt-0">
-        <div className="flex justify-between items-center">
-          <div>
-            <CardTitle className="text-xl font-bold">Logged Transactions</CardTitle>
-          </div>
+      <CardHeader className="p-0">
+        <div className="flex items-center">
+          <CardTitle className="text-xl font-bold">Logged Transactions</CardTitle>
         </div>
       </CardHeader>
       <CardContent className="p-0">
