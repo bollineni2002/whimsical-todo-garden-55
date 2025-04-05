@@ -73,28 +73,29 @@ const TransactionDetail = () => {
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className="min-h-screen flex flex-col"
+      className="min-h-screen flex flex-col bg-background text-foreground"
     >
-      <header className="glass border-b sticky top-0 z-10">
+      <header className="glass border-b sticky top-0 z-10 bg-background/80 backdrop-blur-sm border-border">
         <div className="container mx-auto px-4 py-4 flex justify-between items-center">
           <div className="flex items-center gap-3">
             <ButtonIcon 
               variant="ghost" 
               onClick={() => navigate('/')}
               aria-label="Go back"
+              className="text-foreground hover:bg-secondary"
             >
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M19 12H5"></path>
                 <path d="M12 19l-7-7 7-7"></path>
               </svg>
             </ButtonIcon>
-            <h1 className="text-2xl font-semibold">Transaction Details</h1>
+            <h1 className="text-2xl font-semibold text-foreground">Transaction Details</h1>
           </div>
           <ThemeToggle />
         </div>
       </header>
       
-      <main className="flex-1 flex overflow-hidden">
+      <main className="flex-1 flex overflow-hidden bg-background">
         {loading ? (
           <div className="flex-1 flex items-center justify-center">
             <div className="animate-pulse-subtle">
@@ -122,7 +123,7 @@ const TransactionDetail = () => {
               <line x1="12" y1="8" x2="12" y2="12"></line>
               <line x1="12" y1="16" x2="12.01" y2="16"></line>
             </svg>
-            <h3 className="text-lg font-medium mb-2">Transaction Not Found</h3>
+            <h3 className="text-lg font-medium mb-2 text-foreground">Transaction Not Found</h3>
             <p className="text-muted-foreground mb-4">
               The transaction you're looking for doesn't exist or has been deleted.
             </p>

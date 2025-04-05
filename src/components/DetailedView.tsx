@@ -1,3 +1,4 @@
+
 import { useState, useCallback, useEffect } from 'react';
 import { TabKey, Transaction } from '@/lib/types';
 import TabNavigation from './TabNavigation';
@@ -96,7 +97,7 @@ const DetailedView = ({ transaction, refreshTransaction: externalRefresh }: Deta
   return (
     <div className="flex flex-col h-full w-full overflow-hidden">
       {/* Transaction action header */}
-      <div className="p-4 border-b flex justify-between items-center">
+      <div className="p-4 border-b flex justify-between items-center bg-background text-foreground">
         <h2 className="text-lg font-medium">
           {currentTransaction.name}
           <span className={`ml-2 text-sm px-2 py-0.5 rounded-full ${
@@ -113,12 +114,12 @@ const DetailedView = ({ transaction, refreshTransaction: externalRefresh }: Deta
           {isMobile ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon">
+                <Button variant="ghost" size="icon" className="text-foreground">
                   <MoreVertical className="h-5 w-5" />
                   <span className="sr-only">More options</span>
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
+              <DropdownMenuContent align="end" className="bg-popover border border-border text-foreground">
                 <DialogTrigger asChild>
                   <DropdownMenuItem className="text-destructive focus:text-destructive focus:bg-destructive/10">
                     <Trash2 className="h-4 w-4 mr-2" />
@@ -136,14 +137,14 @@ const DetailedView = ({ transaction, refreshTransaction: externalRefresh }: Deta
             </DialogTrigger>
           )}
           {/* Shared Dialog Content */}
-          <DialogContent>
+          <DialogContent className="bg-background border border-border text-foreground">
             <DialogHeader>
               <DialogTitle>Are you sure?</DialogTitle>
             </DialogHeader>
             <p className="py-4">This action cannot be undone. This will permanently delete this transaction and all its data.</p>
             <DialogFooter className="flex space-x-2 justify-end">
               <DialogClose asChild>
-                <Button variant="outline">Cancel</Button>
+                <Button variant="outline" className="bg-background hover:bg-secondary border border-border text-foreground">Cancel</Button>
               </DialogClose>
               <Button variant="destructive" onClick={handleDelete}>
                 Delete
@@ -154,17 +155,17 @@ const DetailedView = ({ transaction, refreshTransaction: externalRefresh }: Deta
       </div>
 
       {/* Horizontal Tab Navigation */}
-      <div className={`w-full border-b border-border ${isMobile ? 'px-2 py-1' : ''}`}>
+      <div className={`w-full border-b border-border bg-background ${isMobile ? 'px-2 py-1' : ''}`}>
         <TabNavigation 
           activeTab={activeTab} 
           onTabChange={setActiveTab}
           disabledTabs={[]} 
-          isMobile={isMobile} // Pass isMobile prop
+          isMobile={isMobile}
         />
       </div>
         
       {/* Tab Content */}
-      <div className={`flex-1 overflow-auto ${isMobile ? 'p-2' : 'px-4'}`}>
+      <div className={`flex-1 overflow-auto bg-background ${isMobile ? 'p-2' : 'px-4'}`}>
         <TabContent 
           transaction={currentTransaction} 
           activeTab={activeTab} 

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Transportation, Transaction } from '@/lib/types';
 import { Button } from '@/components/ui/button';
@@ -6,8 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { dbManager } from '@/lib/db';
-// import { formatCurrency } from '@/lib/utils'; // Remove old import
-import { useCurrency } from '@/context/CurrencyContext'; // Import useCurrency hook
+import { useCurrency } from '@/context/CurrencyContext';
 import { Edit } from 'lucide-react';
 
 interface TransportationContentProps {
@@ -22,7 +22,7 @@ const TransportationContent: React.FC<TransportationContentProps> = ({
   refreshTransaction 
 }) => {
   const { toast } = useToast();
-  const { formatCurrency } = useCurrency(); // Get formatCurrency from context
+  const { formatCurrency } = useCurrency();
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({
     vehicleType: data?.vehicleType || '',
@@ -237,6 +237,7 @@ const TransportationContent: React.FC<TransportationContentProps> = ({
         <Button 
           onClick={() => setIsEditing(true)}
           variant="outline"
+          className="bg-background hover:bg-secondary border border-border text-foreground"
         >
           <Edit className="h-4 w-4 mr-1" />
           Add Transportation Details
@@ -248,11 +249,12 @@ const TransportationContent: React.FC<TransportationContentProps> = ({
   return (
     <div className="space-y-8">
       <div className="flex justify-between items-center">
-        <h3 className="text-lg font-medium">Vehicle Information</h3>
+        <h3 className="text-lg font-medium text-foreground">Vehicle Information</h3>
         <Button 
           variant="outline" 
           size="sm"
           onClick={() => setIsEditing(true)}
+          className="bg-background hover:bg-secondary border border-border text-foreground"
         >
           <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M12 20h9"></path>
@@ -266,42 +268,42 @@ const TransportationContent: React.FC<TransportationContentProps> = ({
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-2">
             <p className="text-sm text-muted-foreground">Vehicle Type</p>
-            <p className="font-medium">{data.vehicleType}</p>
+            <p className="font-medium text-foreground">{data.vehicleType}</p>
           </div>
           <div className="space-y-2">
             <p className="text-sm text-muted-foreground">Number Plate</p>
-            <p className="font-medium">{data.vehicleNumber}</p>
+            <p className="font-medium text-foreground">{data.vehicleNumber}</p>
           </div>
         </div>
       </div>
       
       <div className="space-y-4">
-        <h3 className="text-lg font-medium">Load Measurements</h3>
+        <h3 className="text-lg font-medium text-foreground">Load Measurements</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-2">
             <p className="text-sm text-muted-foreground">Empty Weight</p>
-            <p className="font-medium">{data.emptyWeight} kg</p>
+            <p className="font-medium text-foreground">{data.emptyWeight} kg</p>
           </div>
           <div className="space-y-2">
             <p className="text-sm text-muted-foreground">Loaded Weight</p>
-            <p className="font-medium">{data.loadedWeight} kg</p>
+            <p className="font-medium text-foreground">{data.loadedWeight} kg</p>
           </div>
         </div>
       </div>
       
       <div className="space-y-4">
-        <h3 className="text-lg font-medium">Schedule Details</h3>
-        <div className="glass p-4 rounded-lg">
+        <h3 className="text-lg font-medium text-foreground">Schedule Details</h3>
+        <div className="glass p-4 rounded-lg bg-card/80 border border-border">
           {data.departureDate && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
               <div className="space-y-2">
                 <p className="text-sm text-muted-foreground">Departure Date</p>
-                <p className="font-medium">{new Date(data.departureDate).toLocaleDateString()}</p>
+                <p className="font-medium text-foreground">{new Date(data.departureDate).toLocaleDateString()}</p>
               </div>
               {data.departureTime && (
                 <div className="space-y-2">
                   <p className="text-sm text-muted-foreground">Departure Time</p>
-                  <p className="font-medium">{data.departureTime}</p>
+                  <p className="font-medium text-foreground">{data.departureTime}</p>
                 </div>
               )}
             </div>
@@ -311,12 +313,12 @@ const TransportationContent: React.FC<TransportationContentProps> = ({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
               <div className="space-y-2">
                 <p className="text-sm text-muted-foreground">Expected Arrival Date</p>
-                <p className="font-medium">{new Date(data.arrivalDate).toLocaleDateString()}</p>
+                <p className="font-medium text-foreground">{new Date(data.arrivalDate).toLocaleDateString()}</p>
               </div>
               {data.arrivalTime && (
                 <div className="space-y-2">
                   <p className="text-sm text-muted-foreground">Expected Arrival Time</p>
-                  <p className="font-medium">{data.arrivalTime}</p>
+                  <p className="font-medium text-foreground">{data.arrivalTime}</p>
                 </div>
               )}
             </div>
@@ -325,13 +327,13 @@ const TransportationContent: React.FC<TransportationContentProps> = ({
       </div>
       
       <div className="space-y-4">
-        <h3 className="text-lg font-medium">Route Details</h3>
-        <div className="glass p-4 rounded-lg">
+        <h3 className="text-lg font-medium text-foreground">Route Details</h3>
+        <div className="glass p-4 rounded-lg bg-card/80 border border-border">
           <div className="grid grid-cols-1 gap-4">
             <div className="flex justify-between items-center">
               <div className="space-y-1">
                 <p className="text-sm text-muted-foreground">Origin</p>
-                <p className="font-medium">{data.origin}</p>
+                <p className="font-medium text-foreground">{data.origin}</p>
               </div>
               <div className="mx-4 text-muted-foreground">
                 <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -341,13 +343,13 @@ const TransportationContent: React.FC<TransportationContentProps> = ({
               </div>
               <div className="space-y-1 text-right">
                 <p className="text-sm text-muted-foreground">Destination</p>
-                <p className="font-medium">{data.destination}</p>
+                <p className="font-medium text-foreground">{data.destination}</p>
               </div>
             </div>
             <div className="mt-4 pt-4 border-t border-border">
               <div className="space-y-2">
                 <p className="text-sm text-muted-foreground">Transport Charges</p>
-                <p className="font-medium">{formatCurrency(data.charges)}</p>
+                <p className="font-medium text-foreground">{formatCurrency(data.charges)}</p>
               </div>
             </div>
           </div>
@@ -356,9 +358,9 @@ const TransportationContent: React.FC<TransportationContentProps> = ({
       
       {data.notes && (
         <div className="space-y-4">
-          <h3 className="text-lg font-medium">Transportation Notes</h3>
-          <div className="glass p-4 rounded-lg">
-            <p className="whitespace-pre-wrap">{data.notes}</p>
+          <h3 className="text-lg font-medium text-foreground">Transportation Notes</h3>
+          <div className="glass p-4 rounded-lg bg-card/80 border border-border">
+            <p className="whitespace-pre-wrap text-foreground">{data.notes}</p>
           </div>
         </div>
       )}

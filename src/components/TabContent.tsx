@@ -125,7 +125,7 @@ const TabContent: React.FC<TabContentProps> = ({ activeTab, transaction, refresh
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -20 }}
           transition={{ duration: 0.2 }}
-          className="bg-card rounded-lg p-6 shadow-sm border"
+          className="bg-card text-card-foreground rounded-lg p-6 shadow-sm border border-border"
         >
           {renderTabContent()}
         </motion.div>
