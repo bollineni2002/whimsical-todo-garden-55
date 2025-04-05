@@ -6,7 +6,7 @@ const config: CapacitorConfig = {
   webDir: 'dist',
   plugins: {
     Keyboard: {
-      resize: 'native', // Use 'native' resize mode for iOS
+      resize: undefined, // Changed to undefined to match the expected 'KeyboardResize | undefined' type
       resizeOnFullScreen: true,
     },
   },
