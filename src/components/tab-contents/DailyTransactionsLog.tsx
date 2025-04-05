@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -372,17 +372,15 @@ const DailyTransactionsLog: React.FC<DailyTransactionsLogProps> = ({
   );
 
   return (
-    <Card className="border-0 shadow-none bg-transparent">
-      <CardHeader className="p-0">
-        <div className="flex items-center">
-          <CardTitle className="text-xl font-bold">Logged Transactions</CardTitle>
-        </div>
-      </CardHeader>
-      <CardContent className="p-0">
+    <Card className="border-0 shadow-none bg-transparent mt-0">
+      <div className="flex items-center">
+        <h2 className="text-xl font-bold">History</h2>
+      </div>
+      
+      <CardContent className="p-0 mt-2">
         {isFormOpen && <TransactionForm />}
 
         <div className="flex items-center justify-between mt-2 mb-4">
-          <h3 className="text-base font-medium">Transaction History</h3>
           <ToggleGroup 
             type="single" 
             defaultValue="all" 

@@ -60,9 +60,12 @@ const AuthHeader = ({ businessName = 'TransactLy', pageTitle, onEditName, childr
         <div className="flex items-center gap-3">
           {children}
           
-          <Button 
-            variant={isAllSynced ? "outline" : "default"}
-            size="sm"
+          {/* Conditionally render Sync button and Profile dropdown only if user is logged in */}
+          {user && (
+            <>
+              <Button 
+                variant={isAllSynced ? "outline" : "default"}
+                size="sm"
             className={`gap-2 ${!isAllSynced ? 'animate-pulse' : ''}`}
             onClick={sync}
             disabled={isSyncing}
@@ -97,6 +100,8 @@ const AuthHeader = ({ businessName = 'TransactLy', pageTitle, onEditName, childr
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
+            </>
+          )}
           
           <ThemeToggle />
         </div>
