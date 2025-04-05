@@ -41,7 +41,7 @@ const TabNavigation: React.FC<TabNavigationProps> = ({
           className={`flex items-center px-3 py-2 text-sm font-medium ${
             activeTab === tab.key
               ? 'text-primary border-b-2 border-primary'
-              : 'text-muted'
+              : 'text-foreground/80' // Increased contrast for inactive tabs
           } ${isMobile ? 'flex-col' : ''}`}
         >
           {tab.icon}
