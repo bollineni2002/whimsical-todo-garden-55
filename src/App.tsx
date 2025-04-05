@@ -15,6 +15,7 @@ import VerifyOTP from "./pages/VerifyOTP";
 import ResetPassword from "./pages/ResetPassword";
 import Profile from "./pages/Profile";
 import Settings from "./pages/Settings";
+import Clients from "./pages/Clients";
 import { useAuth } from "./context/AuthContext";
 
 // Create a client
@@ -85,6 +86,11 @@ const App = () => (
               <Route path="/settings" element={
                 <ProtectedRoute>
                   <Settings />
+                </ProtectedRoute>
+              } />
+              <Route path="/clients" element={
+                <ProtectedRoute>
+                  <Clients />
                 </ProtectedRoute>
               } />
               <Route path="*" element={<NotFound />} />
