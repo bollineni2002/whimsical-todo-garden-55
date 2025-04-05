@@ -1,6 +1,8 @@
+
 import { useState } from 'react';
 import CalculationsNavigation from '@/components/CalculationsNavigation';
 import { useIsMobile } from '@/hooks/use-mobile';
+import AuthHeader from '@/components/AuthHeader';
 
 const Calculations = () => {
   const [activeSection, setActiveSection] = useState('tax');
@@ -9,6 +11,9 @@ const Calculations = () => {
 
   return (
     <div className="flex flex-col h-full w-full">
+      {/* Header with page-specific title */}
+      <AuthHeader pageTitle="Calculations" />
+      
       {/* Navigation */}
       <div className={`w-full border-b border-border ${isMobile ? 'px-2 py-1' : ''}`}>
         <CalculationsNavigation 

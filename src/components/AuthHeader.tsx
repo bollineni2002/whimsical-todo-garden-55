@@ -17,7 +17,7 @@ import { toast } from '@/hooks/use-toast';
 import { useSyncStatus } from '@/hooks/useSyncStatus';
 import { AuthHeaderProps } from '@/types/component-types';
 
-const AuthHeader = ({ businessName = 'TransactLy', onEditName, children, onExport }: AuthHeaderProps) => {
+const AuthHeader = ({ businessName = 'TransactLy', pageTitle, onEditName, children, onExport }: AuthHeaderProps) => {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
   const { isSyncing, isAllSynced, sync, lastSyncTime } = useSyncStatus();
@@ -28,6 +28,9 @@ const AuthHeader = ({ businessName = 'TransactLy', onEditName, children, onExpor
   };
 
   const userInitial = user?.email ? user.email[0].toUpperCase() : 'U';
+  
+  // Display page title if provided, otherwise fall back to businessName
+  const displayTitle = pageTitle || businessName;
 
   return (
     <header className="bg-background sticky top-0 z-10 border-b border-border">
@@ -50,15 +53,13 @@ const AuthHeader = ({ businessName = 'TransactLy', onEditName, children, onExpor
                 <path d="M18 12a2 2 0 0 0-2 2c0 1.1.9 2 2 2h4v-4h-4z" />
               </svg>
             </div>
-            <span className="font-semibold text-lg">{businessName}</span>
+            <span className="font-semibold text-lg">{displayTitle}</span>
           </Link>
         </div>
         
         <div className="flex items-center gap-3">
-          {/* Add the children prop here */}
           {children}
           
-          {/* Sync button */}
           <Button 
             variant={isAllSynced ? "outline" : "default"}
             size="sm"
@@ -72,7 +73,6 @@ const AuthHeader = ({ businessName = 'TransactLy', onEditName, children, onExpor
             {isSyncing ? 'Syncing...' : isAllSynced ? 'Synced' : 'Sync Now'}
           </Button>
           
-          {/* User menu */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon" className="rounded-full h-8 w-8 p-0">
@@ -102,7 +102,6 @@ const AuthHeader = ({ businessName = 'TransactLy', onEditName, children, onExpor
         </div>
       </div>
       
-      {/* Sync status indicator */}
       {lastSyncTime && (
         <div className="container mx-auto px-4 py-1 text-xs text-muted-foreground">
           Last synced: {new Date(lastSyncTime).toLocaleString()}

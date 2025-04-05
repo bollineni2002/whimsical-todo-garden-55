@@ -376,10 +376,7 @@ const DailyTransactionsLog: React.FC<DailyTransactionsLogProps> = ({
       <CardHeader className="pb-2">
         <div className="flex justify-between items-center">
           <div>
-            <CardTitle className="text-xl font-bold">Daily Business Transactions</CardTitle>
-            <CardDescription className="text-muted-foreground">
-              Log all incoming and outgoing money transactions.
-            </CardDescription>
+            <CardTitle className="text-xl font-bold">Logged Transactions</CardTitle>
           </div>
         </div>
       </CardHeader>
@@ -387,7 +384,7 @@ const DailyTransactionsLog: React.FC<DailyTransactionsLogProps> = ({
         {isFormOpen && <TransactionForm />}
 
         <div className="flex items-center justify-between mt-2 mb-4">
-          <h3 className="text-base font-medium">Logged Transactions</h3>
+          <h3 className="text-base font-medium">Transaction History</h3>
           <ToggleGroup 
             type="single" 
             defaultValue="all" 

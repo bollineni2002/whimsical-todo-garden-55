@@ -15,7 +15,6 @@ import { exportTransactions, ExportFormat } from '@/lib/exportUtils';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-// Import icons for the new section
 import { Settings, Users, UserPlus, LineChart, Plus, Calculator, Percent, Landmark, Replace, Briefcase, ListChecks } from 'lucide-react';
 import { dbManager } from '@/lib/db';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
@@ -23,12 +22,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { useNavigate } from 'react-router-dom';
-// Import placeholder components (will be created next)
 import TaxCalculator from '@/components/calculations/TaxCalculator';
 import InterestCalculator from '@/components/calculations/InterestCalculator';
 import CurrencyConverter from '@/components/calculations/CurrencyConverter';
-// Import the new Daily Transactions Log component
 import DailyTransactionsLog from '@/components/tab-contents/DailyTransactionsLog';
+import AuthHeader from '@/components/AuthHeader';
 
 interface Buyer {
   id: string;
@@ -66,6 +64,7 @@ const Index = () => {
   const [newBuyer, setNewBuyer] = useState({ name: '', email: '', phone: '' });
   const [newSeller, setNewSeller] = useState({ name: '', email: '', phone: '' });
   const [isTransactionLogOpen, setIsTransactionLogOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState('dashboard');
   const { toast } = useToast();
 
   const handleExport = async (format: ExportFormat) => {
@@ -211,6 +210,19 @@ const Index = () => {
     navigate('/new-transaction');
   };
 
+  const getPageTitle = () => {
+    switch (activeTab) {
+      case 'transactions':
+        return 'Business Transactions';
+      case 'calculations':
+        return 'Calculations';
+      case 'clients-vendors':
+        return 'Clients';
+      default:
+        return businessName;
+    }
+  };
+
   useEffect(() => {
     loadBusinessName();
     loadBuyersAndSellers();
@@ -224,11 +236,16 @@ const Index = () => {
     >
       <Header 
         onExport={handleExport} 
-        businessName={businessName} 
+        businessName={getPageTitle()} 
       /> 
 
       <div className="flex-1 overflow-auto">
-        <Tabs defaultValue="dashboard" className="w-full flex flex-col h-[calc(100vh-64px)]">
+        <Tabs 
+          defaultValue="dashboard" 
+          value={activeTab}
+          onValueChange={setActiveTab}
+          className="w-full flex flex-col h-[calc(100vh-64px)]"
+        >
           <TabsContent value="dashboard" className="container mx-auto px-4 py-4 flex-1 overflow-auto">
             <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-4 gap-4">
               <div className="w-full md:w-auto">
@@ -505,11 +522,7 @@ const Index = () => {
 
           <TabsContent value="calculations" className="container mx-auto px-4 py-8 flex-1 overflow-auto">
             <Card>
-              <CardHeader>
-                <CardTitle>Calculations</CardTitle>
-                <CardDescription>Tools for tax, interest, and currency conversion.</CardDescription>
-              </CardHeader>
-              <CardContent>
+              <CardContent className="p-0 pt-6">
                 <Tabs defaultValue="tax" className="w-full">
                   <TabsList className="grid w-full grid-cols-3 mb-4">
                     <TabsTrigger value="tax" icon={<Percent className="w-4 h-4" />}>
