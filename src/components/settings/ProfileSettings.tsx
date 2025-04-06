@@ -6,13 +6,16 @@ import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Session, User } from '@supabase/supabase-js'; // Changed import source
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import PasswordSettings from './PasswordSettings';
 
 interface ProfileSettingsProps {
   user: User | null;
   onUpdate: (profileData: { name: string; phone: string }) => Promise<void>;
+  onPasswordChange?: (currentPassword: string, newPassword: string) => Promise<void>;
 }
 
-const ProfileSettings = ({ user, onUpdate }: ProfileSettingsProps) => {
+const ProfileSettings = ({ user, onUpdate, onPasswordChange }: ProfileSettingsProps) => {
   const [name, setName] = useState<string>('');
   const [email, setEmail] = useState<string>('');
   const [phone, setPhone] = useState<string>('');
@@ -29,9 +32,9 @@ const ProfileSettings = ({ user, onUpdate }: ProfileSettingsProps) => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    
+
     try {
-      await onUpdate({ 
+      await onUpdate({
         name,
         phone
       });
@@ -59,25 +62,25 @@ const ProfileSettings = ({ user, onUpdate }: ProfileSettingsProps) => {
           Update your personal information.
         </p>
       </div>
-      
+
       <div className="flex flex-col md:flex-row items-start md:items-center gap-4">
         <Avatar className="h-16 w-16">
           <AvatarImage src={user?.user_metadata?.avatar_url || ''} alt={name} />
           <AvatarFallback className="text-lg">{getInitials(name)}</AvatarFallback>
         </Avatar>
-        
+
         <div className="space-y-1 flex-1">
           <h3 className="font-medium">{name || 'Your Name'}</h3>
           <p className="text-sm text-muted-foreground">{email}</p>
         </div>
-        
+
         <Button variant="outline" size="sm" className="mt-2 md:mt-0">
           Change Avatar
         </Button>
       </div>
-      
+
       <Separator />
-      
+
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-2">
@@ -89,7 +92,7 @@ const ProfileSettings = ({ user, onUpdate }: ProfileSettingsProps) => {
               placeholder="Enter your full name"
             />
           </div>
-          
+
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
             <Input
@@ -103,7 +106,7 @@ const ProfileSettings = ({ user, onUpdate }: ProfileSettingsProps) => {
               Your email cannot be changed.
             </p>
           </div>
-          
+
           <div className="space-y-2">
             <Label htmlFor="phone">Phone Number</Label>
             <Input
@@ -114,11 +117,29 @@ const ProfileSettings = ({ user, onUpdate }: ProfileSettingsProps) => {
             />
           </div>
         </div>
-        
+
         <div className="flex justify-end">
-          <Button type="submit" disabled={isLoading}>
-            {isLoading ? 'Saving...' : 'Save Changes'}
-          </Button>
+          <div className="flex gap-2">
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button variant="outline" type="button">
+                  Change Password
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Change Password</DialogTitle>
+                  <DialogDescription>
+                    Update your password to keep your account secure.
+                  </DialogDescription>
+                </DialogHeader>
+                <PasswordSettings onPasswordChange={onPasswordChange} />
+              </DialogContent>
+            </Dialog>
+            <Button type="submit" disabled={isLoading}>
+              {isLoading ? 'Saving...' : 'Save Changes'}
+            </Button>
+          </div>
         </div>
       </form>
     </div>
