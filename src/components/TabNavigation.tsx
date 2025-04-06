@@ -1,11 +1,11 @@
 import { TabKey } from '@/lib/types';
 import { ExtendedTabKey } from './TabContent';
-import { 
-  Package, 
-  Truck, 
-  ShoppingCart, 
-  CreditCard, 
-  FileText, 
+import {
+  Package,
+  Truck,
+  ShoppingCart,
+  CreditCard,
+  FileText,
   Paperclip
 } from 'lucide-react';
 
@@ -16,16 +16,16 @@ interface TabNavigationProps {
   isMobile?: boolean; // Add isMobile prop
 }
 
-const TabNavigation: React.FC<TabNavigationProps> = ({ 
-  activeTab, 
-  onTabChange, 
-  disabledTabs, 
-  isMobile 
+const TabNavigation: React.FC<TabNavigationProps> = ({
+  activeTab,
+  onTabChange,
+  disabledTabs,
+  isMobile
 }) => {
   const tabs = [
-    { key: TabKey.LOAD_BUY, label: 'Purchase', icon: <Package className="h-4 w-4" /> },
+    { key: TabKey.PURCHASES, label: 'Purchases', icon: <Package className="h-4 w-4" /> },
     { key: TabKey.TRANSPORTATION, label: 'Transportation', icon: <Truck className="h-4 w-4" /> },
-    { key: TabKey.LOAD_SOLD, label: 'Sale', icon: <ShoppingCart className="h-4 w-4" /> },
+    { key: TabKey.SALES, label: 'Sales', icon: <ShoppingCart className="h-4 w-4" /> },
     { key: TabKey.PAYMENTS, label: 'Payments', icon: <CreditCard className="h-4 w-4" /> },
     { key: TabKey.NOTES, label: 'Notes', icon: <FileText className="h-4 w-4" /> },
     { key: TabKey.ATTACHMENTS, label: 'Attachments', icon: <Paperclip className="h-4 w-4" /> },

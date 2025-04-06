@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import { Transaction } from '@/lib/types';
-import { dbManager } from '@/lib/db';
+import { transactionService } from '@/lib/transaction-service';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/AuthContext';
 
@@ -16,13 +16,23 @@ export const useTransactions = () => {
 
   const loadTransactions = async () => {
     try {
+      if (!user?.id) return;
+
       setLoading(true);
-      // Get transactions for the current user only
-      const data = await dbManager.getAllTransactions(user?.id);
-      
-      // No mock transaction creation - just set the actual user data
-      setTransactions(data);
-      setFilteredTransactions(data);
+      console.log('Loading transactions for user:', user.id);
+
+      // Get transactions for the current user only using the transaction service
+      const data = await transactionService.getAllTransactions(user.id);
+      console.log(`Loaded ${data.length} transactions:`, data.map(t => ({ id: t.id, name: t.name })));
+
+      // Check for duplicates before setting state
+      const uniqueTransactions = removeDuplicateTransactions(data);
+      if (uniqueTransactions.length !== data.length) {
+        console.log(`Removed ${data.length - uniqueTransactions.length} duplicate transactions`);
+      }
+
+      setTransactions(uniqueTransactions);
+      setFilteredTransactions(uniqueTransactions);
     } catch (error) {
       console.error('Failed to load transactions:', error);
       toast({
@@ -35,21 +45,33 @@ export const useTransactions = () => {
     }
   };
 
+  // Helper function to remove duplicate transactions
+  const removeDuplicateTransactions = (transactions: Transaction[]): Transaction[] => {
+    const uniqueIds = new Set<string>();
+    return transactions.filter(transaction => {
+      if (uniqueIds.has(transaction.id)) {
+        return false;
+      }
+      uniqueIds.add(transaction.id);
+      return true;
+    });
+  };
+
   // Filter transactions when searchQuery or statusFilter changes
   useEffect(() => {
     let filtered = transactions;
-    
+
     // Status filter based on keywords like "pending", "completed", "success", etc.
     if (statusFilter) {
-      filtered = filtered.filter(transaction => 
+      filtered = filtered.filter(transaction =>
         transaction.status === statusFilter
       );
     }
-    
+
     // Text search filter
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
-      
+
       // Special case handling for status keywords in search
       if (query === 'pending' || query === 'pending transaction') {
         filtered = filtered.filter(transaction => transaction.status === 'pending');
@@ -58,17 +80,14 @@ export const useTransactions = () => {
       } else if (query === 'cancelled' || query === 'canceled' || query === 'cancelled transaction') {
         filtered = filtered.filter(transaction => transaction.status === 'cancelled');
       } else {
-        // Regular search across multiple fields
-        filtered = filtered.filter(transaction => 
+        // Regular search across transaction name and ID
+        filtered = filtered.filter(transaction =>
           transaction.name?.toLowerCase().includes(query) ||
-          transaction.id.toLowerCase().includes(query) ||
-          (transaction.loadBuy?.supplierName?.toLowerCase().includes(query)) ||
-          (transaction.loadSold?.buyerName?.toLowerCase().includes(query)) ||
-          (transaction.loadBuy?.goodsName?.toLowerCase().includes(query))
+          transaction.id.toLowerCase().includes(query)
         );
       }
     }
-    
+
     setFilteredTransactions(filtered);
   }, [searchQuery, statusFilter, transactions]);
 

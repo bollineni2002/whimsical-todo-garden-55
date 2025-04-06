@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Application Recovery</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+      line-height: 1.6;
+      padding: 20px;
+      max-width: 800px;
+      margin: 0 auto;
+      color: #333;
+    }
+    .card {
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    h1, h2 {
+      margin-top: 0;
+      color: #2563eb;
+    }
+    button {
+      background-color: #2563eb;
+      color: white;
+      border: none;
+      padding: 10px 15px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 14px;
+      margin-right: 10px;
+      margin-bottom: 10px;
+      transition: background-color 0.2s;
+    }
+    button:hover {
+      background-color: #1d4ed8;
+    }
+    button.danger {
+      background-color: #dc2626;
+    }
+    button.danger:hover {
+      background-color: #b91c1c;
+    }
+    button.success {
+      background-color: #10b981;
+    }
+    button.success:hover {
+      background-color: #059669;
+    }
+    pre {
+      background-color: #f5f5f5;
+      padding: 10px;
+      border-radius: 4px;
+      overflow-x: auto;
+      font-size: 14px;
+    }
+    .error {
+      color: #dc2626;
+      font-weight: bold;
+    }
+    .success {
+      color: #10b981;
+      font-weight: bold;
+    }
+    .warning {
+      color: #f59e0b;
+      font-weight: bold;
+    }
+    .logs {
+      max-height: 200px;
+      overflow-y: auto;
+      background-color: #f5f5f5;
+      padding: 10px;
+      border-radius: 4px;
+      font-family: monospace;
+      font-size: 14px;
+      margin-top: 10px;
+    }
+    .action-group {
+      margin-bottom: 20px;
+    }
+    .action-buttons {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Application Recovery</h1>
+    <p>This page helps recover from issues with the application. Use the options below to fix common problems.</p>
+    
+    <div class="action-group">
+      <h2>Quick Recovery</h2>
+      <p>These options will help you quickly recover from common issues.</p>
+      <div class="action-buttons">
+        <button id="quickFix" class="success">Quick Fix (Recommended)</button>
+        <button id="fullRecovery" class="danger">Full Recovery (Last Resort)</button>
+      </div>
+    </div>
+    
+    <div class="action-group">
+      <h2>Advanced Options</h2>
+      <p>Use these options if you know what you're doing.</p>
+      <div class="action-buttons">
+        <button id="clearLocalStorage">Clear Local Storage</button>
+        <button id="clearSessionStorage">Clear Session Storage</button>
+        <button id="clearIndexedDB">Clear IndexedDB</button>
+        <button id="clearCache">Clear Cache</button>
+        <button id="clearServiceWorkers">Clear Service Workers</button>
+      </div>
+    </div>
+    
+    <div class="action-group">
+      <h2>Return to Application</h2>
+      <div class="action-buttons">
+        <button id="returnToApp">Return to App</button>
+        <button id="goToLogin">Go to Login</button>
+        <button id="goToFallback">Go to Fallback Mode</button>
+      </div>
+    </div>
+    
+    <div>
+      <h2>Logs</h2>
+      <div id="logs" class="logs"></div>
+    </div>
+  </div>
+  
+  <script src="recovery.js"></script>
+  <script>
+    // Function to add log message
+    function addLog(message, type = 'info') {
+      const logsElement = document.getElementById('logs');
+      const logEntry = document.createElement('div');
+      logEntry.textContent = `${new Date().toLocaleTimeString()}: ${message}`;
+      
+      if (type === 'error') {
+        logEntry.classList.add('error');
+      } else if (type === 'success') {
+        logEntry.classList.add('success');
+      } else if (type === 'warning') {
+        logEntry.classList.add('warning');
+      }
+      
+      logsElement.appendChild(logEntry);
+      logsElement.scrollTop = logsElement.scrollHeight;
+      
+      console.log(message);
+    }
+    
+    // Add event listeners
+    document.getElementById('quickFix').addEventListener('click', async () => {
+      addLog('Performing quick fix...', 'info');
+      try {
+        await window.appRecovery.performMinimalRecovery();
+        addLog('Quick fix completed successfully!', 'success');
+      } catch (error) {
+        addLog(`Error performing quick fix: ${error.message}`, 'error');
+      }
+    });
+    
+    document.getElementById('fullRecovery').addEventListener('click', async () => {
+      if (confirm('This will clear ALL application data. Are you sure?')) {
+        addLog('Performing full recovery...', 'warning');
+        try {
+          await window.appRecovery.performFullRecovery();
+          addLog('Full recovery completed successfully!', 'success');
+        } catch (error) {
+          addLog(`Error performing full recovery: ${error.message}`, 'error');
+        }
+      }
+    });
+    
+    document.getElementById('clearLocalStorage').addEventListener('click', () => {
+      addLog('Clearing local storage...', 'info');
+      try {
+        const result = window.appRecovery.clearLocalStorage();
+        if (result) {
+          addLog('Local storage cleared successfully!', 'success');
+        } else {
+          addLog('Failed to clear local storage', 'error');
+        }
+      } catch (error) {
+        addLog(`Error clearing local storage: ${error.message}`, 'error');
+      }
+    });
+    
+    document.getElementById('clearSessionStorage').addEventListener('click', () => {
+      addLog('Clearing session storage...', 'info');
+      try {
+        const result = window.appRecovery.clearSessionStorage();
+        if (result) {
+          addLog('Session storage cleared successfully!', 'success');
+        } else {
+          addLog('Failed to clear session storage', 'error');
+        }
+      } catch (error) {
+        addLog(`Error clearing session storage: ${error.message}`, 'error');
+      }
+    });
+    
+    document.getElementById('clearIndexedDB').addEventListener('click', async () => {
+      addLog('Clearing IndexedDB...', 'info');
+      try {
+        const result = await window.appRecovery.clearIndexedDB();
+        if (result) {
+          addLog('IndexedDB cleared successfully!', 'success');
+        } else {
+          addLog('Failed to clear some IndexedDB databases', 'warning');
+        }
+      } catch (error) {
+        addLog(`Error clearing IndexedDB: ${error.message}`, 'error');
+      }
+    });
+    
+    document.getElementById('clearCache').addEventListener('click', async () => {
+      addLog('Clearing cache...', 'info');
+      try {
+        const result = await window.appRecovery.clearCacheStorage();
+        if (result) {
+          addLog('Cache cleared successfully!', 'success');
+        } else {
+          addLog('Failed to clear cache or cache API not available', 'warning');
+        }
+      } catch (error) {
+        addLog(`Error clearing cache: ${error.message}`, 'error');
+      }
+    });
+    
+    document.getElementById('clearServiceWorkers').addEventListener('click', async () => {
+      addLog('Clearing service workers...', 'info');
+      try {
+        const result = await window.appRecovery.clearServiceWorkers();
+        if (result) {
+          addLog('Service workers cleared successfully!', 'success');
+        } else {
+          addLog('Failed to clear service workers or Service Worker API not available', 'warning');
+        }
+      } catch (error) {
+        addLog(`Error clearing service workers: ${error.message}`, 'error');
+      }
+    });
+    
+    document.getElementById('returnToApp').addEventListener('click', () => {
+      window.location.href = '/';
+    });
+    
+    document.getElementById('goToLogin').addEventListener('click', () => {
+      window.location.href = '/auth';
+    });
+    
+    document.getElementById('goToFallback').addEventListener('click', () => {
+      window.location.href = '/?fallback=true';
+    });
+    
+    // Add initial log
+    addLog('Recovery page loaded successfully', 'success');
+  </script>
+</body>
+</html>

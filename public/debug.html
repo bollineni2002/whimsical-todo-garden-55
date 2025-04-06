@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Debug Page</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+      line-height: 1.6;
+      padding: 20px;
+      max-width: 800px;
+      margin: 0 auto;
+    }
+    .card {
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    h1 {
+      margin-top: 0;
+    }
+    button {
+      background-color: #4f46e5;
+      color: white;
+      border: none;
+      padding: 10px 15px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 14px;
+      margin-right: 10px;
+      margin-bottom: 10px;
+    }
+    button:hover {
+      background-color: #4338ca;
+    }
+    pre {
+      background-color: #f5f5f5;
+      padding: 10px;
+      border-radius: 4px;
+      overflow-x: auto;
+      font-size: 14px;
+    }
+    .error {
+      color: #ef4444;
+      font-weight: bold;
+    }
+    .success {
+      color: #10b981;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Application Debug</h1>
+    <p>This page helps diagnose white screen issues in the main application.</p>
+    
+    <div>
+      <h2>1. Check Browser Console</h2>
+      <p>Open your browser's developer console (F12 or right-click > Inspect > Console) to see any JavaScript errors.</p>
+    </div>
+    
+    <div>
+      <h2>2. Test Supabase Connection</h2>
+      <button id="testSupabase">Test Supabase Connection</button>
+      <div id="supabaseResult"></div>
+    </div>
+    
+    <div>
+      <h2>3. Check Local Storage</h2>
+      <button id="checkStorage">Check Local Storage</button>
+      <div id="storageResult"></div>
+    </div>
+    
+    <div>
+      <h2>4. Clear Application Data</h2>
+      <button id="clearStorage">Clear Local Storage</button>
+      <button id="clearIndexedDB">Clear IndexedDB</button>
+      <div id="clearResult"></div>
+    </div>
+    
+    <div>
+      <h2>5. Application Info</h2>
+      <pre id="appInfo"></pre>
+    </div>
+  </div>
+
+  <script>
+    // Display application info
+    document.getElementById('appInfo').textContent = `
+User Agent: ${navigator.userAgent}
+Online: ${navigator.onLine}
+Platform: ${navigator.platform}
+Language: ${navigator.language}
+Cookies Enabled: ${navigator.cookieEnabled}
+    `;
+
+    // Test Supabase connection
+    document.getElementById('testSupabase').addEventListener('click', async () => {
+      const resultDiv = document.getElementById('supabaseResult');
+      resultDiv.innerHTML = '<p>Testing Supabase connection...</p>';
+      
+      try {
+        // Try to load the Supabase script
+        const script = document.createElement('script');
+        script.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';
+        script.onload = async () => {
+          try {
+            // Get Supabase URL and key from localStorage if available
+            let supabaseUrl = localStorage.getItem('supabase.url');
+            let supabaseKey = localStorage.getItem('supabase.key');
+            
+            if (!supabaseUrl || !supabaseKey) {
+              resultDiv.innerHTML = '<p class="error">Supabase URL or key not found in localStorage.</p>';
+              return;
+            }
+            
+            // Create Supabase client
+            const { createClient } = supabase;
+            const client = createClient(supabaseUrl, supabaseKey);
+            
+            // Try a simple query
+            const { data, error } = await client.from('profiles').select('id').limit(1);
+            
+            if (error) {
+              resultDiv.innerHTML = `<p class="error">Error connecting to Supabase: ${error.message}</p>`;
+            } else {
+              resultDiv.innerHTML = `<p class="success">Successfully connected to Supabase!</p>`;
+            }
+          } catch (err) {
+            resultDiv.innerHTML = `<p class="error">Error: ${err.message}</p>`;
+          }
+        };
+        script.onerror = () => {
+          resultDiv.innerHTML = '<p class="error">Failed to load Supabase script.</p>';
+        };
+        document.body.appendChild(script);
+      } catch (err) {
+        resultDiv.innerHTML = `<p class="error">Error: ${err.message}</p>`;
+      }
+    });
+
+    // Check local storage
+    document.getElementById('checkStorage').addEventListener('click', () => {
+      const resultDiv = document.getElementById('storageResult');
+      try {
+        const items = { ...localStorage };
+        const filteredItems = {};
+        
+        // Filter out sensitive information
+        for (const key in items) {
+          if (key.includes('token') || key.includes('key')) {
+            filteredItems[key] = '[REDACTED]';
+          } else {
+            filteredItems[key] = items[key];
+          }
+        }
+        
+        resultDiv.innerHTML = `<pre>${JSON.stringify(filteredItems, null, 2)}</pre>`;
+      } catch (err) {
+        resultDiv.innerHTML = `<p class="error">Error: ${err.message}</p>`;
+      }
+    });
+
+    // Clear local storage
+    document.getElementById('clearStorage').addEventListener('click', () => {
+      const resultDiv = document.getElementById('clearResult');
+      try {
+        localStorage.clear();
+        resultDiv.innerHTML = '<p class="success">Local storage cleared successfully!</p>';
+      } catch (err) {
+        resultDiv.innerHTML = `<p class="error">Error clearing local storage: ${err.message}</p>`;
+      }
+    });
+
+    // Clear IndexedDB
+    document.getElementById('clearIndexedDB').addEventListener('click', async () => {
+      const resultDiv = document.getElementById('clearResult');
+      try {
+        resultDiv.innerHTML = '<p>Attempting to clear IndexedDB...</p>';
+        
+        // Get all IndexedDB databases
+        const databases = await window.indexedDB.databases();
+        
+        if (databases.length === 0) {
+          resultDiv.innerHTML = '<p>No IndexedDB databases found.</p>';
+          return;
+        }
+        
+        let successCount = 0;
+        let errorCount = 0;
+        
+        // Delete each database
+        for (const db of databases) {
+          try {
+            await new Promise((resolve, reject) => {
+              const request = window.indexedDB.deleteDatabase(db.name);
+              request.onsuccess = () => resolve();
+              request.onerror = () => reject(new Error(`Failed to delete database ${db.name}`));
+            });
+            successCount++;
+          } catch (err) {
+            console.error(`Error deleting database ${db.name}:`, err);
+            errorCount++;
+          }
+        }
+        
+        resultDiv.innerHTML = `<p class="success">IndexedDB cleanup: ${successCount} databases deleted successfully, ${errorCount} failed.</p>`;
+      } catch (err) {
+        resultDiv.innerHTML = `<p class="error">Error clearing IndexedDB: ${err.message}</p>`;
+      }
+    });
+  </script>
+</body>
+</html>

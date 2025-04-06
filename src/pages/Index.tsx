@@ -25,7 +25,7 @@ import { useNavigate } from 'react-router-dom';
 import TaxCalculator from '@/components/calculations/TaxCalculator';
 import InterestCalculator from '@/components/calculations/InterestCalculator';
 import CurrencyConverter from '@/components/calculations/CurrencyConverter';
-import DailyTransactionsLog from '@/components/tab-contents/DailyTransactionsLog';
+import PersistentDailyTransactionsLog from '@/components/tab-contents/PersistentDailyTransactionsLog';
 import AuthHeader from '@/components/AuthHeader';
 
 interface Buyer {
@@ -45,15 +45,15 @@ interface Seller {
 }
 
 const Index = () => {
-  const { 
-    filteredTransactions, 
-    loading, 
-    searchQuery, 
+  const {
+    filteredTransactions,
+    loading,
+    searchQuery,
     setSearchQuery,
     setStatusFilter,
     loadTransactions
   } = useTransactions();
-  
+
   const navigate = useNavigate();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [businessName, setBusinessName] = useState('TransactLy');
@@ -103,11 +103,11 @@ const Index = () => {
     try {
       const savedBuyers = await localStorage.getItem('buyers');
       const savedSellers = await localStorage.getItem('sellers');
-      
+
       if (savedBuyers) {
         setBuyers(JSON.parse(savedBuyers));
       }
-      
+
       if (savedSellers) {
         setSellers(JSON.parse(savedSellers));
       }
@@ -136,7 +136,7 @@ const Index = () => {
         });
         return;
       }
-      
+
       const newBuyerEntry: Buyer = {
         id: `buyer-${Date.now()}`,
         name: newBuyer.name,
@@ -144,14 +144,14 @@ const Index = () => {
         phone: newBuyer.phone,
         date: new Date().toISOString(),
       };
-      
+
       const updatedBuyers = [...buyers, newBuyerEntry];
       setBuyers(updatedBuyers);
       await localStorage.setItem('buyers', JSON.stringify(updatedBuyers));
-      
+
       setNewBuyer({ name: '', email: '', phone: '' });
       setIsBuyerDialogOpen(false);
-      
+
       toast({
         title: 'Success',
         description: 'Buyer added successfully',
@@ -176,7 +176,7 @@ const Index = () => {
         });
         return;
       }
-      
+
       const newSellerEntry: Seller = {
         id: `seller-${Date.now()}`,
         name: newSeller.name,
@@ -184,14 +184,14 @@ const Index = () => {
         phone: newSeller.phone,
         date: new Date().toISOString(),
       };
-      
+
       const updatedSellers = [...sellers, newSellerEntry];
       setSellers(updatedSellers);
       await localStorage.setItem('sellers', JSON.stringify(updatedSellers));
-      
+
       setNewSeller({ name: '', email: '', phone: '' });
       setIsSellerDialogOpen(false);
-      
+
       toast({
         title: 'Success',
         description: 'Seller added successfully',
@@ -229,19 +229,19 @@ const Index = () => {
   }, []);
 
   return (
-    <motion.div 
+    <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       className="min-h-screen flex flex-col"
     >
-      <Header 
-        onExport={handleExport} 
-        businessName={getPageTitle()} 
-      /> 
+      <Header
+        onExport={handleExport}
+        businessName={getPageTitle()}
+      />
 
       <div className="flex-1 overflow-auto">
-        <Tabs 
-          defaultValue="dashboard" 
+        <Tabs
+          defaultValue="dashboard"
           value={activeTab}
           onValueChange={setActiveTab}
           className="w-full flex flex-col h-[calc(100vh-64px)]"
@@ -250,28 +250,28 @@ const Index = () => {
             <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-4 gap-4">
               <div className="w-full md:w-auto">
                 <div className="flex flex-col md:flex-row gap-4">
-                  <SearchBar 
+                  <SearchBar
                     searchQuery={searchQuery}
                     setSearchQuery={setSearchQuery}
                   />
                   <div className="flex space-x-2">
-                    <Button 
-                      variant={filteredTransactions.length === 0 ? "default" : "outline"} 
+                    <Button
+                      variant={filteredTransactions.length === 0 ? "default" : "outline"}
                       size="sm"
                       onClick={() => handleFilterChange(null)}
                     >
                       All
                     </Button>
-                    <Button 
-                      variant="outline" 
+                    <Button
+                      variant="outline"
                       size="sm"
                       onClick={() => handleFilterChange('pending')}
                       className="border-amber-500 text-amber-500 hover:bg-amber-50"
                     >
                       Pending
                     </Button>
-                    <Button 
-                      variant="outline" 
+                    <Button
+                      variant="outline"
                       size="sm"
                       onClick={() => handleFilterChange('completed')}
                       className="border-green-500 text-green-500 hover:bg-green-50"
@@ -281,7 +281,7 @@ const Index = () => {
                   </div>
                 </div>
               </div>
-              
+
               <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                 <DialogTrigger asChild>
                   <Button onClick={() => setIsDialogOpen(true)}>
@@ -289,26 +289,26 @@ const Index = () => {
                     New Transaction
                   </Button>
                 </DialogTrigger>
-                <CreateTransactionDialog 
+                <CreateTransactionDialog
                   onTransactionCreated={() => {
                     setIsDialogOpen(false);
                     loadTransactions();
-                  }} 
+                  }}
                 />
               </Dialog>
             </div>
-            
+
             <AnimatePresence>
               {loading ? (
                 <LoadingSpinner />
               ) : filteredTransactions.length === 0 ? (
-                <EmptyState 
+                <EmptyState
                   hasSearchQuery={searchQuery.length > 0}
                   onCreateTransaction={handleCreateTransaction}
                 />
               ) : (
-                <TransactionList 
-                  transactions={filteredTransactions} 
+                <TransactionList
+                  transactions={filteredTransactions}
                   loading={loading}
                   onRefresh={loadTransactions}
                   onCreateTransaction={handleCreateTransaction}
@@ -375,33 +375,33 @@ const Index = () => {
                         <div className="grid gap-4 py-4">
                           <div className="grid grid-cols-4 items-center gap-4">
                             <Label htmlFor="buyerName" className="text-right">Name</Label>
-                            <Input 
-                              id="buyerName" 
+                            <Input
+                              id="buyerName"
                               name="name"
-                              className="col-span-3" 
-                              placeholder="Enter buyer name" 
+                              className="col-span-3"
+                              placeholder="Enter buyer name"
                               value={newBuyer.name}
                               onChange={handleBuyerInputChange}
                             />
                           </div>
                           <div className="grid grid-cols-4 items-center gap-4">
                             <Label htmlFor="buyerEmail" className="text-right">Email</Label>
-                            <Input 
-                              id="buyerEmail" 
+                            <Input
+                              id="buyerEmail"
                               name="email"
-                              className="col-span-3" 
-                              placeholder="Enter buyer email" 
+                              className="col-span-3"
+                              placeholder="Enter buyer email"
                               value={newBuyer.email}
                               onChange={handleBuyerInputChange}
                             />
                           </div>
                           <div className="grid grid-cols-4 items-center gap-4">
                             <Label htmlFor="buyerPhone" className="text-right">Phone</Label>
-                            <Input 
-                              id="buyerPhone" 
+                            <Input
+                              id="buyerPhone"
                               name="phone"
-                              className="col-span-3" 
-                              placeholder="Enter buyer phone" 
+                              className="col-span-3"
+                              placeholder="Enter buyer phone"
                               value={newBuyer.phone}
                               onChange={handleBuyerInputChange}
                             />
@@ -464,33 +464,33 @@ const Index = () => {
                         <div className="grid gap-4 py-4">
                           <div className="grid grid-cols-4 items-center gap-4">
                             <Label htmlFor="sellerName" className="text-right">Name</Label>
-                            <Input 
-                              id="sellerName" 
+                            <Input
+                              id="sellerName"
                               name="name"
-                              className="col-span-3" 
-                              placeholder="Enter seller name" 
+                              className="col-span-3"
+                              placeholder="Enter seller name"
                               value={newSeller.name}
                               onChange={handleSellerInputChange}
                             />
                           </div>
                           <div className="grid grid-cols-4 items-center gap-4">
                             <Label htmlFor="sellerEmail" className="text-right">Email</Label>
-                            <Input 
-                              id="sellerEmail" 
+                            <Input
+                              id="sellerEmail"
                               name="email"
-                              className="col-span-3" 
-                              placeholder="Enter seller email" 
+                              className="col-span-3"
+                              placeholder="Enter seller email"
                               value={newSeller.email}
                               onChange={handleSellerInputChange}
                             />
                           </div>
                           <div className="grid grid-cols-4 items-center gap-4">
                             <Label htmlFor="sellerPhone" className="text-right">Phone</Label>
-                            <Input 
-                              id="sellerPhone" 
+                            <Input
+                              id="sellerPhone"
                               name="phone"
-                              className="col-span-3" 
-                              placeholder="Enter seller phone" 
+                              className="col-span-3"
+                              placeholder="Enter seller phone"
                               value={newSeller.phone}
                               onChange={handleSellerInputChange}
                             />
@@ -509,12 +509,18 @@ const Index = () => {
           </TabsContent>
 
           <TabsContent value="transactions" className="container mx-auto px-4 py-8 flex-1 overflow-auto relative">
-            <DailyTransactionsLog isFormOpen={isTransactionLogOpen} setIsFormOpen={setIsTransactionLogOpen} />
-            
-            <Button 
-              size="icon" 
+            <PersistentDailyTransactionsLog
+              isFormOpen={isTransactionLogOpen}
+              setIsFormOpen={setIsTransactionLogOpen}
+              dialogModeRef={{ current: true }}
+            />
+
+            <Button
+              size="icon"
               className="h-12 w-12 rounded-full fixed bottom-24 right-6 shadow-lg z-10"
-              onClick={() => setIsTransactionLogOpen(true)}
+              onClick={() => {
+                setIsTransactionLogOpen(true);
+              }}
             >
               <Plus className="h-5 w-5" />
             </Button>
@@ -536,7 +542,7 @@ const Index = () => {
                     </TabsTrigger>
                   </TabsList>
                   <TabsContent value="tax">
-                    <TaxCalculator /> 
+                    <TaxCalculator />
                   </TabsContent>
                   <TabsContent value="interest">
                     <InterestCalculator />
@@ -565,10 +571,10 @@ const Index = () => {
               </CardContent>
             </Card>
           </TabsContent>
-          
+
           <div className="mt-auto sticky bottom-0 z-10">
             <TabsList className="w-full bg-background border-t flex justify-between rounded-none">
-              <TabsTrigger 
+              <TabsTrigger
                 value="dashboard"
                 className="flex-1 py-3"
               >
@@ -577,7 +583,7 @@ const Index = () => {
                   <span className="text-xs mt-1">Dashboard</span>
                 </div>
               </TabsTrigger>
-              <TabsTrigger 
+              <TabsTrigger
                 value="transactions"
                 className="flex-1 py-3"
               >
@@ -586,7 +592,7 @@ const Index = () => {
                   <span className="text-xs mt-1">Transactions</span>
                 </div>
               </TabsTrigger>
-              <TabsTrigger 
+              <TabsTrigger
                 value="calculations"
                 className="flex-1 py-3"
               >
@@ -595,7 +601,7 @@ const Index = () => {
                   <span className="text-xs mt-1">Calculations</span>
                 </div>
               </TabsTrigger>
-              <TabsTrigger 
+              <TabsTrigger
                 value="clients-vendors"
                 className="flex-1 py-3"
               >

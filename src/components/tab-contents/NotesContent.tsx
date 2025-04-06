@@ -1,22 +1,20 @@
 
 import React, { useState } from 'react';
-import { Transaction, Note } from '@/lib/types';
+import { CompleteTransaction, TransactionNote } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { dbManager } from '@/lib/db';
+import { transactionService } from '@/lib/transaction-service';
 import { useToast } from '@/hooks/use-toast';
-import { generateId } from '@/lib/utils';
 import { Plus, Trash2, Edit, Save } from 'lucide-react';
 
 interface NotesContentProps {
-  notes: Note[];
-  transaction: Transaction;
+  transaction: CompleteTransaction;
   refreshTransaction: () => Promise<void>;
 }
 
-const NotesContent: React.FC<NotesContentProps> = ({ notes, transaction, refreshTransaction }) => {
+const NotesContent: React.FC<NotesContentProps> = ({ transaction, refreshTransaction }) => {
   const [isAddingNote, setIsAddingNote] = useState(false);
   const [isEditingNoteId, setIsEditingNoteId] = useState<string | null>(null);
   const [isDeletingNoteId, setIsDeletingNoteId] = useState<string | null>(null);
@@ -35,28 +33,16 @@ const NotesContent: React.FC<NotesContentProps> = ({ notes, transaction, refresh
         return;
       }
 
-      const newNote: Note = {
-        id: generateId('note'),
-        date: new Date().toISOString(),
-        content: newNoteContent.trim(),
-      };
+      await transactionService.addNote(transaction.transaction.id, newNoteContent.trim());
 
-      // Update transaction with new note
-      const updatedTransaction = {
-        ...transaction,
-        notes: [...transaction.notes, newNote],
-      };
-
-      await dbManager.updateTransaction(updatedTransaction);
-      
       toast({
         title: "Success",
         description: "Note added successfully",
       });
-      
+
       setIsAddingNote(false);
       setNewNoteContent('');
-      
+
       await refreshTransaction();
     } catch (error) {
       console.error('Error adding note:', error);
@@ -68,9 +54,9 @@ const NotesContent: React.FC<NotesContentProps> = ({ notes, transaction, refresh
     }
   };
 
-  const startEditingNote = (note: Note) => {
+  const startEditingNote = (note: TransactionNote) => {
     setIsEditingNoteId(note.id);
-    setEditNoteContent(note.content);
+    setEditNoteContent(note.note);
   };
 
   const cancelEditingNote = () => {
@@ -89,29 +75,27 @@ const NotesContent: React.FC<NotesContentProps> = ({ notes, transaction, refresh
         return;
       }
 
-      // Find the note in the transaction's notes array
-      const updatedNotes = transaction.notes.map(note => 
-        note.id === noteId 
-          ? { ...note, content: editNoteContent.trim() } 
-          : note
-      );
+      // Find the note to update
+      const noteToUpdate = transaction.notes.find(note => note.id === noteId);
 
-      // Update transaction with edited note
-      const updatedTransaction = {
-        ...transaction,
-        notes: updatedNotes,
-      };
+      if (!noteToUpdate) {
+        throw new Error('Note not found');
+      }
 
-      await dbManager.updateTransaction(updatedTransaction);
-      
+      // Update the note
+      await transactionService.updateNote({
+        ...noteToUpdate,
+        note: editNoteContent.trim()
+      });
+
       toast({
         title: "Success",
         description: "Note updated successfully",
       });
-      
+
       setIsEditingNoteId(null);
       setEditNoteContent('');
-      
+
       await refreshTransaction();
     } catch (error) {
       console.error('Error updating note:', error);
@@ -125,24 +109,15 @@ const NotesContent: React.FC<NotesContentProps> = ({ notes, transaction, refresh
 
   const deleteNote = async (noteId: string) => {
     try {
-      // Filter out the note to be deleted
-      const updatedNotes = transaction.notes.filter(note => note.id !== noteId);
+      await transactionService.deleteNote(noteId);
 
-      // Update transaction without the deleted note
-      const updatedTransaction = {
-        ...transaction,
-        notes: updatedNotes,
-      };
-
-      await dbManager.updateTransaction(updatedTransaction);
-      
       toast({
         title: "Success",
         description: "Note deleted successfully",
       });
-      
+
       setIsDeletingNoteId(null);
-      
+
       await refreshTransaction();
     } catch (error) {
       console.error('Error deleting note:', error);
@@ -158,7 +133,7 @@ const NotesContent: React.FC<NotesContentProps> = ({ notes, transaction, refresh
     <div className="space-y-6">
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-xl font-semibold">Notes</h2>
-        <Button 
+        <Button
           onClick={() => setIsAddingNote(true)}
           variant="default"
           size="sm"
@@ -168,30 +143,30 @@ const NotesContent: React.FC<NotesContentProps> = ({ notes, transaction, refresh
         </Button>
       </div>
 
-      {notes.length === 0 ? (
+      {transaction.notes.length === 0 ? (
         <div className="text-center py-8 text-muted-foreground">
           No notes added yet. Add your first note.
         </div>
       ) : (
         <div className="space-y-4">
-          {notes.map((note) => (
+          {transaction.notes.map((note) => (
             <div key={note.id} className="border rounded-lg p-4 hover:bg-accent/5 transition-colors">
               <div className="flex justify-between items-start mb-2">
                 <span className="text-xs text-muted-foreground">
-                  {new Date(note.date).toLocaleDateString()} {new Date(note.date).toLocaleTimeString()}
+                  {note.created_at ? new Date(note.created_at).toLocaleDateString() + ' ' + new Date(note.created_at).toLocaleTimeString() : 'No date'}
                 </span>
                 <div className="flex gap-2">
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
+                  <Button
+                    variant="ghost"
+                    size="sm"
                     onClick={() => startEditingNote(note)}
                     className="h-7 px-2"
                   >
                     <Edit className="h-3.5 w-3.5" />
                   </Button>
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
+                  <Button
+                    variant="ghost"
+                    size="sm"
                     onClick={() => setIsDeletingNoteId(note.id)}
                     className="h-7 px-2 text-destructive hover:text-destructive"
                   >
@@ -199,7 +174,7 @@ const NotesContent: React.FC<NotesContentProps> = ({ notes, transaction, refresh
                   </Button>
                 </div>
               </div>
-              
+
               {isEditingNoteId === note.id ? (
                 <div className="mt-2 space-y-3">
                   <Textarea
@@ -209,16 +184,16 @@ const NotesContent: React.FC<NotesContentProps> = ({ notes, transaction, refresh
                     className="w-full"
                   />
                   <div className="flex justify-end gap-2">
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
+                    <Button
+                      variant="outline"
+                      size="sm"
                       onClick={cancelEditingNote}
                     >
                       Cancel
                     </Button>
-                    <Button 
-                      variant="default" 
-                      size="sm" 
+                    <Button
+                      variant="default"
+                      size="sm"
                       onClick={() => saveEditedNote(note.id)}
                     >
                       <Save className="h-3.5 w-3.5 mr-1" />
@@ -227,7 +202,7 @@ const NotesContent: React.FC<NotesContentProps> = ({ notes, transaction, refresh
                   </div>
                 </div>
               ) : (
-                <p className="whitespace-pre-wrap">{note.content}</p>
+                <p className="whitespace-pre-wrap">{note.note}</p>
               )}
             </div>
           ))}
@@ -268,8 +243,8 @@ const NotesContent: React.FC<NotesContentProps> = ({ notes, transaction, refresh
           <p className="py-4">Are you sure you want to delete this note? This action cannot be undone.</p>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsDeletingNoteId(null)}>Cancel</Button>
-            <Button 
-              variant="destructive" 
+            <Button
+              variant="destructive"
               onClick={() => isDeletingNoteId && deleteNote(isDeletingNoteId)}
             >
               Delete

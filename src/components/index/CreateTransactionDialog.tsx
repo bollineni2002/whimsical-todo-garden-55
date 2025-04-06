@@ -2,16 +2,14 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
-import { dbManager } from '@/lib/db';
-import { Transaction } from '@/lib/types';
-import { generateId } from '@/lib/utils';
+import { transactionService } from '@/lib/transaction-service';
 import { useAuth } from '@/context/AuthContext';
 
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogHeader, 
-  DialogTitle, 
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
   DialogFooter
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -30,31 +28,36 @@ const CreateTransactionDialog = ({ onTransactionCreated }: CreateTransactionDial
 
   const handleCreateTransaction = async () => {
     try {
-      const name = newTransactionName.trim() || `Transaction ${new Date().toLocaleDateString()}`;
-      const newTransaction: Transaction = {
-        id: generateId('txn'),
-        name: name,
-        date: new Date().toISOString(),
-        totalAmount: 0,
-        status: 'pending',
-        payments: [],
-        notes: [],
-        attachments: [],
-        user_id: user?.id // Associate with the current user
-      };
+      if (!user?.id) {
+        throw new Error('User not authenticated');
+      }
 
-      await dbManager.addTransaction(newTransaction);
+      const name = newTransactionName.trim() || `Transaction ${new Date().toLocaleDateString()}`;
+      console.log(`Attempting to create transaction with name: ${name}`);
+
+      // Create transaction using the transaction service
+      // The service now checks for duplicates internally
+      const newTransaction = await transactionService.createTransaction(user.id, name);
+
+      if (!newTransaction) {
+        throw new Error('Failed to create transaction');
+      }
+
+      console.log(`Transaction created/retrieved with ID: ${newTransaction.id}`);
       setNewTransactionName('');
-      
+
       toast({
         title: 'Success',
         description: 'Transaction created successfully',
       });
-      
+
       if (onTransactionCreated) {
+        console.log('Calling onTransactionCreated callback to refresh transaction list');
         onTransactionCreated();
       }
-      
+
+      // Navigate to the transaction details page
+      console.log(`Navigating to transaction details: /transaction/${newTransaction.id}`);
       navigate(`/transaction/${newTransaction.id}`);
     } catch (error) {
       console.error('Failed to create transaction:', error);

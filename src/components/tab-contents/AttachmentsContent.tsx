@@ -1,22 +1,22 @@
 
 import React, { useState, useRef } from 'react';
-import { Transaction, Attachment } from '@/lib/types';
+import { CompleteTransaction, Attachment } from '@/lib/types';
 import { Button } from '@/components/ui/button';
-import { dbManager } from '@/lib/db';
+import { transactionService } from '@/lib/transaction-service';
 import { useToast } from '@/hooks/use-toast';
-import { generateId } from '@/lib/utils';
+import { useAuth } from '@/context/AuthContext';
 import { Download, FileText, Image, Paperclip, Plus, X } from 'lucide-react';
 
 interface AttachmentsContentProps {
-  attachments: Attachment[];
-  transaction: Transaction;
+  transaction: CompleteTransaction;
   refreshTransaction: () => Promise<void>;
 }
 
-const AttachmentsContent: React.FC<AttachmentsContentProps> = ({ attachments, transaction, refreshTransaction }) => {
+const AttachmentsContent: React.FC<AttachmentsContentProps> = ({ transaction, refreshTransaction }) => {
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
+  const { user } = useAuth();
 
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
@@ -30,7 +30,7 @@ const AttachmentsContent: React.FC<AttachmentsContentProps> = ({ attachments, tr
   const handleFileDrop = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     setIsDragging(false);
-    
+
     if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
       handleFileUpload(e.dataTransfer.files);
     }
@@ -44,44 +44,34 @@ const AttachmentsContent: React.FC<AttachmentsContentProps> = ({ attachments, tr
 
   const handleFileUpload = async (files: FileList) => {
     try {
-      const newAttachments: Attachment[] = [];
-      
+      if (!user) {
+        toast({
+          title: "Error",
+          description: "You must be logged in to upload files",
+          variant: "destructive",
+        });
+        return;
+      }
+
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
-        const reader = new FileReader();
-        
-        reader.onload = async (event) => {
-          if (event.target && event.target.result) {
-            const newAttachment: Attachment = {
-              id: generateId('att'),
-              name: file.name,
-              type: file.type,
-              uri: event.target.result as string,
-              date: new Date().toISOString(),
-            };
-            
-            newAttachments.push(newAttachment);
-            
-            // If this is the last file, update the transaction
-            if (i === files.length - 1) {
-              const updatedTransaction = {
-                ...transaction,
-                attachments: [...transaction.attachments, ...newAttachments],
-              };
-              
-              await dbManager.updateTransaction(updatedTransaction);
-              await refreshTransaction();
-              
-              toast({
-                title: "Success",
-                description: `${newAttachments.length} ${newAttachments.length === 1 ? 'file' : 'files'} uploaded successfully`,
-              });
-            }
-          }
-        };
-        
-        reader.readAsDataURL(file);
+
+        // Upload the file
+        await transactionService.addAttachment(
+          transaction.transaction.id,
+          user.id,
+          file,
+          file.name,
+          file.type
+        );
       }
+
+      await refreshTransaction();
+
+      toast({
+        title: "Success",
+        description: `${files.length} ${files.length === 1 ? 'file' : 'files'} uploaded successfully`,
+      });
     } catch (error) {
       console.error('Error uploading files:', error);
       toast({
@@ -94,16 +84,9 @@ const AttachmentsContent: React.FC<AttachmentsContentProps> = ({ attachments, tr
 
   const handleDeleteAttachment = async (id: string) => {
     try {
-      const updatedAttachments = transaction.attachments.filter(attachment => attachment.id !== id);
-      
-      const updatedTransaction = {
-        ...transaction,
-        attachments: updatedAttachments,
-      };
-      
-      await dbManager.updateTransaction(updatedTransaction);
+      await transactionService.deleteAttachment(id);
       await refreshTransaction();
-      
+
       toast({
         title: "Success",
         description: "Attachment deleted successfully",
@@ -130,7 +113,7 @@ const AttachmentsContent: React.FC<AttachmentsContentProps> = ({ attachments, tr
     <div className="space-y-6">
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-xl font-semibold">Attachments</h2>
-        <Button 
+        <Button
           onClick={() => fileInputRef.current?.click()}
           variant="default"
           size="sm"
@@ -138,7 +121,7 @@ const AttachmentsContent: React.FC<AttachmentsContentProps> = ({ attachments, tr
           <Plus className="h-4 w-4 mr-1" />
           Add Attachment
         </Button>
-        <input 
+        <input
           type="file"
           ref={fileInputRef}
           onChange={handleFileInputChange}
@@ -147,7 +130,7 @@ const AttachmentsContent: React.FC<AttachmentsContentProps> = ({ attachments, tr
         />
       </div>
 
-      <div 
+      <div
         className={`border-2 border-dashed rounded-lg p-6 text-center ${isDragging ? 'border-primary bg-primary/10' : 'border-muted-foreground/20'}`}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
@@ -155,8 +138,8 @@ const AttachmentsContent: React.FC<AttachmentsContentProps> = ({ attachments, tr
       >
         <Paperclip className="h-10 w-10 mx-auto text-muted-foreground mb-4" />
         <p className="text-muted-foreground mb-2">Drag and drop files here or</p>
-        <Button 
-          variant="outline" 
+        <Button
+          variant="outline"
           onClick={() => fileInputRef.current?.click()}
         >
           Browse Files
@@ -166,17 +149,17 @@ const AttachmentsContent: React.FC<AttachmentsContentProps> = ({ attachments, tr
         </p>
       </div>
 
-      {attachments.length === 0 ? (
+      {transaction.attachments.length === 0 ? (
         <div className="text-center py-4 text-muted-foreground">
           No attachments added yet.
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-6">
-          {attachments.map((attachment) => (
+          {transaction.attachments.map((attachment) => (
             <div key={attachment.id} className="border rounded-lg p-4 flex flex-col h-full">
               <div className="flex justify-between items-start">
                 <div className="flex items-center gap-2 mb-2">
-                  {getFileIcon(attachment.type)}
+                  {getFileIcon(attachment.file_type)}
                   <span className="font-medium truncate max-w-[150px]">{attachment.name}</span>
                 </div>
                 <Button
@@ -188,23 +171,23 @@ const AttachmentsContent: React.FC<AttachmentsContentProps> = ({ attachments, tr
                   <X className="h-4 w-4" />
                 </Button>
               </div>
-              
+
               <div className="flex-grow flex items-center justify-center my-2">
-                {attachment.type.startsWith('image/') ? (
-                  <img 
-                    src={attachment.uri} 
-                    alt={attachment.name} 
+                {attachment.file_type.startsWith('image/') ? (
+                  <img
+                    src={attachment.uri}
+                    alt={attachment.name}
                     className="max-h-[100px] object-contain"
                   />
                 ) : (
                   <div className="text-muted-foreground text-sm px-2 py-1 bg-muted rounded">
-                    {attachment.type.split('/')[1] || 'File'}
+                    {attachment.file_type.split('/')[1] || 'File'}
                   </div>
                 )}
               </div>
-              
+
               <div className="mt-auto pt-2 flex justify-between items-center text-xs text-muted-foreground">
-                <span>{new Date(attachment.date).toLocaleDateString()}</span>
+                <span>{attachment.created_at ? new Date(attachment.created_at).toLocaleDateString() : 'No date'}</span>
                 <Button
                   variant="ghost"
                   size="sm"

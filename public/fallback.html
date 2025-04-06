@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Application Error</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+      line-height: 1.6;
+      padding: 20px;
+      max-width: 800px;
+      margin: 0 auto;
+      color: #333;
+      background-color: #f9fafb;
+    }
+    .card {
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      background-color: white;
+    }
+    h1, h2 {
+      margin-top: 0;
+      color: #2563eb;
+    }
+    button, a.button {
+      background-color: #2563eb;
+      color: white;
+      border: none;
+      padding: 10px 15px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 14px;
+      margin-right: 10px;
+      margin-bottom: 10px;
+      transition: background-color 0.2s;
+      text-decoration: none;
+      display: inline-block;
+    }
+    button:hover, a.button:hover {
+      background-color: #1d4ed8;
+    }
+    .error-icon {
+      width: 64px;
+      height: 64px;
+      margin-bottom: 20px;
+      color: #dc2626;
+    }
+    .action-buttons {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 20px;
+    }
+    .steps {
+      margin-top: 20px;
+      padding-left: 20px;
+    }
+    .steps li {
+      margin-bottom: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <svg class="error-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+    </svg>
+
+    <h1>Application Error</h1>
+    <p>We're sorry, but the application has encountered an error and cannot be displayed. This could be due to a temporary issue or a problem with your browser's data.</p>
+
+    <h2>Try These Solutions:</h2>
+    <ol class="steps">
+      <li>Refresh the page by clicking the button below or pressing F5 on your keyboard.</li>
+      <li>Try our recovery tools to fix common issues.</li>
+      <li>Try safe mode, which loads a minimal version of the application.</li>
+      <li>Check if the required database tables exist in Supabase:</li>
+      <ul>
+        <li>Go to your Supabase dashboard</li>
+        <li>Navigate to the SQL Editor</li>
+        <li>Copy and paste the SQL from <a href="/create_tables.sql" target="_blank">create_tables.sql</a></li>
+        <li>Run the SQL to create the necessary tables</li>
+      </ul>
+      <li>If the problem persists, clear your browser data for this site and try again.</li>
+    </ol>
+
+    <div class="action-buttons">
+      <a href="/" class="button">Refresh Page</a>
+      <a href="/recovery.html" class="button">Recovery Tools</a>
+      <a href="/?safe=true" class="button">Safe Mode</a>
+      <a href="/create_tables.sql" download class="button">Download SQL</a>
+    </div>
+  </div>
+
+  <script>
+    // Log the error to the console
+    console.log('Application error page loaded');
+
+    // Check if there's an error in sessionStorage
+    const errorInfo = sessionStorage.getItem('app_error');
+    if (errorInfo) {
+      try {
+        const error = JSON.parse(errorInfo);
+        console.error('Stored error:', error);
+      } catch (e) {
+        console.error('Error parsing stored error:', e);
+      }
+    }
+
+    // Add event listener to refresh button
+    document.querySelector('a[href="/"]').addEventListener('click', function(e) {
+      e.preventDefault();
+      window.location.reload();
+    });
+  </script>
+</body>
+</html>

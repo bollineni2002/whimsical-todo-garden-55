@@ -14,16 +14,19 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/AuthContext';
 import ThemeToggle from '@/components/ThemeToggle';
+import SyncStatus from '@/components/common/SyncStatus';
 import { ExportFormat } from '@/lib/exportUtils';
-import { 
-  FileText, 
-  Download, 
-  Settings, 
-  LogOut, 
-  User, 
-  ChevronDown, 
+import {
+  FileText,
+  Download,
+  Settings,
+  LogOut,
+  User,
+  ChevronDown,
   Menu,
-  X
+  X,
+  Users,
+  BookOpen
 } from 'lucide-react';
 
 interface HeaderProps {
@@ -77,8 +80,8 @@ const Header = ({ onExport, businessName }: HeaderProps) => {
       <div className="container mx-auto px-4 py-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center">
-            <h1 
-              className="text-2xl font-bold" 
+            <h1
+              className="text-2xl font-bold"
             >
               {businessName}
             </h1>
@@ -108,7 +111,11 @@ const Header = ({ onExport, businessName }: HeaderProps) => {
               </DropdownMenuContent>
             </DropdownMenu>
 
+            <SyncStatus className="mr-2" />
+
             <ThemeToggle />
+
+            <div className="mx-1"></div>
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -164,30 +171,30 @@ const Header = ({ onExport, businessName }: HeaderProps) => {
               </div>
               <ThemeToggle />
             </div>
-            
+
             <div className="space-y-1 pt-2">
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                className="w-full justify-start" 
+              <Button
+                variant="ghost"
+                size="sm"
+                className="w-full justify-start"
                 onClick={() => navigate('/profile')}
               >
                 <User className="h-4 w-4 mr-2" />
                 Profile
               </Button>
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                className="w-full justify-start" 
+              <Button
+                variant="ghost"
+                size="sm"
+                className="w-full justify-start"
                 onClick={() => navigate('/settings')}
               >
                 <Settings className="h-4 w-4 mr-2" />
                 Settings
               </Button>
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                className="w-full justify-start" 
+              <Button
+                variant="ghost"
+                size="sm"
+                className="w-full justify-start"
                 onClick={() => {
                   setIsMobileMenuOpen(false);
                   onExport('csv');
@@ -196,10 +203,10 @@ const Header = ({ onExport, businessName }: HeaderProps) => {
                 <Download className="h-4 w-4 mr-2" />
                 Export as CSV
               </Button>
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                className="w-full justify-start" 
+              <Button
+                variant="ghost"
+                size="sm"
+                className="w-full justify-start"
                 onClick={() => {
                   setIsMobileMenuOpen(false);
                   onExport('json');
@@ -208,10 +215,10 @@ const Header = ({ onExport, businessName }: HeaderProps) => {
                 <Download className="h-4 w-4 mr-2" />
                 Export as JSON
               </Button>
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                className="w-full justify-start text-red-500 hover:text-red-600 hover:bg-red-50" 
+              <Button
+                variant="ghost"
+                size="sm"
+                className="w-full justify-start text-red-500 hover:text-red-600 hover:bg-red-50"
                 onClick={handleSignOut}
               >
                 <LogOut className="h-4 w-4 mr-2" />

@@ -1,9 +1,9 @@
 
 import { useState, useCallback, useEffect } from 'react';
-import { TabKey, Transaction } from '@/lib/types';
+import { TabKey, CompleteTransaction } from '@/lib/types';
 import TabNavigation from './TabNavigation';
 import TabContent, { ExtendedTabKey } from './TabContent';
-import { dbManager } from '@/lib/db';
+import { transactionService } from '@/lib/transaction-service';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose, DialogTrigger } from '@/components/ui/dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -14,15 +14,29 @@ import { useAuth } from '@/context/AuthContext';
 import { useIsMobile } from '@/hooks/use-mobile';
 
 interface DetailedViewProps {
-  transaction: Transaction;
+  transaction: CompleteTransaction;
   refreshTransaction?: () => Promise<void>;
 }
 
 const DetailedView = ({ transaction, refreshTransaction: externalRefresh }: DetailedViewProps) => {
-  // Use the first tab as the default active tab
-  const [activeTab, setActiveTab] = useState<TabKey | ExtendedTabKey>(TabKey.LOAD_BUY);
-  const [currentTransaction, setCurrentTransaction] = useState<Transaction>(transaction);
+  // Get the active tab from localStorage or use the first tab as default
+  const [activeTab, setActiveTab] = useState<TabKey | ExtendedTabKey>(() => {
+    const savedTab = localStorage.getItem(`transaction_${transaction.transaction.id}_activeTab`);
+    return savedTab ? (savedTab as TabKey | ExtendedTabKey) : TabKey.PURCHASES;
+  });
+  const [currentTransaction, setCurrentTransaction] = useState<CompleteTransaction>(transaction);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+
+  // Update currentTransaction when transaction prop changes
+  useEffect(() => {
+    setCurrentTransaction(transaction);
+  }, [transaction]);
+
+  // Save active tab to localStorage when it changes
+  useEffect(() => {
+    localStorage.setItem(`transaction_${transaction.transaction.id}_activeTab`, activeTab);
+  }, [activeTab, transaction.transaction.id]);
+
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user } = useAuth();
@@ -30,41 +44,63 @@ const DetailedView = ({ transaction, refreshTransaction: externalRefresh }: Deta
 
   const internalRefreshTransaction = useCallback(async () => {
     try {
-      const refreshedTransaction = await dbManager.getTransaction(transaction.id);
+      const refreshedTransaction = await transactionService.getCompleteTransaction(transaction.transaction.id);
       if (refreshedTransaction) {
         setCurrentTransaction(refreshedTransaction);
       }
     } catch (error) {
       console.error("Error refreshing transaction:", error);
     }
-  }, [transaction.id]);
+  }, [transaction.transaction.id]);
 
-  // Use external refresh if provided, otherwise use internal refresh
-  const refreshTransaction = externalRefresh || internalRefreshTransaction;
+  // Wrap the refresh function to preserve the active tab
+  const refreshTransaction = async () => {
+    // Store the current active tab
+    const currentActiveTab = activeTab;
+
+    // Call the external refresh if provided, otherwise use internal refresh
+    if (externalRefresh) {
+      await externalRefresh();
+    } else {
+      await internalRefreshTransaction();
+    }
+
+    // Restore the active tab after refresh
+    // Get the saved tab from localStorage in case it was updated during the refresh
+    const savedTab = localStorage.getItem(`transaction_${transaction.transaction.id}_activeTab`);
+    if (savedTab) {
+      setActiveTab(savedTab as TabKey | ExtendedTabKey);
+    } else {
+      setActiveTab(currentActiveTab);
+    }
+  };
 
   // Check if the transaction should be marked as completed based on payments
   useEffect(() => {
     const checkTransactionStatus = async () => {
-      // Only proceed if there's both load buy and load sold data
-      if (currentTransaction.loadBuy && currentTransaction.loadSold) {
-        const { amountPaid, totalCost } = currentTransaction.loadBuy;
-        const { amountReceived, totalSaleAmount } = currentTransaction.loadSold;
-        
+      // Only proceed if there are purchases and sales
+      if (currentTransaction.purchases.length > 0 && currentTransaction.sales.length > 0) {
+        // Calculate total amounts
+        const totalPurchaseCost = currentTransaction.purchases.reduce((sum, purchase) => sum + purchase.total_cost, 0);
+        const totalPurchasePaid = currentTransaction.purchases.reduce((sum, purchase) => sum + purchase.amount_paid, 0);
+
+        const totalSaleAmount = currentTransaction.sales.reduce((sum, sale) => sum + sale.total_amount, 0);
+        const totalSaleReceived = currentTransaction.sales.reduce((sum, sale) => sum + sale.amount_received, 0);
+
         // If amounts paid and received match the total costs, mark as completed
         if (
-          amountPaid >= totalCost && 
-          amountReceived >= totalSaleAmount &&
-          currentTransaction.status !== 'completed'
+          totalPurchasePaid >= totalPurchaseCost &&
+          totalSaleReceived >= totalSaleAmount &&
+          currentTransaction.transaction.status !== 'completed'
         ) {
           const updatedTransaction = {
-            ...currentTransaction,
+            ...currentTransaction.transaction,
             status: 'completed' as const,
-            updatedAt: new Date().toISOString(),
           };
-          
-          await dbManager.updateTransaction(updatedTransaction);
+
+          await transactionService.updateTransaction(updatedTransaction);
           await refreshTransaction();
-          
+
           toast({
             title: "Status Updated",
             description: "Transaction has been marked as completed automatically.",
@@ -72,13 +108,13 @@ const DetailedView = ({ transaction, refreshTransaction: externalRefresh }: Deta
         }
       }
     };
-    
+
     checkTransactionStatus();
   }, [currentTransaction, refreshTransaction, toast]);
 
   const handleDelete = async () => {
     try {
-      await dbManager.deleteTransaction(currentTransaction.id);
+      await transactionService.deleteTransaction(currentTransaction.transaction.id);
       toast({
         title: "Success",
         description: "Transaction deleted successfully",
@@ -99,13 +135,13 @@ const DetailedView = ({ transaction, refreshTransaction: externalRefresh }: Deta
       {/* Transaction action header */}
       <div className="p-4 border-b flex justify-between items-center bg-background text-foreground">
         <h2 className="text-lg font-medium">
-          {currentTransaction.name}
+          {currentTransaction.transaction.name}
           <span className={`ml-2 text-sm px-2 py-0.5 rounded-full ${
-            currentTransaction.status === 'completed' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100' :
-            currentTransaction.status === 'cancelled' ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100' :
+            currentTransaction.transaction.status === 'completed' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100' :
+            currentTransaction.transaction.status === 'cancelled' ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100' :
             'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-100'
           }`}>
-            {currentTransaction.status.charAt(0).toUpperCase() + currentTransaction.status.slice(1)}
+            {currentTransaction.transaction.status.charAt(0).toUpperCase() + currentTransaction.transaction.status.slice(1)}
           </span>
         </h2>
 
@@ -156,20 +192,24 @@ const DetailedView = ({ transaction, refreshTransaction: externalRefresh }: Deta
 
       {/* Horizontal Tab Navigation */}
       <div className={`w-full border-b border-border bg-background ${isMobile ? 'px-2 py-1' : ''}`}>
-        <TabNavigation 
-          activeTab={activeTab} 
-          onTabChange={setActiveTab}
-          disabledTabs={[]} 
+        <TabNavigation
+          activeTab={activeTab}
+          onTabChange={(tab) => {
+            setActiveTab(tab);
+            // Save to localStorage immediately
+            localStorage.setItem(`transaction_${transaction.transaction.id}_activeTab`, tab);
+          }}
+          disabledTabs={[]}
           isMobile={isMobile}
         />
       </div>
-        
+
       {/* Tab Content */}
       <div className={`flex-1 overflow-auto bg-background ${isMobile ? 'p-2' : 'px-4'}`}>
-        <TabContent 
-          transaction={currentTransaction} 
-          activeTab={activeTab} 
-          refreshTransaction={refreshTransaction} 
+        <TabContent
+          transaction={currentTransaction}
+          activeTab={activeTab}
+          refreshTransaction={refreshTransaction}
         />
       </div>
     </div>

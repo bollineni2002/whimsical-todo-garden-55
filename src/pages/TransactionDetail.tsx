@@ -3,16 +3,17 @@ import { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import DetailedView from '@/components/DetailedView';
 import ThemeToggle from '@/components/ThemeToggle';
-import { Transaction } from '@/lib/types';
-import { dbManager } from '@/lib/db';
+import { CompleteTransaction } from '@/lib/types';
+import { transactionService } from '@/lib/transaction-service';
 import { motion } from 'framer-motion';
 import { useToast } from '@/hooks/use-toast';
 import ButtonIcon from '@/components/ui/ButtonIcon';
 import { Button } from '@/components/ui/button';
+import SyncStatus from '@/components/common/SyncStatus';
 
 const TransactionDetail = () => {
   const { id } = useParams<{ id: string }>();
-  const [transaction, setTransaction] = useState<Transaction | null>(null);
+  const [transaction, setTransaction] = useState<CompleteTransaction | null>(null);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -25,21 +26,9 @@ const TransactionDetail = () => {
 
     try {
       setLoading(true);
-      const data = await dbManager.getTransaction(id);
+      const data = await transactionService.getCompleteTransaction(id);
       if (data) {
-        // Initialize all required transaction properties to prevent blank screens
-        const updatedTransaction = {
-          ...data,
-          loadBuy: data.loadBuy || undefined,
-          transportation: data.transportation || undefined,
-          loadSold: data.loadSold || undefined,
-          payments: data.payments || [],
-          notes: data.notes || [],
-          attachments: data.attachments || [],
-          buyers: data.buyers || [], // Ensure buyers array is initialized
-          suppliers: data.suppliers || [], // Ensure suppliers array is initialized
-        };
-        setTransaction(updatedTransaction);
+        setTransaction(data);
       } else {
         toast({
           title: 'Error',
@@ -78,8 +67,8 @@ const TransactionDetail = () => {
       <header className="glass border-b sticky top-0 z-10 bg-background/80 backdrop-blur-sm border-border">
         <div className="container mx-auto px-4 py-4 flex justify-between items-center">
           <div className="flex items-center gap-3">
-            <ButtonIcon 
-              variant="ghost" 
+            <ButtonIcon
+              variant="ghost"
               onClick={() => navigate('/')}
               aria-label="Go back"
               className="text-foreground hover:bg-secondary"
@@ -91,10 +80,13 @@ const TransactionDetail = () => {
             </ButtonIcon>
             <h1 className="text-2xl font-semibold text-foreground">Transaction Details</h1>
           </div>
-          <ThemeToggle />
+          <div className="flex items-center gap-2">
+            <SyncStatus />
+            <ThemeToggle />
+          </div>
         </div>
       </header>
-      
+
       <main className="flex-1 flex overflow-hidden bg-background">
         {loading ? (
           <div className="flex-1 flex items-center justify-center">
@@ -112,7 +104,7 @@ const TransactionDetail = () => {
             </div>
           </div>
         ) : transaction ? (
-          <DetailedView 
+          <DetailedView
             transaction={transaction}
             refreshTransaction={refreshTransaction}
           />

@@ -1,116 +1,86 @@
 
-import { TabKey, Transaction } from '@/lib/types';
+import { TabKey, CompleteTransaction } from '@/lib/types';
 import { AnimatePresence, motion } from 'framer-motion';
-import TransportationContent from './TransportationComponent';
-import LoadBuyContent from './tab-contents/LoadBuyContent';
-import LoadSoldContent from './tab-contents/LoadSoldContent';
+import TransportationContent from './tab-contents/TransportationContent';
+import PurchasesContent from './tab-contents/PurchasesContent';
+import SalesContent from './tab-contents/SalesContent';
 import PaymentsContent from './tab-contents/PaymentsContent';
 import NotesContent from './tab-contents/NotesContent';
 import AttachmentsContent from './tab-contents/AttachmentsContent';
-import MultipleSuppliersContent from './tab-contents/MultipleSuppliersContent';
-import MultipleBuyersContent from './tab-contents/MultipleBuyersContent';
 
-// Extended TabKey enum to include the new tabs
+// Extended TabKey enum to include any additional tabs
 export enum ExtendedTabKey {
-  LOAD_BUY = 'loadBuy',
+  PURCHASES = 'purchases',
   TRANSPORTATION = 'transportation',
-  LOAD_SOLD = 'loadSold',
+  SALES = 'sales',
   PAYMENTS = 'payments',
   NOTES = 'notes',
-  ATTACHMENTS = 'attachments',
-  MULTIPLE_SUPPLIERS = 'multipleSuppliers',
-  MULTIPLE_BUYERS = 'multipleBuyers'
+  ATTACHMENTS = 'attachments'
 }
 
 interface TabContentProps {
   activeTab: TabKey | ExtendedTabKey;
-  transaction: Transaction;
+  transaction: CompleteTransaction;
   refreshTransaction: () => Promise<void>;
 }
 
 const TabContent: React.FC<TabContentProps> = ({ activeTab, transaction, refreshTransaction }) => {
   const renderTabContent = () => {
     switch(activeTab) {
-      case TabKey.LOAD_BUY:
-      case ExtendedTabKey.LOAD_BUY:
+      case TabKey.PURCHASES:
+      case ExtendedTabKey.PURCHASES:
         return (
-          <LoadBuyContent 
-            data={transaction.loadBuy} 
-            transaction={transaction} 
+          <PurchasesContent
+            transaction={transaction}
             refreshTransaction={refreshTransaction}
-            suppliers={transaction.suppliers || []}
           />
         );
-        
+
       case TabKey.TRANSPORTATION:
       case ExtendedTabKey.TRANSPORTATION:
         return (
-          <TransportationContent 
-            data={transaction.transportation} 
-            transaction={transaction} 
-            refreshTransaction={refreshTransaction} 
-          />
-        );
-        
-      case TabKey.LOAD_SOLD:
-      case ExtendedTabKey.LOAD_SOLD:
-        return (
-          <LoadSoldContent 
-            data={transaction.loadSold} 
-            transaction={transaction} 
+          <TransportationContent
+            transaction={transaction}
             refreshTransaction={refreshTransaction}
-            buyers={transaction.buyers || []}
           />
         );
-        
+
+      case TabKey.SALES:
+      case ExtendedTabKey.SALES:
+        return (
+          <SalesContent
+            transaction={transaction}
+            refreshTransaction={refreshTransaction}
+          />
+        );
+
       case TabKey.PAYMENTS:
       case ExtendedTabKey.PAYMENTS:
         return (
-          <PaymentsContent 
-            payments={transaction.payments || []} 
-            transaction={transaction} 
-            refreshTransaction={refreshTransaction} 
+          <PaymentsContent
+            transaction={transaction}
+            refreshTransaction={refreshTransaction}
           />
         );
-        
+
       case TabKey.NOTES:
       case ExtendedTabKey.NOTES:
         return (
-          <NotesContent 
-            notes={transaction.notes || []} 
-            transaction={transaction} 
-            refreshTransaction={refreshTransaction} 
+          <NotesContent
+            transaction={transaction}
+            refreshTransaction={refreshTransaction}
           />
         );
-        
+
       case TabKey.ATTACHMENTS:
       case ExtendedTabKey.ATTACHMENTS:
         return (
-          <AttachmentsContent 
-            attachments={transaction.attachments || []} 
-            transaction={transaction} 
-            refreshTransaction={refreshTransaction} 
+          <AttachmentsContent
+            transaction={transaction}
+            refreshTransaction={refreshTransaction}
           />
         );
-      
-      case ExtendedTabKey.MULTIPLE_SUPPLIERS:
-        return (
-          <MultipleSuppliersContent 
-            suppliers={transaction.suppliers || []} 
-            transaction={transaction} 
-            refreshTransaction={refreshTransaction} 
-          />
-        );
-        
-      case ExtendedTabKey.MULTIPLE_BUYERS:
-        return (
-          <MultipleBuyersContent 
-            buyers={transaction.buyers || []} 
-            transaction={transaction} 
-            refreshTransaction={refreshTransaction} 
-          />
-        );
-        
+
       default:
         return null;
     }

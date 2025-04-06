@@ -1,8 +1,9 @@
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { supabaseSimple as supabase } from '@/integrations/supabase/simple-client';
 import { useToast } from '@/hooks/use-toast';
 import type { User, Session } from '@supabase/supabase-js';
+import { initializeDatabase, ensureUserProfile } from '@/lib/db-init';
 
 interface AuthContextType {
   user: User | null;
@@ -38,19 +39,49 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             setUser(newSession?.user || null);
           }
         );
-        
+
+        // Set a timeout to prevent infinite loading
+        const timeoutId = setTimeout(() => {
+          console.log('Auth initialization timed out after 10 seconds');
+          setIsLoading(false);
+        }, 10000); // 10 second timeout
+
         // Then check for existing session
         const { data: { session: activeSession }, error } = await supabase.auth.getSession();
-        
+
         if (error) {
           console.error('Error retrieving session:', error);
         } else {
           setSession(activeSession);
           setUser(activeSession?.user || null);
+
+          // Initialize database if user is logged in
+          if (activeSession?.user) {
+            try {
+              // Ensure user profile exists
+              const userData = activeSession.user.user_metadata || {};
+              await ensureUserProfile(
+                activeSession.user.id,
+                activeSession.user.email || '',
+                userData.full_name,
+                userData.phone,
+                userData.business_name
+              );
+
+              // Initialize database with minimal sync
+              await initializeDatabase(activeSession.user.id, true);
+            } catch (dbError) {
+              console.error('Error initializing database:', dbError);
+            }
+          }
         }
-        
+
+        // Clear the timeout since initialization completed
+        clearTimeout(timeoutId);
+
         return () => {
           subscription.unsubscribe();
+          clearTimeout(timeoutId); // Clear timeout on cleanup
         };
       } catch (error) {
         console.error('Auth initialization error:', error);
@@ -65,12 +96,32 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signIn = async (email: string, password: string) => {
     try {
       setIsLoading(true);
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
-      
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+
       if (error) {
         throw error;
       }
-      
+
+      // Initialize database after successful sign in
+      if (data.user) {
+        try {
+          // Ensure user profile exists
+          const userData = data.user.user_metadata || {};
+          await ensureUserProfile(
+            data.user.id,
+            data.user.email || '',
+            userData.full_name,
+            userData.phone,
+            userData.business_name
+          );
+
+          // Initialize database with minimal sync
+          await initializeDatabase(data.user.id, true);
+        } catch (dbError) {
+          console.error('Error initializing database:', dbError);
+        }
+      }
+
       toast({
         title: "Welcome back!",
         description: "You have successfully signed in.",
@@ -91,7 +142,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signUp = async (email: string, password: string, name?: string, phone?: string) => {
     try {
       setIsLoading(true);
-      
+
       // Create default options
       const options: any = {
         email,
@@ -103,13 +154,31 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           },
         },
       };
-      
-      const { error } = await supabase.auth.signUp(options);
-      
+
+      const { data, error } = await supabase.auth.signUp(options);
+
       if (error) {
         throw error;
       }
-      
+
+      // Initialize database after successful sign up
+      if (data.user) {
+        try {
+          // Ensure user profile exists
+          await ensureUserProfile(
+            data.user.id,
+            email,
+            name,
+            phone
+          );
+
+          // Initialize database with minimal sync
+          await initializeDatabase(data.user.id, true);
+        } catch (dbError) {
+          console.error('Error initializing database:', dbError);
+        }
+      }
+
       toast({
         title: "Account created",
         description: "Please check your email to confirm your account.",
@@ -151,18 +220,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const resetPassword = async (email: string) => {
     try {
       setIsLoading(true);
-      
+
       // Get the current window URL (deployment URL)
       const deploymentUrl = window.location.origin;
-      
+
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
         redirectTo: `${deploymentUrl}/reset-password`,
       });
-      
+
       if (error) {
         throw error;
       }
-      
+
       toast({
         title: "Password reset email sent",
         description: "Check your inbox for a password reset link.",
@@ -184,11 +253,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       setIsLoading(true);
       const { error } = await supabase.auth.updateUser({ password });
-      
+
       if (error) {
         throw error;
       }
-      
+
       toast({
         title: "Password updated",
         description: "Your password has been successfully updated.",
@@ -229,15 +298,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (profile.email) {
         updates.email = profile.email;
       }
-      
+
       // Only update if there are changes
       if (Object.keys(updates).length > 0) {
         const { error } = await supabase.auth.updateUser(updates);
-        
+
         if (error) {
           throw error;
         }
-        
+
         toast({
           title: "Profile updated",
           description: "Your profile has been successfully updated.",
@@ -259,11 +328,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signInWithPhone = async (phone: string) => {
     try {
       setIsLoading(true);
-      
+
       // This is a placeholder as Supabase currently doesn't support OTP directly
       // In a production app, integrate with Twilio to send OTP
       // For now, we'll just mock this functionality
-      
+
       // Mock successful OTP sent
       setTimeout(() => {
         toast({
@@ -271,9 +340,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           description: "A verification code has been sent to your phone.",
         });
       }, 1000);
-      
+
       return Promise.resolve();
-      
+
     } catch (error: any) {
       console.error('Phone sign in error:', error);
       toast({
@@ -290,29 +359,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const verifyOTP = async (phone: string, token: string) => {
     try {
       setIsLoading(true);
-      
+
       // This is a placeholder as Supabase currently doesn't support OTP directly
       // In a production app, verify with Twilio API
       // For demo purposes, we'll mock verification with any 6-digit code
-      
+
       if (token.length === 6) {
         // Mock successful verification
         // In a real implementation, you would verify with your SMS provider (Twilio)
-        
+
         // After verification, you'd sign in the user
         // For now, we'll use a placeholder email based on phone number to simulate login
         const placeholderEmail = `${phone.replace(/\D/g, '')}@example.com`;
         const placeholderPassword = 'phone-auth-password';
-        
+
         // You would need to have created this user in advance or implement phone-based auth
         // This is just a mock for demonstration purposes
         await signIn(placeholderEmail, placeholderPassword);
-        
+
         return Promise.resolve();
       } else {
         throw new Error("Invalid verification code");
       }
-      
+
     } catch (error: any) {
       console.error('OTP verification error:', error);
       toast({
@@ -329,7 +398,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const resendOTP = async (phone: string) => {
     try {
       setIsLoading(true);
-      
+
       // Mock resending OTP
       // In a real implementation, you would call your SMS provider API (Twilio)
       setTimeout(() => {
@@ -338,9 +407,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           description: "A new verification code has been sent to your phone.",
         });
       }, 1000);
-      
+
       return Promise.resolve();
-      
+
     } catch (error: any) {
       console.error('Resend OTP error:', error);
       toast({
@@ -355,13 +424,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   return (
-    <AuthContext.Provider value={{ 
-      user, 
-      session, 
-      isLoading, 
-      signIn, 
-      signUp, 
-      signOut, 
+    <AuthContext.Provider value={{
+      user,
+      session,
+      isLoading,
+      signIn,
+      signUp,
+      signOut,
       resetPassword,
       updatePassword,
       updateProfile,

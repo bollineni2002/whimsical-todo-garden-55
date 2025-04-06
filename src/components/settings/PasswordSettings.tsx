@@ -3,7 +3,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useAuth } from '@/context/AuthContext';
-import { supabase } from '@/integrations/supabase/client';
+import { supabaseSimple as supabase } from '@/integrations/supabase/simple-client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -67,7 +67,7 @@ const PasswordSettings = ({ onPasswordChange }: PasswordSettingsProps) => {
 
         await updatePassword(data.newPassword);
       }
-      
+
       form.reset();
     } catch (error: any) {
       toast({ title: "Error", description: error.message || "An unexpected error occurred.", variant: "destructive" });
