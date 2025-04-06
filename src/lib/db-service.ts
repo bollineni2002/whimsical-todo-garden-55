@@ -153,13 +153,20 @@ const openDatabase = async (): Promise<IDBPDatabase<AppDatabase>> => {
 
 // Generic function to add an item to a store
 const addItem = async <T>(storeName: string, item: T): Promise<T> => {
-  const db = await openDatabase();
-  const tx = db.transaction(storeName, 'readwrite');
-  const store = tx.objectStore(storeName);
-  await store.add(item);
-  await tx.done;
-  db.close();
-  return item;
+  console.log(`DB-SERVICE: Adding item to ${storeName} store:`, item);
+  try {
+    const db = await openDatabase();
+    const tx = db.transaction(storeName, 'readwrite');
+    const store = tx.objectStore(storeName);
+    await store.add(item);
+    await tx.done;
+    db.close();
+    console.log(`DB-SERVICE: Successfully added item to ${storeName} store`);
+    return item;
+  } catch (error) {
+    console.error(`DB-SERVICE: Error adding item to ${storeName} store:`, error);
+    throw error;
+  }
 };
 
 // Generic function to get an item from a store
@@ -209,13 +216,20 @@ const getItemsByIndex = async <T>(
   indexName: string,
   value: string
 ): Promise<T[]> => {
-  const db = await openDatabase();
-  const tx = db.transaction(storeName, 'readonly');
-  const store = tx.objectStore(storeName);
-  const index = store.index(indexName);
-  const items = await index.getAll(value);
-  db.close();
-  return items;
+  console.log(`DB-SERVICE: Getting items from ${storeName} store by index ${indexName} with value ${value}`);
+  try {
+    const db = await openDatabase();
+    const tx = db.transaction(storeName, 'readonly');
+    const store = tx.objectStore(storeName);
+    const index = store.index(indexName);
+    const items = await index.getAll(value);
+    db.close();
+    console.log(`DB-SERVICE: Found ${items.length} items in ${storeName} store`);
+    return items;
+  } catch (error) {
+    console.error(`DB-SERVICE: Error getting items from ${storeName} store by index:`, error);
+    return [];
+  }
 };
 
 // Update sync status for a table
@@ -890,22 +904,29 @@ export const dbService = {
 
   getBuyersByUser: async (userId: string): Promise<Buyer[]> => {
     try {
-      return await getItemsByIndex<Buyer>('buyers', 'by-user-id', userId);
+      console.log('DB-SERVICE: Getting buyers for user:', userId);
+      const buyers = await getItemsByIndex<Buyer>('buyers', 'by-user-id', userId);
+      console.log('DB-SERVICE: Found buyers:', buyers.length);
+      return buyers;
     } catch (error) {
-      console.error('Error getting buyers by user:', error);
+      console.error('DB-SERVICE: Error getting buyers by user:', error);
       return [];
     }
   },
 
   addBuyer: async (buyer: Omit<Buyer, 'id'>): Promise<Buyer> => {
     try {
+      console.log('DB-SERVICE: Adding buyer:', buyer);
       const newBuyer: Buyer = {
         ...buyer,
         id: generateId(),
       };
-      return await addItem<Buyer>('buyers', newBuyer);
+      console.log('DB-SERVICE: Generated buyer with ID:', newBuyer.id);
+      const result = await addItem<Buyer>('buyers', newBuyer);
+      console.log('DB-SERVICE: Successfully added buyer:', result);
+      return result;
     } catch (error) {
-      console.error('Error adding buyer:', error);
+      console.error('DB-SERVICE: Error adding buyer:', error);
       throw error;
     }
   },

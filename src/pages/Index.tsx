@@ -15,7 +15,7 @@ import { exportTransactions, ExportFormat } from '@/lib/exportUtils';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Settings, Users, UserPlus, LineChart, Plus, Calculator, Percent, Landmark, Replace, Briefcase, ListChecks } from 'lucide-react';
+import { Settings, Users, UserPlus, LineChart, Plus, Calculator, Percent, Landmark, Replace, Briefcase, ListChecks, Edit, Trash2, RefreshCw } from 'lucide-react';
 import { dbManager } from '@/lib/db';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -27,6 +27,11 @@ import InterestCalculator from '@/components/calculations/InterestCalculator';
 import CurrencyConverter from '@/components/calculations/CurrencyConverter';
 import PersistentDailyTransactionsLog from '@/components/tab-contents/PersistentDailyTransactionsLog';
 import AuthHeader from '@/components/AuthHeader';
+import { dbService } from '@/lib/db-service';
+import { supabaseService } from '@/lib/supabase-service';
+import { syncService } from '@/lib/sync-service';
+import { useAuth } from '@/context/AuthContext';
+import ForceBuyerSellerSync from '@/components/buyers-sellers/ForceBuyerSellerSync';
 
 interface Buyer {
   id: string;
@@ -59,13 +64,22 @@ const Index = () => {
   const [businessName, setBusinessName] = useState('TransactLy');
   const [isBuyerDialogOpen, setIsBuyerDialogOpen] = useState(false);
   const [isSellerDialogOpen, setIsSellerDialogOpen] = useState(false);
+  const [isEditBuyerDialogOpen, setIsEditBuyerDialogOpen] = useState(false);
+  const [isDeleteBuyerDialogOpen, setIsDeleteBuyerDialogOpen] = useState(false);
+  const [isEditSellerDialogOpen, setIsEditSellerDialogOpen] = useState(false);
+  const [isDeleteSellerDialogOpen, setIsDeleteSellerDialogOpen] = useState(false);
   const [buyers, setBuyers] = useState<Buyer[]>([]);
   const [sellers, setSellers] = useState<Seller[]>([]);
+  const [clientsLoading, setLoading] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
   const [newBuyer, setNewBuyer] = useState({ name: '', email: '', phone: '' });
   const [newSeller, setNewSeller] = useState({ name: '', email: '', phone: '' });
+  const [selectedBuyer, setSelectedBuyer] = useState<Buyer | null>(null);
+  const [selectedSeller, setSelectedSeller] = useState<Seller | null>(null);
   const [isTransactionLogOpen, setIsTransactionLogOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('dashboard');
   const { toast } = useToast();
+  const { user } = useAuth();
 
   const handleExport = async (format: ExportFormat) => {
     try {
@@ -100,55 +114,138 @@ const Index = () => {
   };
 
   const loadBuyersAndSellers = async () => {
+    if (!user?.id) return;
+
     try {
-      const savedBuyers = await localStorage.getItem('buyers');
-      const savedSellers = await localStorage.getItem('sellers');
+      setLoading(true);
 
-      if (savedBuyers) {
-        setBuyers(JSON.parse(savedBuyers));
-      }
+      // Load buyers from IndexedDB
+      console.log('Loading buyers from IndexedDB...');
+      const buyersData = await dbService.getBuyersByUser(user.id);
+      console.log(`Loaded ${buyersData.length} buyers from IndexedDB`);
+      setBuyers(buyersData);
 
-      if (savedSellers) {
-        setSellers(JSON.parse(savedSellers));
+      // Load sellers from IndexedDB
+      console.log('Loading sellers from IndexedDB...');
+      const sellersData = await dbService.getSellersByUser(user.id);
+      console.log(`Loaded ${sellersData.length} sellers from IndexedDB`);
+      setSellers(sellersData);
+
+      // Also load from localStorage for backward compatibility
+      try {
+        const savedBuyers = await localStorage.getItem('buyers');
+        const savedSellers = await localStorage.getItem('sellers');
+
+        // If we have buyers in localStorage but not in IndexedDB, migrate them
+        if (savedBuyers && buyersData.length === 0) {
+          const localBuyers = JSON.parse(savedBuyers);
+          console.log(`Migrating ${localBuyers.length} buyers from localStorage to IndexedDB`);
+
+          for (const buyer of localBuyers) {
+            const buyerToAdd = {
+              ...buyer,
+              user_id: user.id
+            };
+            await dbService.addBuyer(buyerToAdd);
+          }
+
+          // Reload buyers after migration
+          const updatedBuyers = await dbService.getBuyersByUser(user.id);
+          setBuyers(updatedBuyers);
+        }
+
+        // If we have sellers in localStorage but not in IndexedDB, migrate them
+        if (savedSellers && sellersData.length === 0) {
+          const localSellers = JSON.parse(savedSellers);
+          console.log(`Migrating ${localSellers.length} sellers from localStorage to IndexedDB`);
+
+          for (const seller of localSellers) {
+            const sellerToAdd = {
+              ...seller,
+              user_id: user.id
+            };
+            await dbService.addSeller(sellerToAdd);
+          }
+
+          // Reload sellers after migration
+          const updatedSellers = await dbService.getSellersByUser(user.id);
+          setSellers(updatedSellers);
+        }
+      } catch (localStorageError) {
+        console.error('Error migrating from localStorage:', localStorageError);
       }
     } catch (error) {
       console.error('Failed to load buyers and sellers:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to load contacts',
+        variant: 'destructive',
+      });
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleBuyerInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setNewBuyer(prev => ({ ...prev, [name]: value }));
+    if (selectedBuyer) {
+      setSelectedBuyer({ ...selectedBuyer, [name]: value });
+    } else {
+      setNewBuyer(prev => ({ ...prev, [name]: value }));
+    }
   };
 
   const handleSellerInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setNewSeller(prev => ({ ...prev, [name]: value }));
+    if (selectedSeller) {
+      setSelectedSeller({ ...selectedSeller, [name]: value });
+    } else {
+      setNewSeller(prev => ({ ...prev, [name]: value }));
+    }
   };
 
   const handleAddBuyer = async () => {
+    if (!user?.id) return;
+
     try {
-      if (!newBuyer.name || !newBuyer.phone) {
+      if (!newBuyer.name) {
         toast({
           title: 'Validation Error',
-          description: 'Name and Phone are required fields',
+          description: 'Name is required',
           variant: 'destructive',
         });
         return;
       }
 
-      const newBuyerEntry: Buyer = {
-        id: `buyer-${Date.now()}`,
-        name: newBuyer.name,
-        email: newBuyer.email,
-        phone: newBuyer.phone,
-        date: new Date().toISOString(),
+      // Add buyer to IndexedDB
+      const buyerToAdd = {
+        ...newBuyer,
+        user_id: user.id,
       };
 
-      const updatedBuyers = [...buyers, newBuyerEntry];
-      setBuyers(updatedBuyers);
-      await localStorage.setItem('buyers', JSON.stringify(updatedBuyers));
+      console.log('Adding buyer to IndexedDB:', buyerToAdd);
+      const createdBuyer = await dbService.addBuyer(buyerToAdd);
+      console.log('Added buyer to IndexedDB:', createdBuyer);
 
+      // If online, also add to Supabase
+      if (navigator.onLine) {
+        try {
+          console.log('Syncing new buyer to Supabase...');
+          const result = await supabaseService.createBuyer(createdBuyer);
+          if (result) {
+            console.log('Successfully synced buyer to Supabase:', result);
+          } else {
+            console.error('Failed to sync buyer to Supabase');
+          }
+        } catch (syncError) {
+          console.error('Error syncing buyer to Supabase:', syncError);
+        }
+      }
+
+      // Reload buyers
+      await loadBuyersAndSellers();
+
+      // Reset form and close dialog
       setNewBuyer({ name: '', email: '', phone: '' });
       setIsBuyerDialogOpen(false);
 
@@ -167,28 +264,47 @@ const Index = () => {
   };
 
   const handleAddSeller = async () => {
+    if (!user?.id) return;
+
     try {
-      if (!newSeller.name || !newSeller.phone) {
+      if (!newSeller.name) {
         toast({
           title: 'Validation Error',
-          description: 'Name and Phone are required fields',
+          description: 'Name is required',
           variant: 'destructive',
         });
         return;
       }
 
-      const newSellerEntry: Seller = {
-        id: `seller-${Date.now()}`,
-        name: newSeller.name,
-        email: newSeller.email,
-        phone: newSeller.phone,
-        date: new Date().toISOString(),
+      // Add seller to IndexedDB
+      const sellerToAdd = {
+        ...newSeller,
+        user_id: user.id,
       };
 
-      const updatedSellers = [...sellers, newSellerEntry];
-      setSellers(updatedSellers);
-      await localStorage.setItem('sellers', JSON.stringify(updatedSellers));
+      console.log('Adding seller to IndexedDB:', sellerToAdd);
+      const createdSeller = await dbService.addSeller(sellerToAdd);
+      console.log('Added seller to IndexedDB:', createdSeller);
 
+      // If online, also add to Supabase
+      if (navigator.onLine) {
+        try {
+          console.log('Syncing new seller to Supabase...');
+          const result = await supabaseService.createSeller(createdSeller);
+          if (result) {
+            console.log('Successfully synced seller to Supabase:', result);
+          } else {
+            console.error('Failed to sync seller to Supabase');
+          }
+        } catch (syncError) {
+          console.error('Error syncing seller to Supabase:', syncError);
+        }
+      }
+
+      // Reload sellers
+      await loadBuyersAndSellers();
+
+      // Reset form and close dialog
       setNewSeller({ name: '', email: '', phone: '' });
       setIsSellerDialogOpen(false);
 
@@ -210,6 +326,220 @@ const Index = () => {
     navigate('/new-transaction');
   };
 
+  const handleEditBuyer = async () => {
+    if (!selectedBuyer) return;
+
+    try {
+      if (!selectedBuyer.name) {
+        toast({
+          title: 'Validation Error',
+          description: 'Name is required',
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      // Update buyer in IndexedDB
+      console.log('Updating buyer in IndexedDB:', selectedBuyer);
+      await dbService.updateBuyer(selectedBuyer);
+      console.log('Updated buyer in IndexedDB');
+
+      // If online, also update in Supabase
+      if (navigator.onLine) {
+        try {
+          console.log('Syncing updated buyer to Supabase...');
+          const result = await supabaseService.updateBuyer(selectedBuyer);
+          if (result) {
+            console.log('Successfully synced updated buyer to Supabase:', result);
+          } else {
+            console.error('Failed to sync updated buyer to Supabase');
+          }
+        } catch (syncError) {
+          console.error('Error syncing updated buyer to Supabase:', syncError);
+        }
+      }
+
+      // Reload buyers
+      await loadBuyersAndSellers();
+
+      setIsEditBuyerDialogOpen(false);
+      setSelectedBuyer(null);
+
+      toast({
+        title: 'Success',
+        description: 'Buyer updated successfully',
+      });
+    } catch (error) {
+      console.error('Failed to update buyer:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to update buyer',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleDeleteBuyer = async () => {
+    if (!selectedBuyer) return;
+
+    try {
+      // Delete buyer from IndexedDB
+      console.log('Deleting buyer from IndexedDB:', selectedBuyer.id);
+      await dbService.deleteBuyer(selectedBuyer.id);
+      console.log('Deleted buyer from IndexedDB');
+
+      // If online, also delete from Supabase
+      if (navigator.onLine) {
+        try {
+          console.log('Syncing deleted buyer to Supabase...');
+          const result = await supabaseService.deleteBuyer(selectedBuyer.id);
+          if (result) {
+            console.log('Successfully synced deleted buyer to Supabase');
+          } else {
+            console.error('Failed to sync deleted buyer to Supabase');
+          }
+        } catch (syncError) {
+          console.error('Error syncing deleted buyer to Supabase:', syncError);
+        }
+      }
+
+      // Reload buyers
+      await loadBuyersAndSellers();
+
+      setIsDeleteBuyerDialogOpen(false);
+      setSelectedBuyer(null);
+
+      toast({
+        title: 'Success',
+        description: 'Buyer deleted successfully',
+      });
+    } catch (error) {
+      console.error('Failed to delete buyer:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to delete buyer',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleEditSeller = async () => {
+    if (!selectedSeller) return;
+
+    try {
+      if (!selectedSeller.name) {
+        toast({
+          title: 'Validation Error',
+          description: 'Name is required',
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      // Update seller in IndexedDB
+      console.log('Updating seller in IndexedDB:', selectedSeller);
+      await dbService.updateSeller(selectedSeller);
+      console.log('Updated seller in IndexedDB');
+
+      // If online, also update in Supabase
+      if (navigator.onLine) {
+        try {
+          console.log('Syncing updated seller to Supabase...');
+          const result = await supabaseService.updateSeller(selectedSeller);
+          if (result) {
+            console.log('Successfully synced updated seller to Supabase:', result);
+          } else {
+            console.error('Failed to sync updated seller to Supabase');
+          }
+        } catch (syncError) {
+          console.error('Error syncing updated seller to Supabase:', syncError);
+        }
+      }
+
+      // Reload sellers
+      await loadBuyersAndSellers();
+
+      setIsEditSellerDialogOpen(false);
+      setSelectedSeller(null);
+
+      toast({
+        title: 'Success',
+        description: 'Seller updated successfully',
+      });
+    } catch (error) {
+      console.error('Failed to update seller:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to update seller',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleDeleteSeller = async () => {
+    if (!selectedSeller) return;
+
+    try {
+      // Delete seller from IndexedDB
+      console.log('Deleting seller from IndexedDB:', selectedSeller.id);
+      await dbService.deleteSeller(selectedSeller.id);
+      console.log('Deleted seller from IndexedDB');
+
+      // If online, also delete from Supabase
+      if (navigator.onLine) {
+        try {
+          console.log('Syncing deleted seller to Supabase...');
+          const result = await supabaseService.deleteSeller(selectedSeller.id);
+          if (result) {
+            console.log('Successfully synced deleted seller to Supabase');
+          } else {
+            console.error('Failed to sync deleted seller to Supabase');
+          }
+        } catch (syncError) {
+          console.error('Error syncing deleted seller to Supabase:', syncError);
+        }
+      }
+
+      // Reload sellers
+      await loadBuyersAndSellers();
+
+      setIsDeleteSellerDialogOpen(false);
+      setSelectedSeller(null);
+
+      toast({
+        title: 'Success',
+        description: 'Seller deleted successfully',
+      });
+    } catch (error) {
+      console.error('Failed to delete seller:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to delete seller',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const openEditBuyerDialog = (buyer: Buyer) => {
+    setSelectedBuyer(buyer);
+    setIsEditBuyerDialogOpen(true);
+  };
+
+  const openDeleteBuyerDialog = (buyer: Buyer) => {
+    setSelectedBuyer(buyer);
+    setIsDeleteBuyerDialogOpen(true);
+  };
+
+  const openEditSellerDialog = (seller: Seller) => {
+    setSelectedSeller(seller);
+    setIsEditSellerDialogOpen(true);
+  };
+
+  const openDeleteSellerDialog = (seller: Seller) => {
+    setSelectedSeller(seller);
+    setIsDeleteSellerDialogOpen(true);
+  };
+
   const getPageTitle = () => {
     switch (activeTab) {
       case 'transactions':
@@ -225,8 +555,10 @@ const Index = () => {
 
   useEffect(() => {
     loadBusinessName();
-    loadBuyersAndSellers();
-  }, []);
+    if (user?.id) {
+      loadBuyersAndSellers();
+    }
+  }, [user]);
 
   return (
     <motion.div
@@ -327,21 +659,172 @@ const Index = () => {
                   Sellers
                 </TabsTrigger>
               </TabsList>
+
+              {/* Edit Buyer Dialog */}
+              <Dialog open={isEditBuyerDialogOpen} onOpenChange={setIsEditBuyerDialogOpen}>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Edit Buyer</DialogTitle>
+                    <DialogDescription>
+                      Update the buyer's information below.
+                    </DialogDescription>
+                  </DialogHeader>
+                  {selectedBuyer && (
+                    <div className="grid gap-4 py-4">
+                      <div className="grid grid-cols-4 items-center gap-4">
+                        <Label htmlFor="edit_name" className="text-right">Name</Label>
+                        <Input
+                          id="edit_name"
+                          name="name"
+                          value={selectedBuyer.name}
+                          onChange={handleBuyerInputChange}
+                          className="col-span-3"
+                        />
+                      </div>
+                      <div className="grid grid-cols-4 items-center gap-4">
+                        <Label htmlFor="edit_email" className="text-right">Email</Label>
+                        <Input
+                          id="edit_email"
+                          name="email"
+                          type="email"
+                          value={selectedBuyer.email || ''}
+                          onChange={handleBuyerInputChange}
+                          className="col-span-3"
+                        />
+                      </div>
+                      <div className="grid grid-cols-4 items-center gap-4">
+                        <Label htmlFor="edit_phone" className="text-right">Phone</Label>
+                        <Input
+                          id="edit_phone"
+                          name="phone"
+                          value={selectedBuyer.phone || ''}
+                          onChange={handleBuyerInputChange}
+                          className="col-span-3"
+                        />
+                      </div>
+                    </div>
+                  )}
+                  <DialogFooter>
+                    <Button variant="outline" onClick={() => setIsEditBuyerDialogOpen(false)}>Cancel</Button>
+                    <Button onClick={handleEditBuyer}>Save Changes</Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+
+              {/* Delete Buyer Dialog */}
+              <Dialog open={isDeleteBuyerDialogOpen} onOpenChange={setIsDeleteBuyerDialogOpen}>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Delete Buyer</DialogTitle>
+                    <DialogDescription>
+                      This action cannot be undone.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="py-4">
+                    <p>Are you sure you want to delete this buyer?</p>
+                  </div>
+                  <DialogFooter>
+                    <Button variant="outline" onClick={() => setIsDeleteBuyerDialogOpen(false)}>Cancel</Button>
+                    <Button variant="destructive" onClick={handleDeleteBuyer}>Delete</Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+
+              {/* Edit Seller Dialog */}
+              <Dialog open={isEditSellerDialogOpen} onOpenChange={setIsEditSellerDialogOpen}>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Edit Seller</DialogTitle>
+                    <DialogDescription>
+                      Update the seller's information below.
+                    </DialogDescription>
+                  </DialogHeader>
+                  {selectedSeller && (
+                    <div className="grid gap-4 py-4">
+                      <div className="grid grid-cols-4 items-center gap-4">
+                        <Label htmlFor="edit_seller_name" className="text-right">Name</Label>
+                        <Input
+                          id="edit_seller_name"
+                          name="name"
+                          value={selectedSeller.name}
+                          onChange={handleSellerInputChange}
+                          className="col-span-3"
+                        />
+                      </div>
+                      <div className="grid grid-cols-4 items-center gap-4">
+                        <Label htmlFor="edit_seller_email" className="text-right">Email</Label>
+                        <Input
+                          id="edit_seller_email"
+                          name="email"
+                          type="email"
+                          value={selectedSeller.email || ''}
+                          onChange={handleSellerInputChange}
+                          className="col-span-3"
+                        />
+                      </div>
+                      <div className="grid grid-cols-4 items-center gap-4">
+                        <Label htmlFor="edit_seller_phone" className="text-right">Phone</Label>
+                        <Input
+                          id="edit_seller_phone"
+                          name="phone"
+                          value={selectedSeller.phone || ''}
+                          onChange={handleSellerInputChange}
+                          className="col-span-3"
+                        />
+                      </div>
+                    </div>
+                  )}
+                  <DialogFooter>
+                    <Button variant="outline" onClick={() => setIsEditSellerDialogOpen(false)}>Cancel</Button>
+                    <Button onClick={handleEditSeller}>Save Changes</Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+
+              {/* Delete Seller Dialog */}
+              <Dialog open={isDeleteSellerDialogOpen} onOpenChange={setIsDeleteSellerDialogOpen}>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Delete Seller</DialogTitle>
+                    <DialogDescription>
+                      This action cannot be undone.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="py-4">
+                    <p>Are you sure you want to delete this seller?</p>
+                  </div>
+                  <DialogFooter>
+                    <Button variant="outline" onClick={() => setIsDeleteSellerDialogOpen(false)}>Cancel</Button>
+                    <Button variant="destructive" onClick={handleDeleteSeller}>Delete</Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
               <TabsContent value="buyers">
                 <Card>
-                  <CardHeader>
-                    <CardTitle>Buyers Management</CardTitle>
-                    <CardDescription>Add and manage your buyers in one place</CardDescription>
+                  <CardHeader className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                    <div>
+                      <CardTitle>Buyers Management</CardTitle>
+                      <CardDescription>Add and manage your buyers in one place</CardDescription>
+                    </div>
+                    <ForceBuyerSellerSync
+                      type="buyers"
+                      onSyncComplete={loadBuyersAndSellers}
+                      className="mt-2 sm:mt-0"
+                    />
                   </CardHeader>
                   <CardContent>
-                    {buyers.length === 0 ? (
+                    {clientsLoading ? (
+                      <div className="flex justify-center items-center py-8">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                      </div>
+                    ) : buyers.length === 0 ? (
                       <div className="text-center py-6 text-muted-foreground">
                         No buyers added yet. Add your first buyer.
                       </div>
                     ) : (
                       <div className="space-y-4">
                         {buyers.map(buyer => (
-                          <div key={buyer.id} className="border rounded-lg p-4 hover:bg-accent/5 transition-colors">
+                          <div key={buyer.id} className="border rounded-lg p-4 hover:bg-accent/5 transition-colors relative">
                             <div className="flex flex-col md:flex-row justify-between">
                               <div>
                                 <h3 className="font-medium">{buyer.name}</h3>
@@ -351,6 +834,24 @@ const Index = () => {
                               <div className="text-sm text-right mt-2 md:mt-0">
                                 <p className="text-muted-foreground">Added on {new Date(buyer.date).toLocaleDateString()}</p>
                               </div>
+                            </div>
+                            <div className="absolute top-2 right-2 flex space-x-2">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-8 w-8 p-0 text-blue-600"
+                                onClick={() => openEditBuyerDialog(buyer)}
+                              >
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-8 w-8 p-0 text-red-600"
+                                onClick={() => openDeleteBuyerDialog(buyer)}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
                             </div>
                           </div>
                         ))}
@@ -418,19 +919,30 @@ const Index = () => {
               </TabsContent>
               <TabsContent value="sellers">
                 <Card>
-                  <CardHeader>
-                    <CardTitle>Sellers Management</CardTitle>
-                    <CardDescription>Add and manage your sellers in one place</CardDescription>
+                  <CardHeader className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                    <div>
+                      <CardTitle>Sellers Management</CardTitle>
+                      <CardDescription>Add and manage your sellers in one place</CardDescription>
+                    </div>
+                    <ForceBuyerSellerSync
+                      type="sellers"
+                      onSyncComplete={loadBuyersAndSellers}
+                      className="mt-2 sm:mt-0"
+                    />
                   </CardHeader>
                   <CardContent>
-                    {sellers.length === 0 ? (
+                    {clientsLoading ? (
+                      <div className="flex justify-center items-center py-8">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                      </div>
+                    ) : sellers.length === 0 ? (
                       <div className="text-center py-6 text-muted-foreground">
                         No sellers added yet. Add your first seller.
                       </div>
                     ) : (
                       <div className="space-y-4">
                         {sellers.map(seller => (
-                          <div key={seller.id} className="border rounded-lg p-4 hover:bg-accent/5 transition-colors">
+                          <div key={seller.id} className="border rounded-lg p-4 hover:bg-accent/5 transition-colors relative">
                             <div className="flex flex-col md:flex-row justify-between">
                               <div>
                                 <h3 className="font-medium">{seller.name}</h3>
@@ -440,6 +952,24 @@ const Index = () => {
                               <div className="text-sm text-right mt-2 md:mt-0">
                                 <p className="text-muted-foreground">Added on {new Date(seller.date).toLocaleDateString()}</p>
                               </div>
+                            </div>
+                            <div className="absolute top-2 right-2 flex space-x-2">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-8 w-8 p-0 text-blue-600"
+                                onClick={() => openEditSellerDialog(seller)}
+                              >
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-8 w-8 p-0 text-red-600"
+                                onClick={() => openDeleteSellerDialog(seller)}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
                             </div>
                           </div>
                         ))}

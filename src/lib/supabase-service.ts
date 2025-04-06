@@ -1,4 +1,5 @@
 import { supabaseSimple as supabase } from '@/integrations/supabase/simple-client';
+import { supabaseUtils } from './supabase-utils';
 import { dbService } from './db-service';
 import {
   User,
@@ -724,6 +725,11 @@ export const supabaseService = {
     }
   },
 
+  // Check if a storage bucket exists
+  checkStorageBucket: async (bucketName: string): Promise<boolean> => {
+    return await supabaseUtils.checkBucketExists(bucketName);
+  },
+
   // Upload attachment file to Supabase storage
   uploadAttachmentFile: async (
     userId: string,
@@ -731,28 +737,60 @@ export const supabaseService = {
     fileName: string
   ): Promise<string | null> => {
     try {
+      // Check if storage is available
+      if (!supabaseUtils.isStorageAvailable()) {
+        console.error('Supabase storage is not available');
+        return URL.createObjectURL(file);
+      }
+
+      // Ensure the bucket exists
+      await supabaseUtils.ensureBucketExists('attachments', true);
+
       const filePath = `${userId}/${fileName}`;
-      const { data, error } = await supabase.storage
-        .from('attachments')
-        .upload(filePath, file, {
-          cacheControl: '3600',
-          upsert: true,
-        });
+
+      // Safely access the storage bucket
+      const storageClient = supabase.storage.from('attachments');
+      if (!storageClient) {
+        console.error("Failed to get storage client for 'attachments' bucket");
+        return URL.createObjectURL(file);
+      }
+
+      console.log(`Uploading file to path: ${filePath}`);
+      const { data, error } = await storageClient.upload(filePath, file, {
+        cacheControl: '3600',
+        upsert: true,
+      });
 
       if (error) {
         console.error('Error uploading file:', error);
-        return null;
+        // Return a local URL as fallback
+        return URL.createObjectURL(file);
       }
 
-      // Get public URL
-      const { data: { publicUrl } } = supabase.storage
-        .from('attachments')
-        .getPublicUrl(data.path);
+      if (!data || !data.path) {
+        console.error('Upload succeeded but no data or path returned');
+        return URL.createObjectURL(file);
+      }
 
-      return publicUrl;
+      console.log(`File uploaded successfully to: ${data.path}`);
+
+      // Get public URL
+      try {
+        const { data: urlData } = storageClient.getPublicUrl(data.path);
+        if (!urlData || !urlData.publicUrl) {
+          console.error('Failed to get public URL');
+          return URL.createObjectURL(file);
+        }
+        console.log(`Got public URL: ${urlData.publicUrl}`);
+        return urlData.publicUrl;
+      } catch (urlError) {
+        console.error('Error getting public URL:', urlError);
+        return URL.createObjectURL(file);
+      }
     } catch (error) {
       console.error('Error uploading attachment file:', error);
-      return null;
+      // Return a local URL as fallback
+      return URL.createObjectURL(file);
     }
   },
 
@@ -903,7 +941,9 @@ export const supabaseService = {
 
   createBuyer: async (buyer: Buyer): Promise<Buyer | null> => {
     try {
-      console.log('Creating buyer in Supabase:', buyer);
+      console.log('SUPABASE-SERVICE: Creating buyer in Supabase:', buyer);
+      console.log('SUPABASE-SERVICE: Buyer ID:', buyer.id);
+      console.log('SUPABASE-SERVICE: User ID:', buyer.user_id);
 
       // Make sure we have a valid user_id
       if (!buyer.user_id) {
@@ -936,14 +976,15 @@ export const supabaseService = {
         return await supabaseService.updateBuyer(buyer);
       }
 
-      // Prepare the buyer data
+      // Prepare the buyer data - remove date field which isn't in Supabase schema
+      const { date, ...buyerWithoutDate } = buyer;
       const buyerData = {
-        ...buyer,
+        ...buyerWithoutDate,
         // Ensure created_at is set
         created_at: buyer.created_at || new Date().toISOString()
       };
 
-      console.log('Inserting buyer into Supabase:', buyerData);
+      console.log('Inserting buyer into Supabase (without date):', buyerData);
 
       const { data, error } = await supabase
         .from('buyers')
@@ -993,9 +1034,13 @@ export const supabaseService = {
     try {
       console.log('Updating buyer in Supabase:', buyer);
 
+      // Create a copy of the buyer object without the date field
+      const { date, ...buyerWithoutDate } = buyer;
+      console.log('Sending buyer data to Supabase (without date):', buyerWithoutDate);
+
       const { data, error } = await supabase
         .from('buyers')
-        .update(buyer)
+        .update(buyerWithoutDate)
         .eq('id', buyer.id)
         .select()
         .single();
@@ -1003,7 +1048,7 @@ export const supabaseService = {
       if (error) {
         console.error('Error updating buyer:', error);
         console.error('Error details:', JSON.stringify(error, null, 2));
-        console.error('Buyer data:', JSON.stringify(buyer, null, 2));
+        console.error('Buyer data:', JSON.stringify(buyerWithoutDate, null, 2));
         return null;
       }
 
@@ -1109,14 +1154,15 @@ export const supabaseService = {
         return await supabaseService.updateSeller(seller);
       }
 
-      // Prepare the seller data
+      // Prepare the seller data - remove date field which isn't in Supabase schema
+      const { date, ...sellerWithoutDate } = seller;
       const sellerData = {
-        ...seller,
+        ...sellerWithoutDate,
         // Ensure created_at is set
         created_at: seller.created_at || new Date().toISOString()
       };
 
-      console.log('Inserting seller into Supabase:', sellerData);
+      console.log('Inserting seller into Supabase (without date):', sellerData);
 
       const { data, error } = await supabase
         .from('sellers')
@@ -1166,9 +1212,13 @@ export const supabaseService = {
     try {
       console.log('Updating seller in Supabase:', seller);
 
+      // Create a copy of the seller object without the date field
+      const { date, ...sellerWithoutDate } = seller;
+      console.log('Sending seller data to Supabase (without date):', sellerWithoutDate);
+
       const { data, error } = await supabase
         .from('sellers')
-        .update(seller)
+        .update(sellerWithoutDate)
         .eq('id', seller.id)
         .select()
         .single();
@@ -1176,7 +1226,7 @@ export const supabaseService = {
       if (error) {
         console.error('Error updating seller:', error);
         console.error('Error details:', JSON.stringify(error, null, 2));
-        console.error('Seller data:', JSON.stringify(seller, null, 2));
+        console.error('Seller data:', JSON.stringify(sellerWithoutDate, null, 2));
         return null;
       }
 

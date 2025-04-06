@@ -115,6 +115,8 @@ export interface Buyer {
   name: string;
   email?: string;
   phone?: string;
+  date?: string; // Local field, not in Supabase schema
+  created_at?: string;
 }
 
 export interface Seller {
@@ -123,6 +125,8 @@ export interface Seller {
   name: string;
   email?: string;
   phone?: string;
+  date?: string; // Local field, not in Supabase schema
+  created_at?: string;
 }
 
 // Composite types for UI and data handling

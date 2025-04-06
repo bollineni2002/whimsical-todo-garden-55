@@ -536,11 +536,27 @@ export const syncService = {
         return false;
       }
 
+      console.log(`Syncing attachments for transaction ${transactionId}`);
+
       // Get attachments from Supabase
-      const supabaseAttachments = await supabaseService.getAttachments(transactionId);
+      let supabaseAttachments: Attachment[] = [];
+      try {
+        supabaseAttachments = await supabaseService.getAttachments(transactionId);
+        console.log(`Retrieved ${supabaseAttachments.length} attachments from Supabase`);
+      } catch (error) {
+        console.error('Error fetching attachments from Supabase:', error);
+        // Continue with local attachments only
+      }
 
       // Get local attachments
-      const localAttachments = await dbService.getAttachmentsByTransaction(transactionId);
+      let localAttachments: Attachment[] = [];
+      try {
+        localAttachments = await dbService.getAttachmentsByTransaction(transactionId);
+        console.log(`Retrieved ${localAttachments.length} attachments from local DB`);
+      } catch (error) {
+        console.error('Error fetching attachments from local DB:', error);
+        // Continue with Supabase attachments only
+      }
 
       // Create maps for easier lookup
       const localAttachmentsMap = new Map<string, Attachment>();
@@ -555,42 +571,61 @@ export const syncService = {
 
       // Sync attachments from Supabase to local
       for (const attachment of supabaseAttachments) {
-        const localAttachment = localAttachmentsMap.get(attachment.id);
+        try {
+          const localAttachment = localAttachmentsMap.get(attachment.id);
 
-        if (!localAttachment) {
-          // Add Supabase attachment to local DB
-          await dbService.addAttachment({
-            id: attachment.id,
-            transaction_id: attachment.transaction_id,
-            name: attachment.name,
-            file_type: attachment.file_type,
-            uri: attachment.uri
-          });
-        } else {
-          // Update local attachment with Supabase data
-          await dbService.updateAttachment(attachment);
+          if (!localAttachment) {
+            // Add Supabase attachment to local DB
+            console.log(`Adding Supabase attachment ${attachment.id} to local DB`);
+            await dbService.addAttachment({
+              id: attachment.id,
+              transaction_id: attachment.transaction_id,
+              name: attachment.name,
+              file_type: attachment.file_type,
+              uri: attachment.uri
+            });
+          } else {
+            // Update local attachment with Supabase data
+            console.log(`Updating local attachment ${attachment.id} with Supabase data`);
+            await dbService.updateAttachment(attachment);
+          }
+        } catch (error) {
+          console.error(`Error syncing Supabase attachment ${attachment.id} to local:`, error);
+          // Continue with next attachment
         }
       }
 
       // Sync attachments from local to Supabase
       for (const attachment of localAttachments) {
-        const supabaseAttachment = supabaseAttachmentsMap.get(attachment.id);
+        try {
+          const supabaseAttachment = supabaseAttachmentsMap.get(attachment.id);
 
-        if (!supabaseAttachment) {
-          // Add local attachment to Supabase
-          await supabaseService.createAttachment({
-            id: attachment.id,
-            transaction_id: attachment.transaction_id,
-            name: attachment.name,
-            file_type: attachment.file_type,
-            uri: attachment.uri
-          });
+          if (!supabaseAttachment) {
+            // Add local attachment to Supabase
+            console.log(`Adding local attachment ${attachment.id} to Supabase`);
+            await supabaseService.createAttachment({
+              id: attachment.id,
+              transaction_id: attachment.transaction_id,
+              name: attachment.name,
+              file_type: attachment.file_type,
+              uri: attachment.uri
+            });
+          }
+        } catch (error) {
+          console.error(`Error syncing local attachment ${attachment.id} to Supabase:`, error);
+          // Continue with next attachment
         }
       }
 
       // Update sync status
-      await dbService.updateSyncStatus('attachments');
+      try {
+        await dbService.updateSyncStatus('attachments');
+        console.log('Attachment sync status updated');
+      } catch (error) {
+        console.error('Error updating attachment sync status:', error);
+      }
 
+      console.log('Attachment synchronization completed');
       return true;
     } catch (error) {
       console.error('Error syncing attachments:', error);
@@ -765,12 +800,14 @@ export const syncService = {
   // Sync buyers for a user
   syncBuyers: async (userId: string): Promise<boolean> => {
     try {
+      console.log('SYNC-SERVICE: syncBuyers called for user:', userId);
+
       if (!isOnline()) {
-        console.log('Offline, skipping buyers sync');
+        console.log('SYNC-SERVICE: Offline, skipping buyers sync');
         return false;
       }
 
-      console.log(`Starting buyers sync for user ${userId}`);
+      console.log(`SYNC-SERVICE: Starting buyers sync for user ${userId}`);
 
       // Get buyers from Supabase
       const supabaseBuyers = await supabaseService.getBuyers(userId);

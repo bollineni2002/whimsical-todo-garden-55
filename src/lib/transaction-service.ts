@@ -585,11 +585,16 @@ export const transactionService = {
     fileType: string
   ): Promise<Attachment | null> => {
     try {
-      let uri = URL.createObjectURL(file);
+      console.log(`Adding attachment for transaction ${transactionId}, user ${userId}`);
 
-      // If online, upload to Supabase storage
+      // Create a local URL as fallback
+      let uri = URL.createObjectURL(file);
+      let uploadSuccess = false;
+
+      // If online, try to upload to Supabase storage
       if (isOnline()) {
         try {
+          console.log(`Uploading file to Supabase storage: ${name}`);
           const uploadedUrl = await supabaseService.uploadAttachmentFile(
             userId,
             file,
@@ -597,12 +602,19 @@ export const transactionService = {
           );
 
           if (uploadedUrl) {
+            console.log(`File uploaded successfully, got URL: ${uploadedUrl}`);
             uri = uploadedUrl;
+            uploadSuccess = true;
+          } else {
+            console.warn('Upload returned null URL, using local URL as fallback');
           }
         } catch (error) {
           console.error('Error uploading attachment to Supabase storage:', error);
+          console.log('Using local URL as fallback');
           // Continue with local URI if upload fails
         }
+      } else {
+        console.log('Offline, using local URL for attachment');
       }
 
       // Create attachment object
@@ -613,13 +625,24 @@ export const transactionService = {
         uri
       };
 
+      console.log('Saving attachment to local database:', attachment);
+
       // Add attachment to local database
       const newAttachment = await dbService.addAttachment(attachment);
+      console.log('Attachment saved to local database:', newAttachment);
 
-      // Try to sync with Supabase if online
+      // Try to sync with Supabase if online and we haven't already uploaded the file
       if (isOnline()) {
         try {
+          console.log('Syncing attachment metadata to Supabase');
           await supabaseService.createAttachment(newAttachment);
+          console.log('Attachment metadata synced to Supabase');
+
+          // If we're online but the file upload failed, try to sync the attachment specifically
+          if (!uploadSuccess) {
+            console.log('Attempting to sync attachment specifically');
+            await syncService.syncAttachments(transactionId);
+          }
         } catch (error) {
           console.error('Error syncing new attachment to Supabase:', error);
           // Attachment is still saved locally even if sync fails

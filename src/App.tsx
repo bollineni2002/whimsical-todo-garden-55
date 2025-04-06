@@ -1,5 +1,6 @@
 
 import React, { useState, useEffect } from "react";
+import { initializeStorage } from "./lib/storage-init";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -20,7 +21,6 @@ import VerifyOTP from "./pages/VerifyOTP";
 import ResetPassword from "./pages/ResetPassword";
 import Profile from "./pages/Profile";
 import Settings from "./pages/Settings";
-import Clients from "./pages/Clients";
 import BuyersSellers from "./pages/BuyersSellers";
 import DailyLogs from "./pages/DailyLogs";
 import { useAuth, AuthProvider } from "./context/AuthContext"; // Import AuthProvider
@@ -68,6 +68,19 @@ const App = () => {
     if (safeMode) {
       console.log('Running in safe mode - limited functionality');
     }
+
+    // Initialize Supabase storage
+    initializeStorage()
+      .then(success => {
+        if (success) {
+          console.log('Supabase storage initialized successfully');
+        } else {
+          console.warn('Failed to initialize Supabase storage, some features may not work properly');
+        }
+      })
+      .catch(error => {
+        console.error('Error initializing Supabase storage:', error);
+      });
 
     // Add global error handler
     const originalOnError = window.onerror;
@@ -125,7 +138,11 @@ const App = () => {
           event.reason.message.includes('NetworkError') ||
           event.reason.message.includes('AbortError')
         )) ||
-        (event.reason.toString && event.reason.toString().includes('SyntaxError'))
+        (event.reason.toString && (
+          event.reason.toString().includes('SyntaxError') ||
+          // Handle Supabase storage errors
+          event.reason.toString().includes('Cannot read properties of undefined')
+        ))
       )) {
         setHasError(true);
 
@@ -231,11 +248,7 @@ const App = () => {
                   <Settings />
                 </ProtectedRoute>
               } />
-              <Route path="/clients" element={
-                <ProtectedRoute>
-                  <Clients />
-                </ProtectedRoute>
-              } />
+              {/* Clients route removed - using embedded clients tab in Index page instead */}
               <Route path="/contacts" element={
                 <ProtectedRoute>
                   <BuyersSellers />
