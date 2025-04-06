@@ -292,16 +292,28 @@ export const supabaseService = {
 
       if (existingTransportation) {
         console.log('Transportation already exists, updating instead:', existingTransportation);
+        // Make sure to preserve the ID from the existing record
         return await supabaseService.updateTransportation({
           ...existingTransportation,
-          ...transportation
+          ...transportation,
+          id: existingTransportation.id // Ensure we use the existing ID
         });
       }
 
+      // Clean up the transportation data before sending to Supabase
+      const cleanedTransportation = { ...transportation };
+
+      // Handle empty date and time fields - set them to null instead of empty strings
+      if (cleanedTransportation.departure_date === '') cleanedTransportation.departure_date = null;
+      if (cleanedTransportation.expected_arrival_date === '') cleanedTransportation.expected_arrival_date = null;
+      if (cleanedTransportation.departure_time === '') cleanedTransportation.departure_time = null;
+      if (cleanedTransportation.expected_arrival_time === '') cleanedTransportation.expected_arrival_time = null;
+
       // If no existing record, create a new one
+      console.log('No existing transportation found, creating new record with cleaned data:', cleanedTransportation);
       const { data, error } = await supabase
         .from('transportation')
-        .insert(transportation)
+        .insert(cleanedTransportation)
         .select()
         .single();
 
@@ -309,7 +321,21 @@ export const supabaseService = {
         console.error('Error creating transportation:', error);
         // Log more details about the error
         console.error('Error details:', JSON.stringify(error, null, 2));
-        console.error('Transportation data:', JSON.stringify(transportation, null, 2));
+        console.error('Transportation data:', JSON.stringify(cleanedTransportation, null, 2));
+
+        // Check if this is a duplicate key error, which might happen if the record was created in another session
+        if (error.code === '23505') { // PostgreSQL unique violation error code
+          console.log('Duplicate key error, trying to update instead');
+          // Try to get the record again and update it
+          const retryExisting = await supabaseService.getTransportation(transportation.transaction_id);
+          if (retryExisting) {
+            return await supabaseService.updateTransportation({
+              ...retryExisting,
+              ...cleanedTransportation,
+              id: retryExisting.id
+            });
+          }
+        }
         return null;
       }
 
@@ -325,10 +351,21 @@ export const supabaseService = {
     try {
       console.log('Updating transportation in Supabase:', transportation);
 
+      // Clean up the transportation data before sending to Supabase
+      const cleanedTransportation = { ...transportation };
+
+      // Handle empty date and time fields - set them to null instead of empty strings
+      if (cleanedTransportation.departure_date === '') cleanedTransportation.departure_date = null;
+      if (cleanedTransportation.expected_arrival_date === '') cleanedTransportation.expected_arrival_date = null;
+      if (cleanedTransportation.departure_time === '') cleanedTransportation.departure_time = null;
+      if (cleanedTransportation.expected_arrival_time === '') cleanedTransportation.expected_arrival_time = null;
+
+      console.log('Updating with cleaned data:', cleanedTransportation);
+
       const { data, error } = await supabase
         .from('transportation')
-        .update(transportation)
-        .eq('id', transportation.id)
+        .update(cleanedTransportation)
+        .eq('id', cleanedTransportation.id)
         .select()
         .single();
 
@@ -336,7 +373,7 @@ export const supabaseService = {
         console.error('Error updating transportation:', error);
         // Log more details about the error
         console.error('Error details:', JSON.stringify(error, null, 2));
-        console.error('Transportation data:', JSON.stringify(transportation, null, 2));
+        console.error('Transportation data:', JSON.stringify(cleanedTransportation, null, 2));
         return null;
       }
 

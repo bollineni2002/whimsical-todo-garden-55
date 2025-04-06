@@ -51,7 +51,13 @@ const TransactionDetail = () => {
 
   // Refresh transaction wrapper for child components
   const refreshTransaction = async () => {
-    await loadTransaction();
+    console.log('Refreshing transaction data from TransactionDetail page...');
+    try {
+      await loadTransaction();
+      console.log('Transaction data refreshed successfully');
+    } catch (error) {
+      console.error('Error refreshing transaction data:', error);
+    }
   };
 
   useEffect(() => {

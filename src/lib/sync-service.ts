@@ -298,18 +298,39 @@ export const syncService = {
       console.log('Local transportation:', localTransportation);
 
       if (supabaseTransportation && localTransportation) {
-        console.log('Both Supabase and local have transportation, updating local with Supabase data');
-        // Both exist, update local with Supabase data
-        await dbService.updateTransportation(supabaseTransportation);
+        console.log('Both Supabase and local have transportation, comparing data...');
+
+        // Compare the last modified timestamps if available, otherwise use local data as source of truth
+        // For now, we'll use local data as the source of truth if both exist
+        console.log('Updating Supabase with local transportation data');
+        const result = await supabaseService.updateTransportation({
+          ...supabaseTransportation,
+          ...localTransportation,
+          id: supabaseTransportation.id // Ensure we use the Supabase ID
+        });
+        console.log('Result of updating transportation in Supabase:', result);
+
+        // Update local with the merged data from Supabase
+        if (result) {
+          await dbService.updateTransportation(result);
+          console.log('Local transportation updated with merged data');
+        }
       } else if (supabaseTransportation && !localTransportation) {
         console.log('Only Supabase has transportation, adding to local');
         // Only Supabase has it, add to local
         await dbService.addTransportation(supabaseTransportation);
+        console.log('Added Supabase transportation to local database');
       } else if (!supabaseTransportation && localTransportation) {
         console.log('Only local has transportation, adding to Supabase');
         // Only local has it, add to Supabase
         const result = await supabaseService.createTransportation(localTransportation);
         console.log('Result of adding transportation to Supabase:', result);
+
+        // If the creation was successful, update local with the Supabase data to ensure IDs match
+        if (result) {
+          await dbService.updateTransportation(result);
+          console.log('Updated local transportation with Supabase data');
+        }
       } else {
         console.log('Neither Supabase nor local have transportation for this transaction');
       }

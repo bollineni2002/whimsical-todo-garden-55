@@ -76,19 +76,44 @@ const TransportationContent: React.FC<TransportationContentProps> = ({
 
   const handleSave = async () => {
     try {
-      if (!formData) return;
+      if (!formData) {
+        console.error("Form data is null, cannot save");
+        return;
+      }
 
+      console.log("Saving transportation data:", formData);
+      console.log("Transaction ID:", transaction.transaction.id);
+
+      // Prepare form data for saving
+      const preparedData = { ...formData };
+
+      // Ensure date and time fields are properly formatted
+      // Empty strings should be null for database compatibility
+      if (preparedData.departure_date === '') preparedData.departure_date = null;
+      if (preparedData.expected_arrival_date === '') preparedData.expected_arrival_date = null;
+      if (preparedData.departure_time === '') preparedData.departure_time = null;
+      if (preparedData.expected_arrival_time === '') preparedData.expected_arrival_time = null;
+
+      console.log("Prepared transportation data:", preparedData);
+
+      let result;
       if (data) {
         // Update existing transportation
-        await transactionService.saveTransportation({
-          ...formData,
+        console.log("Updating existing transportation with ID:", data.id);
+        result = await transactionService.saveTransportation({
+          ...preparedData,
           id: data.id
         });
       } else {
         // Add new transportation
-        await transactionService.saveTransportation(formData);
+        console.log("Adding new transportation");
+        result = await transactionService.saveTransportation(preparedData);
       }
 
+      console.log("Transportation save result:", result);
+
+      // Force a refresh to get the latest data
+      console.log("Refreshing transaction data...");
       await refreshTransaction();
       setIsEditing(false);
 

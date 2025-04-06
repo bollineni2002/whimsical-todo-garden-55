@@ -272,34 +272,60 @@ export const transactionService = {
   saveTransportation: async (transportation: Omit<Transportation, 'id'> | Transportation): Promise<Transportation | null> => {
     try {
       let result: Transportation;
+      console.log('Saving transportation:', transportation);
+
+      // Prepare transportation data for saving
+      // Make a copy to avoid modifying the original object
+      const transportationData = { ...transportation };
 
       // Check if transportation has an ID (update) or not (add)
-      if ('id' in transportation) {
+      if ('id' in transportationData) {
+        console.log('Updating existing transportation with ID:', transportationData.id);
         // Update transportation in local database
-        result = await dbService.updateTransportation(transportation as Transportation);
+        result = await dbService.updateTransportation(transportationData as Transportation);
+        console.log('Transportation updated in local database:', result);
 
         // Try to sync with Supabase if online
         if (isOnline()) {
           try {
-            await supabaseService.updateTransportation(transportation as Transportation);
+            console.log('Syncing updated transportation to Supabase...');
+            const supabaseResult = await supabaseService.updateTransportation(transportationData as Transportation);
+            console.log('Supabase update result:', supabaseResult);
+
+            // Force sync the transportation data to ensure it's properly synced
+            await syncService.syncTransportation(transportationData.transaction_id);
           } catch (error) {
             console.error('Error syncing updated transportation to Supabase:', error);
             // Transportation is still updated locally even if sync fails
           }
         }
       } else {
+        console.log('Adding new transportation for transaction:', transportationData.transaction_id);
         // Add transportation to local database
         const newTransportation: Transportation = {
-          ...transportation,
+          ...transportationData,
           id: uuidv4()
         };
 
         result = await dbService.addTransportation(newTransportation);
+        console.log('Transportation added to local database:', result);
 
         // Try to sync with Supabase if online
         if (isOnline()) {
           try {
-            await supabaseService.createTransportation(newTransportation);
+            console.log('Syncing new transportation to Supabase...');
+            const supabaseResult = await supabaseService.createTransportation(newTransportation);
+            console.log('Supabase create result:', supabaseResult);
+
+            // If sync was successful, update local record with Supabase data
+            if (supabaseResult) {
+              await dbService.updateTransportation(supabaseResult);
+              console.log('Updated local transportation with Supabase data');
+              result = supabaseResult;
+            } else {
+              // Force sync the transportation data to ensure it's properly synced
+              await syncService.syncTransportation(transportationData.transaction_id);
+            }
           } catch (error) {
             console.error('Error syncing new transportation to Supabase:', error);
             // Transportation is still saved locally even if sync fails
