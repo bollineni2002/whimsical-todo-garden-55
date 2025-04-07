@@ -81,6 +81,7 @@ const Index = () => {
   const [isTransactionLogOpen, setIsTransactionLogOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('dashboard');
   const [activeCalcTab, setActiveCalcTab] = useState('tax');
+  const [activeClientTab, setActiveClientTab] = useState('buyers');
   const { toast } = useToast();
   const { user } = useAuth();
   const isMobile = useIsMobile();
@@ -654,15 +655,28 @@ const Index = () => {
           </TabsContent>
 
           <TabsContent value="clients-vendors" className="container mx-auto px-4 py-8 flex-1 overflow-auto">
-            <Tabs defaultValue="buyers" className="w-full">
-              <TabsList className="grid w-full grid-cols-2 mb-4">
-                <TabsTrigger value="buyers" icon={<UserPlus className="w-4 h-4" />}>
-                  Buyers
-                </TabsTrigger>
-                <TabsTrigger value="sellers" icon={<Users className="w-4 h-4" />}>
-                  Sellers
-                </TabsTrigger>
-              </TabsList>
+            <Tabs value={activeClientTab} onValueChange={setActiveClientTab} className="w-full">
+              <div className="w-full mb-4 flex justify-around items-center bg-muted p-1 rounded-md">
+                {[
+                  { value: 'buyers', label: 'Buyers', icon: <UserPlus className="h-4 w-4" /> },
+                  { value: 'sellers', label: 'Sellers', icon: <Users className="h-4 w-4" /> }
+                ].map((tab) => {
+                  const isActive = tab.value === activeClientTab;
+
+                  return (
+                    <button
+                      key={tab.value}
+                      onClick={() => setActiveClientTab(tab.value)}
+                      className={`flex items-center px-3 py-2 text-sm font-medium ${isActive ? 'text-primary border-b-2 border-primary' : 'text-foreground/80'}`}
+                    >
+                      {tab.icon}
+                      <span className={`${isMobile ? 'mt-1 text-xs' : 'ml-2'} ${isActive || !isMobile ? '' : 'hidden'}`}>
+                        {tab.label}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
 
               {/* Edit Buyer Dialog */}
               <Dialog open={isEditBuyerDialogOpen} onOpenChange={setIsEditBuyerDialogOpen}>
@@ -803,7 +817,8 @@ const Index = () => {
                   </DialogFooter>
                 </DialogContent>
               </Dialog>
-              <TabsContent value="buyers">
+              <div className="mt-4">
+                {activeClientTab === 'buyers' && (
                 <Card>
                   <CardHeader className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                     <div>
@@ -920,8 +935,9 @@ const Index = () => {
                     </Dialog>
                   </CardFooter>
                 </Card>
-              </TabsContent>
-              <TabsContent value="sellers">
+                )}
+
+                {activeClientTab === 'sellers' && (
                 <Card>
                   <CardHeader className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                     <div>
@@ -1038,7 +1054,8 @@ const Index = () => {
                     </Dialog>
                   </CardFooter>
                 </Card>
-              </TabsContent>
+                )}
+              </div>
             </Tabs>
           </TabsContent>
 
