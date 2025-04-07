@@ -15,22 +15,24 @@ import { exportTransactions, ExportFormat } from '@/lib/exportUtils';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Settings, Users, UserPlus, LineChart, Plus, Calculator, Percent, Landmark, Replace, Briefcase, ListChecks, Edit, Trash2, RefreshCw } from 'lucide-react';
-import { dbManager } from '@/lib/db';
+import { Users, UserPlus, LineChart, Plus, Calculator, Briefcase, ListChecks, Edit, Trash2, Percent, Landmark, Replace } from 'lucide-react';
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { useNavigate } from 'react-router-dom';
+
+import PersistentDailyTransactionsLog from '@/components/tab-contents/PersistentDailyTransactionsLog';
 import TaxCalculator from '@/components/calculations/TaxCalculator';
 import InterestCalculator from '@/components/calculations/InterestCalculator';
 import CurrencyConverter from '@/components/calculations/CurrencyConverter';
-import PersistentDailyTransactionsLog from '@/components/tab-contents/PersistentDailyTransactionsLog';
-import AuthHeader from '@/components/AuthHeader';
+
 import { dbService } from '@/lib/db-service';
 import { supabaseService } from '@/lib/supabase-service';
-import { syncService } from '@/lib/sync-service';
+
 import { useAuth } from '@/context/AuthContext';
+import { useIsMobile } from '@/hooks/use-mobile';
 import ForceBuyerSellerSync from '@/components/buyers-sellers/ForceBuyerSellerSync';
 
 interface Buyer {
@@ -78,8 +80,10 @@ const Index = () => {
   const [selectedSeller, setSelectedSeller] = useState<Seller | null>(null);
   const [isTransactionLogOpen, setIsTransactionLogOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('dashboard');
+  const [activeCalcTab, setActiveCalcTab] = useState('tax');
   const { toast } = useToast();
   const { user } = useAuth();
+  const isMobile = useIsMobile();
 
   const handleExport = async (format: ExportFormat) => {
     try {
@@ -1059,27 +1063,34 @@ const Index = () => {
           <TabsContent value="calculations" className="container mx-auto px-4 py-8 flex-1 overflow-auto">
             <Card>
               <CardContent className="p-0 pt-6">
-                <Tabs defaultValue="tax" className="w-full">
-                  <TabsList className="grid w-full grid-cols-3 mb-4">
-                    <TabsTrigger value="tax" icon={<Percent className="w-4 h-4" />}>
-                      Tax
-                    </TabsTrigger>
-                    <TabsTrigger value="interest" icon={<Landmark className="w-4 h-4" />}>
-                      Interest
-                    </TabsTrigger>
-                    <TabsTrigger value="currency" icon={<Replace className="w-4 h-4" />}>
-                      Currency
-                    </TabsTrigger>
-                  </TabsList>
-                  <TabsContent value="tax">
-                    <TaxCalculator />
-                  </TabsContent>
-                  <TabsContent value="interest">
-                    <InterestCalculator />
-                  </TabsContent>
-                  <TabsContent value="currency">
-                    <CurrencyConverter />
-                  </TabsContent>
+                <Tabs value={activeCalcTab} onValueChange={setActiveCalcTab} className="w-full">
+                  <div className="w-full mb-4 flex justify-around items-center bg-muted p-1 rounded-md">
+                    {[
+                      { value: 'tax', label: 'Tax', icon: <Percent className="h-4 w-4" /> },
+                      { value: 'interest', label: 'Interest', icon: <Landmark className="h-4 w-4" /> },
+                      { value: 'currency', label: 'Currency', icon: <Replace className="h-4 w-4" /> }
+                    ].map((tab) => {
+                      const isActive = tab.value === activeCalcTab;
+
+                      return (
+                        <button
+                          key={tab.value}
+                          onClick={() => setActiveCalcTab(tab.value)}
+                          className={`flex items-center px-3 py-2 text-sm font-medium ${isActive ? 'text-primary border-b-2 border-primary' : 'text-foreground/80'}`}
+                        >
+                          {tab.icon}
+                          <span className={`${isMobile ? 'mt-1 text-xs' : 'ml-2'} ${isActive || !isMobile ? '' : 'hidden'}`}>
+                            {tab.label}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <div className="mt-4">
+                    {activeCalcTab === 'tax' && <TaxCalculator />}
+                    {activeCalcTab === 'interest' && <InterestCalculator />}
+                    {activeCalcTab === 'currency' && <CurrencyConverter />}
+                  </div>
                 </Tabs>
               </CardContent>
             </Card>
