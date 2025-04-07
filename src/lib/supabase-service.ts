@@ -1034,16 +1034,54 @@ export const supabaseService = {
     try {
       console.log('Updating buyer in Supabase:', buyer);
 
+      if (!buyer.id || !buyer.user_id) {
+        console.error('Cannot update buyer: Missing id or user_id');
+        return null;
+      }
+
       // Create a copy of the buyer object without the date field
       const { date, ...buyerWithoutDate } = buyer;
       console.log('Sending buyer data to Supabase (without date):', buyerWithoutDate);
 
+      // First check if the buyer exists
+      const { data: existingBuyer, error: checkError } = await supabase
+        .from('buyers')
+        .select('id')
+        .eq('id', buyer.id)
+        .maybeSingle();
+
+      if (checkError) {
+        console.error('Error checking if buyer exists:', checkError);
+      }
+
+      if (!existingBuyer) {
+        console.log('Buyer does not exist in Supabase, inserting instead of updating');
+        // If buyer doesn't exist, insert it instead
+        const { data: insertedData, error: insertError } = await supabase
+          .from('buyers')
+          .insert({
+            ...buyerWithoutDate,
+            created_at: new Date().toISOString()
+          })
+          .select();
+
+        if (insertError) {
+          console.error('Error inserting buyer:', insertError);
+          console.error('Error details:', JSON.stringify(insertError, null, 2));
+          console.error('Buyer data:', JSON.stringify(buyerWithoutDate, null, 2));
+          return null;
+        }
+
+        console.log('Buyer inserted successfully:', insertedData);
+        return insertedData?.[0] as Buyer || null;
+      }
+
+      // If buyer exists, update it
       const { data, error } = await supabase
         .from('buyers')
         .update(buyerWithoutDate)
         .eq('id', buyer.id)
-        .select()
-        .single();
+        .select();
 
       if (error) {
         console.error('Error updating buyer:', error);
@@ -1053,7 +1091,7 @@ export const supabaseService = {
       }
 
       console.log('Buyer updated successfully:', data);
-      return data as Buyer;
+      return data?.[0] as Buyer || null;
     } catch (error) {
       console.error('Error updating buyer:', error);
       return null;
@@ -1212,16 +1250,54 @@ export const supabaseService = {
     try {
       console.log('Updating seller in Supabase:', seller);
 
+      if (!seller.id || !seller.user_id) {
+        console.error('Cannot update seller: Missing id or user_id');
+        return null;
+      }
+
       // Create a copy of the seller object without the date field
       const { date, ...sellerWithoutDate } = seller;
       console.log('Sending seller data to Supabase (without date):', sellerWithoutDate);
 
+      // First check if the seller exists
+      const { data: existingSeller, error: checkError } = await supabase
+        .from('sellers')
+        .select('id')
+        .eq('id', seller.id)
+        .maybeSingle();
+
+      if (checkError) {
+        console.error('Error checking if seller exists:', checkError);
+      }
+
+      if (!existingSeller) {
+        console.log('Seller does not exist in Supabase, inserting instead of updating');
+        // If seller doesn't exist, insert it instead
+        const { data: insertedData, error: insertError } = await supabase
+          .from('sellers')
+          .insert({
+            ...sellerWithoutDate,
+            created_at: new Date().toISOString()
+          })
+          .select();
+
+        if (insertError) {
+          console.error('Error inserting seller:', insertError);
+          console.error('Error details:', JSON.stringify(insertError, null, 2));
+          console.error('Seller data:', JSON.stringify(sellerWithoutDate, null, 2));
+          return null;
+        }
+
+        console.log('Seller inserted successfully:', insertedData);
+        return insertedData?.[0] as Seller || null;
+      }
+
+      // If seller exists, update it
       const { data, error } = await supabase
         .from('sellers')
         .update(sellerWithoutDate)
         .eq('id', seller.id)
-        .select()
-        .single();
+        .select();
 
       if (error) {
         console.error('Error updating seller:', error);
@@ -1231,7 +1307,7 @@ export const supabaseService = {
       }
 
       console.log('Seller updated successfully:', data);
-      return data as Seller;
+      return data?.[0] as Seller || null;
     } catch (error) {
       console.error('Error updating seller:', error);
       return null;

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import '@/styles/floating-add-button.css';
 import { DailyLog } from '@/lib/types';
 import { dbService } from '@/lib/db-service';
 import { supabaseService } from '@/lib/supabase-service';
@@ -370,10 +371,7 @@ const DailyLogsList: React.FC = () => {
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
-          <Button onClick={() => setIsAddDialogOpen(true)}>
-            <Plus className="h-4 w-4 mr-2" />
-            Add Log
-          </Button>
+          {/* Search box only in the header, Add button moved to floating button */}
         </div>
       </div>
 
@@ -458,6 +456,15 @@ const DailyLogsList: React.FC = () => {
           ))}
         </div>
       )}
+
+      {/* Floating Add Button with animation */}
+      <div
+        className="floating-add-button"
+        onClick={() => setIsAddDialogOpen(true)}
+        title="Add New Log"
+      >
+        <Plus size={32} />
+      </div>
 
       {/* Add Log Dialog */}
       <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>

@@ -70,11 +70,21 @@ const SyncStatus = ({ className = '' }: SyncStatusProps) => {
       if (isOnline && user?.id && !isSynced) {
         try {
           setIsSyncing(true);
-          await syncService.syncAll(user.id);
+          console.log('Automatically syncing all data after coming online...');
+
+          // Sync all data including buyers and sellers
+          const syncSuccess = await syncService.syncAll(user.id);
+
+          // Also specifically sync buyers and sellers to ensure they're up to date
+          await syncService.syncBuyers(user.id);
+          await syncService.syncSellers(user.id);
+
           setIsSynced(true);
           const now = new Date();
           setLastSyncTime(now);
           localStorage.setItem('lastSyncTime', now.toISOString());
+
+          console.log('Automatic sync completed');
         } catch (error) {
           console.error('Error syncing data:', error);
         } finally {
@@ -92,7 +102,15 @@ const SyncStatus = ({ className = '' }: SyncStatusProps) => {
 
     try {
       setIsSyncing(true);
-      await syncService.syncAll(user.id);
+      console.log('Manually syncing all data...');
+
+      // Sync all data including buyers and sellers
+      const syncSuccess = await syncService.syncAll(user.id);
+
+      // Also specifically sync buyers and sellers to ensure they're up to date
+      await syncService.syncBuyers(user.id);
+      await syncService.syncSellers(user.id);
+
       setIsSynced(true);
       const now = new Date();
       setLastSyncTime(now);
@@ -102,6 +120,8 @@ const SyncStatus = ({ className = '' }: SyncStatusProps) => {
         title: 'Sync Complete',
         description: 'All data has been synchronized with the cloud',
       });
+
+      console.log('Manual sync completed');
     } catch (error) {
       console.error('Error syncing data:', error);
       toast({

@@ -58,12 +58,29 @@ export const useSyncStatus = () => {
     if (!user) return;
 
     try {
+      // Check transactions
       const localTransactions = await dbManager.getAllTransactions();
-
-      // Check if there are transactions that haven't been synced
       const unsyncedTransactions = localTransactions.filter(t => !t.syncedAt || new Date(t.syncedAt).getTime() < new Date(t.updatedAt || t.date).getTime());
 
-      setIsAllSynced(unsyncedTransactions.length === 0);
+      // Import needed services for buyers/sellers check
+      const { dbService } = await import('@/lib/db-service');
+      const { syncService } = await import('@/lib/sync-service');
+
+      // Check buyers and sellers
+      let hasUnsyncedBuyersOrSellers = false;
+
+      try {
+        // Get sync status from syncService
+        const syncStatus = await syncService.getSyncStatus();
+        if (!syncStatus.isAllSynced) {
+          hasUnsyncedBuyersOrSellers = true;
+        }
+      } catch (syncStatusError) {
+        console.error('Error checking sync status:', syncStatusError);
+        hasUnsyncedBuyersOrSellers = true; // Assume there are unsynced changes if we can't check
+      }
+
+      setIsAllSynced(unsyncedTransactions.length === 0 && !hasUnsyncedBuyersOrSellers);
     } catch (error) {
       console.error('Error checking unsynced changes:', error);
       setIsAllSynced(false);
@@ -84,81 +101,31 @@ export const useSyncStatus = () => {
     setIsSyncing(true);
 
     try {
-      // Get all local transactions
-      const localTransactions = await dbManager.getAllTransactions();
+      // Import syncService for comprehensive sync
+      const { syncService } = await import('@/lib/sync-service');
 
-      // Upload each transaction to Supabase
-      for (const transaction of localTransactions) {
-        // Skip already synced transactions
-        if (transaction.syncedAt && new Date(transaction.syncedAt).getTime() >= new Date(transaction.updatedAt || transaction.date).getTime()) {
-          continue;
-        }
+      // Use syncAll to sync all data types including buyers and sellers
+      const syncSuccess = await syncService.syncAll(user.id);
 
-        // Prepare transaction for upload (add user_id)
-        const transactionToUpload: SupabaseTransaction = {
-          ...transaction,
-          user_id: user.id,
-          syncedAt: new Date().toISOString(),
-        };
+      if (syncSuccess) {
+        // Update sync status
+        const now = Date.now();
+        setLastSyncTime(now);
+        localStorage.setItem(`lastSyncTime_${user.id}`, now.toString());
+        setIsAllSynced(true);
 
-        // Check if transaction already exists in Supabase
-        const { data: existingTransaction } = await supabase
-          .from('transactions')
-          .select('id')
-          .eq('id', transaction.id)
-          .eq('user_id', user.id)
-          .single();
-
-        if (existingTransaction) {
-          // Update existing transaction
-          await supabase
-            .from('transactions')
-            .update(transactionToUpload)
-            .eq('id', transaction.id)
-            .eq('user_id', user.id);
-        } else {
-          // Insert new transaction
-          await supabase
-            .from('transactions')
-            .insert(transactionToUpload);
-        }
-
-        // Update local transaction with synced timestamp
-        await dbManager.updateTransaction({
-          ...transaction,
-          syncedAt: new Date().toISOString(),
+        toast({
+          title: "Sync successful",
+          description: "All your data has been synced to the cloud.",
+        });
+      } else {
+        setIsAllSynced(false);
+        toast({
+          title: "Sync partially failed",
+          description: "Some of your data may not have been synced. Please try again.",
+          variant: "destructive",
         });
       }
-
-      // Download transactions from Supabase that aren't in local DB
-      const { data: cloudTransactions } = await supabase
-        .from('transactions')
-        .select('*')
-        .eq('user_id', user.id);
-
-      if (cloudTransactions) {
-        // Find cloud transactions not in local DB
-        const localIds = new Set(localTransactions.map(t => t.id));
-        const newCloudTransactions = cloudTransactions.filter(t => t && 'id' in t && !localIds.has(t.id as string));
-
-        // Add new cloud transactions to local DB
-        for (const transaction of newCloudTransactions) {
-          if (transaction) {
-            await dbManager.addTransaction(transaction as unknown as Transaction);
-          }
-        }
-      }
-
-      // Update sync status
-      const now = Date.now();
-      setLastSyncTime(now);
-      localStorage.setItem(`lastSyncTime_${user.id}`, now.toString());
-      setIsAllSynced(true);
-
-      toast({
-        title: "Sync successful",
-        description: "All your transactions have been synced to the cloud.",
-      });
     } catch (error) {
       console.error('Sync error:', error);
       setIsAllSynced(false);

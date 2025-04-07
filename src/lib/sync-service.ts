@@ -860,6 +860,25 @@ export const syncService = {
         const supabaseBuyer = supabaseBuyersMap.get(buyer.id);
 
         if (!supabaseBuyer) {
+          // Check for potential duplicates by name and contact info
+          const potentialDuplicates = supabaseBuyers.filter(sb =>
+            sb.name.toLowerCase() === buyer.name.toLowerCase() &&
+            (sb.phone === buyer.phone || (!sb.phone && !buyer.phone)) &&
+            (sb.email === buyer.email || (!sb.email && !buyer.email))
+          );
+
+          if (potentialDuplicates.length > 0) {
+            console.log(`Found potential duplicate for buyer ${buyer.id} in Supabase:`, potentialDuplicates[0]);
+            // Update the local buyer with the Supabase ID to prevent future duplicates
+            const updatedBuyer = {
+              ...buyer,
+              syncedAt: new Date().toISOString()
+            };
+            await dbService.updateBuyer(updatedBuyer);
+            console.log(`Updated local buyer ${buyer.id} with synced status`);
+            continue;
+          }
+
           console.log(`Adding local buyer ${buyer.id} to Supabase`);
           // Add local buyer to Supabase
           try {
@@ -947,6 +966,25 @@ export const syncService = {
         const supabaseSeller = supabaseSellersMap.get(seller.id);
 
         if (!supabaseSeller) {
+          // Check for potential duplicates by name and contact info
+          const potentialDuplicates = supabaseSellers.filter(ss =>
+            ss.name.toLowerCase() === seller.name.toLowerCase() &&
+            (ss.phone === seller.phone || (!ss.phone && !seller.phone)) &&
+            (ss.email === seller.email || (!ss.email && !seller.email))
+          );
+
+          if (potentialDuplicates.length > 0) {
+            console.log(`Found potential duplicate for seller ${seller.id} in Supabase:`, potentialDuplicates[0]);
+            // Update the local seller with the Supabase ID to prevent future duplicates
+            const updatedSeller = {
+              ...seller,
+              syncedAt: new Date().toISOString()
+            };
+            await dbService.updateSeller(updatedSeller);
+            console.log(`Updated local seller ${seller.id} with synced status`);
+            continue;
+          }
+
           console.log(`Adding local seller ${seller.id} to Supabase`);
           // Add local seller to Supabase
           try {

@@ -154,7 +154,7 @@ const ForceBuyerSellerSync: React.FC<ForceBuyerSellerSyncProps> = ({
       className={className}
     >
       <RefreshCw className={`h-4 w-4 mr-2 ${isSyncing ? 'animate-spin' : ''}`} />
-      {isSyncing ? 'Syncing...' : `Sync ${type.charAt(0).toUpperCase() + type.slice(1)}`}
+      {isSyncing ? 'Syncing...' : `Force Sync ${type.charAt(0).toUpperCase() + type.slice(1)}`}
     </Button>
   );
 };

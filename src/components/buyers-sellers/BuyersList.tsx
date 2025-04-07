@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import '@/styles/floating-add-button.css';
 import { Buyer } from '@/lib/types';
 import { dbService } from '@/lib/db-service';
 import { supabaseService } from '@/lib/supabase-service';
@@ -99,8 +100,6 @@ const BuyersList: React.FC = () => {
   };
 
   const handleAddBuyer = async () => {
-    // Add a direct alert to confirm the function is being called
-    alert('Adding new buyer - check console for logs');
     console.log('handleAddBuyer called');
     if (!user?.id) {
       console.log('No user ID, returning');
@@ -123,78 +122,54 @@ const BuyersList: React.FC = () => {
         user_id: user.id,
       };
 
+      // Check for potential duplicates before adding
+      console.log('Checking for duplicate buyers...');
+      const existingBuyers = await dbService.getBuyersByUser(user.id);
+      const potentialDuplicates = existingBuyers.filter(buyer =>
+        buyer.name.toLowerCase() === buyerToAdd.name.toLowerCase() &&
+        (buyer.phone === buyerToAdd.phone || (!buyer.phone && !buyerToAdd.phone)) &&
+        (buyer.email === buyerToAdd.email || (!buyer.email && !buyerToAdd.email))
+      );
+
+      if (potentialDuplicates.length > 0) {
+        console.log('Found potential duplicate buyer:', potentialDuplicates[0]);
+        toast({
+          title: 'Duplicate Detected',
+          description: 'A buyer with this name and contact information already exists.',
+          variant: 'destructive',
+        });
+        return;
+      }
+
       // Add buyer to local database
       const createdBuyer = await dbService.addBuyer(buyerToAdd);
       console.log('Added buyer to local database:', createdBuyer);
 
-      // DIRECT SUPABASE INSERT - Bypass the service layer for testing
+      // Automatically sync to Supabase if online
       if (navigator.onLine) {
         try {
-          // Import the Supabase client directly
-          const { supabaseSimple } = await import('@/integrations/supabase/simple-client');
+          console.log('Automatically syncing new buyer to Supabase:', createdBuyer);
 
-          console.log('Attempting direct Supabase insert for buyer:', createdBuyer);
-
-          // First check if the buyer already exists
-          const { data: existingBuyer, error: checkError } = await supabaseSimple
-            .from('buyers')
-            .select('id')
-            .eq('id', createdBuyer.id)
-            .maybeSingle();
-
-          if (checkError) {
-            console.error('Error checking if buyer exists:', checkError);
-          }
-
-          if (!existingBuyer) {
-            // Prepare the buyer data with created_at
-            const buyerData = {
-              ...createdBuyer,
-              created_at: new Date().toISOString()
-            };
-
-            // Direct insert to Supabase
-            const { data, error } = await supabaseSimple
-              .from('buyers')
-              .insert(buyerData)
-              .select();
-
-            if (error) {
-              console.error('Error in direct Supabase insert:', error);
-              alert('Error syncing to Supabase: ' + error.message);
-            } else {
-              console.log('Direct Supabase insert successful:', data);
-              alert('Successfully synced buyer to Supabase!');
-            }
-          } else {
-            console.log('Buyer already exists in Supabase');
-          }
-        } catch (directError) {
-          console.error('Error in direct Supabase operation:', directError);
-          alert('Error in direct Supabase operation: ' + (directError as Error).message);
-        }
-
-        // Also try the normal sync methods
-        try {
-          console.log('Attempting to sync buyer to Supabase via service:', createdBuyer);
+          // First try the direct service method
           const result = await supabaseService.createBuyer(createdBuyer);
+
           if (result) {
-            console.log('Successfully synced buyer to Supabase via service:', result);
+            console.log('Successfully synced buyer to Supabase:', result);
           } else {
-            console.error('Failed to sync buyer to Supabase via service, result was null');
-            // Try using the forceSyncContacts method as a fallback
-            console.log('Trying forceSyncContacts as fallback...');
-            await syncService.forceSyncContacts(user.id);
+            console.error('Failed to sync buyer to Supabase, trying fallback methods');
+
+            // Try using the syncBuyers method as a fallback
+            console.log('Trying syncBuyers as fallback...');
+            const syncSuccess = await syncService.syncBuyers(user.id);
+
+            if (!syncSuccess) {
+              // If that fails, try forceSyncContacts as a last resort
+              console.log('Trying forceSyncContacts as final fallback...');
+              await syncService.forceSyncContacts(user.id);
+            }
           }
         } catch (error) {
-          console.error('Error syncing buyer to Supabase via service:', error);
-          // Try using the syncBuyers method as a fallback
-          try {
-            console.log('Trying syncBuyers as fallback...');
-            await syncService.syncBuyers(user.id);
-          } catch (syncError) {
-            console.error('Error in syncBuyers fallback:', syncError);
-          }
+          console.error('Error syncing buyer to Supabase:', error);
         }
       }
       await loadBuyers();
@@ -224,8 +199,6 @@ const BuyersList: React.FC = () => {
   const handleEditBuyer = async () => {
     if (!selectedBuyer) return;
 
-    // Add an alert to confirm the function is being called
-    alert('Editing buyer - check console for logs');
     console.log('handleEditBuyer called for buyer:', selectedBuyer);
 
     try {
@@ -242,61 +215,31 @@ const BuyersList: React.FC = () => {
       await dbService.updateBuyer(selectedBuyer);
       console.log('Updated buyer in local database:', selectedBuyer);
 
-      // If online, also update in Supabase
+      // Automatically sync to Supabase if online
       if (navigator.onLine) {
-        // DIRECT SUPABASE UPDATE - Bypass the service layer for testing
         try {
-          // Import the Supabase client directly
-          const { supabaseSimple } = await import('@/integrations/supabase/simple-client');
+          console.log('Automatically syncing updated buyer to Supabase:', selectedBuyer);
 
-          console.log('Attempting direct Supabase update for buyer:', selectedBuyer);
-
-          // Prepare the buyer data
-          const buyerData = {
-            ...selectedBuyer,
-            // Make sure created_at is present
-            created_at: selectedBuyer.created_at || new Date().toISOString()
-          };
-
-          // Direct upsert to Supabase
-          const { data, error } = await supabaseSimple
-            .from('buyers')
-            .upsert(buyerData)
-            .select();
-
-          if (error) {
-            console.error('Error in direct Supabase update:', error);
-            alert('Error updating in Supabase: ' + error.message);
-          } else {
-            console.log('Direct Supabase update successful:', data);
-            alert('Successfully updated buyer in Supabase!');
-          }
-        } catch (directError) {
-          console.error('Error in direct Supabase operation:', directError);
-          alert('Error in direct Supabase operation: ' + (directError as Error).message);
-        }
-
-        // Also try the normal service methods
-        try {
-          console.log('Attempting to update buyer in Supabase via service:', selectedBuyer);
+          // First try the direct service method
           const result = await supabaseService.updateBuyer(selectedBuyer);
+
           if (result) {
-            console.log('Successfully updated buyer in Supabase via service:', result);
+            console.log('Successfully updated buyer in Supabase:', result);
           } else {
-            console.error('Failed to update buyer in Supabase via service, result was null');
-            // Try using the forceSyncContacts method as a fallback
-            console.log('Trying forceSyncContacts as fallback...');
-            await syncService.forceSyncContacts(user.id);
+            console.error('Failed to update buyer in Supabase, trying fallback methods');
+
+            // Try using the syncBuyers method as a fallback
+            console.log('Trying syncBuyers as fallback...');
+            const syncSuccess = await syncService.syncBuyers(user.id);
+
+            if (!syncSuccess) {
+              // If that fails, try forceSyncContacts as a last resort
+              console.log('Trying forceSyncContacts as final fallback...');
+              await syncService.forceSyncContacts(user.id);
+            }
           }
         } catch (error) {
-          console.error('Error syncing updated buyer to Supabase via service:', error);
-          // Try using the syncBuyers method as a fallback
-          try {
-            console.log('Trying syncBuyers as fallback...');
-            await syncService.syncBuyers(user.id);
-          } catch (syncError) {
-            console.error('Error in syncBuyers fallback:', syncError);
-          }
+          console.error('Error syncing updated buyer to Supabase:', error);
         }
       }
       await loadBuyers();
@@ -321,8 +264,6 @@ const BuyersList: React.FC = () => {
   const handleDeleteBuyer = async () => {
     if (!selectedBuyer) return;
 
-    // Add an alert to confirm the function is being called
-    alert('Deleting buyer - check console for logs');
     console.log('handleDeleteBuyer called for buyer:', selectedBuyer.id);
 
     try {
@@ -330,44 +271,21 @@ const BuyersList: React.FC = () => {
       await dbService.deleteBuyer(selectedBuyer.id);
       console.log('Deleted buyer from local database:', selectedBuyer.id);
 
-      // If online, also delete from Supabase
+      // Automatically delete from Supabase if online
       if (navigator.onLine) {
-        // DIRECT SUPABASE DELETE - Bypass the service layer for testing
         try {
-          // Import the Supabase client directly
-          const { supabaseSimple } = await import('@/integrations/supabase/simple-client');
+          console.log('Automatically deleting buyer from Supabase:', selectedBuyer.id);
 
-          console.log('Attempting direct Supabase delete for buyer:', selectedBuyer.id);
-
-          // Direct delete from Supabase
-          const { error } = await supabaseSimple
-            .from('buyers')
-            .delete()
-            .eq('id', selectedBuyer.id);
-
-          if (error) {
-            console.error('Error in direct Supabase delete:', error);
-            alert('Error deleting from Supabase: ' + error.message);
-          } else {
-            console.log('Direct Supabase delete successful');
-            alert('Successfully deleted buyer from Supabase!');
-          }
-        } catch (directError) {
-          console.error('Error in direct Supabase operation:', directError);
-          alert('Error in direct Supabase operation: ' + (directError as Error).message);
-        }
-
-        // Also try the normal service method
-        try {
-          console.log('Attempting to delete buyer from Supabase via service:', selectedBuyer.id);
+          // Use the service method to delete from Supabase
           const result = await supabaseService.deleteBuyer(selectedBuyer.id);
+
           if (result) {
-            console.log('Successfully deleted buyer from Supabase via service:', selectedBuyer.id);
+            console.log('Successfully deleted buyer from Supabase:', selectedBuyer.id);
           } else {
-            console.error('Failed to delete buyer from Supabase via service');
+            console.error('Failed to delete buyer from Supabase');
           }
         } catch (error) {
-          console.error('Error syncing deleted buyer to Supabase via service:', error);
+          console.error('Error deleting buyer from Supabase:', error);
         }
       }
       await loadBuyers();
@@ -404,7 +322,7 @@ const BuyersList: React.FC = () => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 relative">
       <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
         <div className="flex items-center gap-2">
           <h1 className="text-2xl font-bold">Buyers</h1>
@@ -485,10 +403,7 @@ const BuyersList: React.FC = () => {
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
-          <Button onClick={() => setIsAddDialogOpen(true)}>
-            <Plus className="h-4 w-4 mr-2" />
-            Add Buyer
-          </Button>
+          {/* Search box only in the header, Add button moved to floating button */}
         </div>
       </div>
 
@@ -551,6 +466,15 @@ const BuyersList: React.FC = () => {
           ))}
         </div>
       )}
+
+      {/* Floating Add Button with animation */}
+      <div
+        className="floating-add-button"
+        onClick={() => setIsAddDialogOpen(true)}
+        title="Add New Buyer"
+      >
+        <Plus size={32} />
+      </div>
 
       {/* Add Buyer Dialog */}
       <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>

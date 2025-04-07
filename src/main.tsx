@@ -3,6 +3,7 @@ import React from 'react';
 import { createRoot } from 'react-dom/client';
 import App from './App.tsx';
 import './index.css';
+import './styles/floating-add-button.css';
 import { AuthProvider } from './context/AuthContext';
 import { LanguageProvider } from './lib/languages';
 import { ThemeProvider } from './context/ThemeContext';
