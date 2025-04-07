@@ -8,7 +8,7 @@ const SettingsHeader = () => {
 
   return (
     <div className="flex items-center mb-6 border-b pb-4">
-      <Button variant="ghost" size="icon" className="mr-4" onClick={() => navigate(-1)}>
+      <Button variant="ghost" size="icon" className="mr-4" onClick={() => navigate('/')}>
         <ChevronLeft className="h-5 w-5" />
         <span className="sr-only">Back</span>
       </Button>
