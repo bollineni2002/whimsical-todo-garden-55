@@ -147,7 +147,7 @@ const Settings = () => {
             onValueChange={setActiveTab}
             className="w-full"
           >
-            <TabsList className="flex border-b rounded-none w-full h-auto p-0 overflow-x-auto scrollbar-hide settings-tabs" data-force-show-text="true">
+            <TabsList className="flex border-b rounded-none w-full h-auto py-0 px-2 overflow-x-auto scrollbar-hide settings-tabs" data-force-show-text="true">
               <TabsTrigger
                 value="profile"
                 className="data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:font-medium rounded-none py-2 text-sm whitespace-nowrap settings-tab"

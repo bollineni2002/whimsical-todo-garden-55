@@ -141,6 +141,14 @@
     -webkit-overflow-scrolling: touch;
   }
 
+  @media (max-width: 640px) {
+    .settings-tabs {
+      padding: 0.25rem 0;
+      justify-content: space-evenly;
+      gap: 0.5rem;
+    }
+  }
+
   /* Only override sr-only for active tabs */
   .settings-tabs [data-state="active"] .sr-only {
     position: static !important;
@@ -290,16 +298,17 @@
 
     .settings-tab {
       font-size: 0.75rem;
-      padding: 0.5rem 0.75rem;
+      padding: 0.35rem 0.5rem;
       white-space: nowrap;
       min-width: auto;
       flex: 0 0 auto;
       position: relative;
-      margin: 0 0.125rem;
+      margin: 0 0.75rem;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
+      height: 3rem;
     }
 
     /* Ensure icons and text are properly aligned */
@@ -309,7 +318,7 @@
 
     /* For active tabs, show icon above text */
     .settings-tab[data-state="active"] span:first-of-type {
-      margin-bottom: 0.25rem;
+      margin-bottom: 0.2rem;
     }
 
     /* For inactive tabs, only show icon */
@@ -329,20 +338,22 @@
     /* For active tabs, show text */
     .settings-tab[data-state="active"] span:last-of-type {
       display: block !important;
-      font-size: 0.7rem;
+      font-size: 0.65rem;
       font-weight: 500;
+      line-height: 1;
+      margin-top: -0.1rem;
     }
 
     /* Add a more prominent active indicator */
     .settings-tab[data-state="active"]::after {
       content: '';
       position: absolute;
-      bottom: -1px;
-      left: 0;
-      right: 0;
-      height: 2px;
+      bottom: 0;
+      left: 25%;
+      right: 25%;
+      height: 3px;
       background-color: var(--primary);
-      border-radius: 1px;
+      border-radius: 1.5px;
     }
   }
 }
