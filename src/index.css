@@ -7,66 +7,66 @@
   :root {
     --background: 210 40% 98%;
     --foreground: 222 47% 11%;
-    
+
     --card: 0 0% 100%;
     --card-foreground: 222 47% 11%;
-    
+
     --popover: 0 0% 100%;
     --popover-foreground: 222 47% 11%;
-    
+
     --primary: 222 47% 11%;
     --primary-foreground: 210 40% 98%;
-    
+
     --secondary: 210 40% 96%;
     --secondary-foreground: 222 47% 11%;
-    
+
     --muted: 210 40% 96%;
     --muted-foreground: 215 16% 47%;
-    
+
     --accent: 210 40% 96%;
     --accent-foreground: 222 47% 11%;
-    
+
     --destructive: 0 84% 60%;
     --destructive-foreground: 210 40% 98%;
 
     --success: 142 72% 29%;
     --success-foreground: 210 40% 98%;
-    
+
     --border: 214 32% 91%;
     --input: 214 32% 91%;
     --ring: 222 47% 11%;
-    
+
     --radius: 0.75rem;
   }
 
   .dark {
     --background: 222 47% 5%;
     --foreground: 210 40% 98%;
-    
+
     --card: 222 47% 7%;
     --card-foreground: 210 40% 98%;
-    
+
     --popover: 222 47% 7%;
     --popover-foreground: 210 40% 98%;
-    
+
     --primary: 210 40% 98%;
     --primary-foreground: 222 47% 11%;
-    
+
     --secondary: 217 33% 17%;
     --secondary-foreground: 210 40% 98%;
-    
+
     --muted: 217 33% 17%;
     --muted-foreground: 215 20% 65%;
-    
+
     --accent: 217 33% 17%;
     --accent-foreground: 210 40% 98%;
-    
+
     --destructive: 0 63% 31%;
     --destructive-foreground: 210 40% 98%;
 
     --success: 142 76% 36%;
     --success-foreground: 210 40% 98%;
-    
+
     --border: 217 33% 17%;
     --input: 217 33% 17%;
     --ring: 212 27% 84%;
@@ -77,7 +77,7 @@
   * {
     @apply border-border;
   }
-  
+
   body {
     @apply bg-background text-foreground;
     font-feature-settings: "ss01", "ss02", "cv01", "cv02", "cv03";
@@ -92,83 +92,96 @@
   .glass {
     @apply bg-background/80 backdrop-blur-lg border border-border/50 shadow-sm;
   }
-  
+
   .glass-card {
     @apply bg-card/90 backdrop-blur-md border border-border/50 shadow-md;
   }
-  
+
   .page-transition-enter {
     opacity: 0;
     transform: translateY(10px);
   }
-  
+
   .page-transition-enter-active {
     opacity: 1;
     transform: translateY(0);
     transition: opacity 300ms, transform 300ms;
   }
-  
+
   .page-transition-exit {
     opacity: 1;
     transform: translateY(0);
   }
-  
+
   .page-transition-exit-active {
     opacity: 0;
     transform: translateY(-10px);
     transition: opacity 300ms, transform 300ms;
   }
-  
+
   .tab-transition {
     transition: all 0.3s ease;
   }
-  
+
   /* Mobile optimizations */
   .scrollbar-hide {
     -ms-overflow-style: none;  /* IE and Edge */
     scrollbar-width: none;  /* Firefox */
   }
-  
+
   .scrollbar-hide::-webkit-scrollbar {
     display: none;  /* Chrome, Safari, Opera */
   }
-  
+
+  /* Settings tabs styles */
+  .settings-tabs {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    width: 100%;
+  }
+
+  .settings-tab {
+    text-align: center;
+    font-size: 0.875rem;
+    padding: 0.5rem 0.25rem;
+  }
+
   /* Enhanced mobile styles */
   @media (max-width: 640px) {
     .tabs-container {
       gap: 0.25rem;
     }
-    
+
     .tab-icon-only {
       padding: 0.5rem;
       justify-content: center;
     }
-    
+
     .tab-with-text {
       padding: 0.5rem 1rem;
     }
-    
+
     .mobile-container {
       padding-left: 0.75rem;
       padding-right: 0.75rem;
     }
-    
+
     .mobile-card {
       padding: 0.75rem;
     }
-    
+
     .mobile-text-sm {
       font-size: 0.875rem;
     }
-    
+
     .mobile-text-xs {
       font-size: 0.75rem;
     }
-    
+
     .mobile-stack {
       flex-direction: column;
     }
-    
+
     .mobile-full-width {
       width: 100%;
     }
@@ -196,24 +209,24 @@
       opacity: 1 !important;
       visibility: visible !important;
     }
-    
+
     [data-state="active"] span:not(.sr-only),
     [data-active="true"] span:not(.sr-only) {
       visibility: visible !important;
       width: auto !important;
       opacity: 1 !important;
     }
-    
+
     /* Fix for tab label visibility */
     .tab-label {
       transition: opacity 0.2s, width 0.2s;
     }
-    
+
     /* Animation for tab icons */
     .tab-icon {
       transition: margin-right 0.2s;
     }
-    
+
     /* Adding indicator for active tabs */
     .tab-active-indicator {
       position: absolute;
@@ -226,11 +239,23 @@
       transform: scaleX(1);
       transition: transform 0.2s ease;
     }
-    
+
     /* Fix Settings button icon display on mobile */
     .settings-button-icon {
       display: inline-flex !important;
       margin-right: 0.5rem;
+    }
+
+    /* Settings tabs mobile styles */
+    .settings-tabs {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .settings-tab {
+      font-size: 0.75rem;
+      padding: 0.5rem 0.125rem;
+      white-space: nowrap;
     }
   }
 }
