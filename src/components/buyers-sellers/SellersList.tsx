@@ -398,7 +398,13 @@ const SellersList: React.FC = () => {
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
-          {/* Search box only in the header, Add button moved to floating button */}
+          <Button
+            onClick={() => setIsAddDialogOpen(true)}
+            className="whitespace-nowrap"
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Add Seller
+          </Button>
         </div>
       </div>
 
@@ -468,7 +474,7 @@ const SellersList: React.FC = () => {
         onClick={() => setIsAddDialogOpen(true)}
         title="Add New Seller"
       >
-        <Plus size={32} />
+        <Plus size={28} />
       </div>
 
       {/* Add Seller Dialog */}

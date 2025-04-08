@@ -4,8 +4,8 @@
   bottom: 24px;
   right: 24px;
   z-index: 9999;
-  width: 64px;
-  height: 64px;
+  width: 56px;
+  height: 56px;
   border-radius: 50%;
   background-color: #2563eb; /* blue-600 */
   color: white;
@@ -16,11 +16,13 @@
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   transition: transform 0.2s, background-color 0.2s;
   animation: pulse-animation 2s infinite;
+  opacity: 0.9; /* Slightly transparent */
 }
 
 .floating-add-button:hover {
   background-color: #1d4ed8; /* blue-700 */
   transform: scale(1.05);
+  opacity: 1;
 }
 
 @keyframes pulse-animation {

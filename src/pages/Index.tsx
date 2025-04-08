@@ -821,11 +821,21 @@ const Index = () => {
                 {activeClientTab === 'buyers' && (
                 <Card>
                   <CardHeader className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                    <ForceBuyerSellerSync
-                      type="buyers"
-                      onSyncComplete={loadBuyersAndSellers}
-                      className="mt-2 sm:mt-0"
-                    />
+                    <div className="flex items-center gap-2">
+                      <ForceBuyerSellerSync
+                        type="buyers"
+                        onSyncComplete={loadBuyersAndSellers}
+                        className="mt-2 sm:mt-0"
+                      />
+                    </div>
+                    <Dialog open={isBuyerDialogOpen} onOpenChange={setIsBuyerDialogOpen}>
+                      <DialogTrigger asChild>
+                        <Button>
+                          <Plus className="h-4 w-4 mr-2" />
+                          Add New Buyer
+                        </Button>
+                      </DialogTrigger>
+                    </Dialog>
                   </CardHeader>
                   <CardContent>
                     {clientsLoading ? (
@@ -875,12 +885,6 @@ const Index = () => {
                   </CardContent>
                   <CardFooter className="flex justify-end">
                     <Dialog open={isBuyerDialogOpen} onOpenChange={setIsBuyerDialogOpen}>
-                      <DialogTrigger asChild>
-                        <Button>
-                          <Plus className="h-4 w-4 mr-2" />
-                          Add New Buyer
-                        </Button>
-                      </DialogTrigger>
                       <DialogContent>
                         <DialogHeader>
                           <DialogTitle>Add New Buyer</DialogTitle>
@@ -936,11 +940,21 @@ const Index = () => {
                 {activeClientTab === 'sellers' && (
                 <Card>
                   <CardHeader className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                    <ForceBuyerSellerSync
-                      type="sellers"
-                      onSyncComplete={loadBuyersAndSellers}
-                      className="mt-2 sm:mt-0"
-                    />
+                    <div className="flex items-center gap-2">
+                      <ForceBuyerSellerSync
+                        type="sellers"
+                        onSyncComplete={loadBuyersAndSellers}
+                        className="mt-2 sm:mt-0"
+                      />
+                    </div>
+                    <Dialog open={isSellerDialogOpen} onOpenChange={setIsSellerDialogOpen}>
+                      <DialogTrigger asChild>
+                        <Button>
+                          <Plus className="h-4 w-4 mr-2" />
+                          Add New Seller
+                        </Button>
+                      </DialogTrigger>
+                    </Dialog>
                   </CardHeader>
                   <CardContent>
                     {clientsLoading ? (
@@ -990,12 +1004,6 @@ const Index = () => {
                   </CardContent>
                   <CardFooter className="flex justify-end">
                     <Dialog open={isSellerDialogOpen} onOpenChange={setIsSellerDialogOpen}>
-                      <DialogTrigger asChild>
-                        <Button>
-                          <Plus className="h-4 w-4 mr-2" />
-                          Add New Seller
-                        </Button>
-                      </DialogTrigger>
                       <DialogContent>
                         <DialogHeader>
                           <DialogTitle>Add New Seller</DialogTitle>
