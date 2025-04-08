@@ -664,7 +664,7 @@ const PersistentDailyTransactionsLog: React.FC<DailyTransactionsLogProps> = ({
         {/* Only show the inline form when not in dialog mode */}
         {isFormOpen && !isDialogMode && <TransactionForm />}
 
-        <div className="flex items-center justify-between mt-2 mb-4">
+        <div className="flex items-center justify-between mt-2 mb-3">
           <ToggleGroup
             type="single"
             defaultValue="all"
@@ -681,13 +681,13 @@ const PersistentDailyTransactionsLog: React.FC<DailyTransactionsLogProps> = ({
         </div>
 
         {isLoading ? (
-          <div className="text-center py-8 bg-muted/10 rounded-lg">
-            <p className="text-muted-foreground text-sm">Loading transactions...</p>
+          <div className="text-center py-4 md:py-8 bg-muted/10 rounded-lg">
+            <p className="text-muted-foreground text-xs md:text-sm">Loading transactions...</p>
           </div>
         ) : filteredTransactions.length === 0 ? (
-          <div className="text-center py-8 bg-muted/10 rounded-lg">
-            <AlertCircle className="w-8 h-8 text-muted-foreground/50 mx-auto mb-2" />
-            <p className="text-muted-foreground text-sm">
+          <div className="text-center py-4 md:py-8 bg-muted/10 rounded-lg">
+            <AlertCircle className="w-6 h-6 md:w-8 md:h-8 text-muted-foreground/50 mx-auto mb-1 md:mb-2" />
+            <p className="text-muted-foreground text-xs md:text-sm px-2">
               {transactions.length === 0
                 ? 'No transactions logged yet. Use the + button to add one.'
                 : `No transactions found for the selected filter (${timeFilter}).`}
@@ -696,62 +696,63 @@ const PersistentDailyTransactionsLog: React.FC<DailyTransactionsLogProps> = ({
         ) : (
           <div className="overflow-x-auto -mx-4 px-4">
             {/* Mobile view for small screens */}
-            <div className="md:hidden space-y-4">
+            <div className="md:hidden space-y-1">
               {filteredTransactions.map((tx) => (
-                <div key={tx.id} className="border border-border/30 rounded-lg p-3 bg-background/50">
-                  <div className="flex justify-between items-start mb-2">
+                <div key={tx.id} className="mobile-transaction-item">
+                  <div className="transaction-header">
                     <div className="flex items-center">
                       {tx.direction === 'received' ? (
-                        <ArrowDownLeft className="h-4 w-4 text-green-500 mr-1.5" />
+                        <ArrowDownLeft className="h-3 w-3 text-green-500 mr-0.5" />
                       ) : (
-                        <ArrowUpRight className="h-4 w-4 text-red-500 mr-1.5" />
+                        <ArrowUpRight className="h-3 w-3 text-red-500 mr-0.5" />
                       )}
-                      <span className={`text-sm font-medium ${tx.direction === 'received' ? 'text-green-500' : 'text-red-500'}`}>
+                      <span className={`text-xs font-medium ${tx.direction === 'received' ? 'text-green-500' : 'text-red-500'}`}>
                         {tx.direction === 'received' ? 'Received' : 'Paid'}
                       </span>
+                      <span className="text-xs text-muted-foreground mx-0.5">•</span>
+                      <span className="text-xs capitalize">{tx.payment_type.replace('_', ' ')}</span>
                     </div>
-                    <div className="text-sm font-mono font-medium">
+                    <div className="text-xs font-mono font-medium">
                       {tx.amount.toFixed(2)}
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs mb-3">
-                    <div className="text-muted-foreground">Date:</div>
-                    <div>{new Date(tx.date).toLocaleDateString()}</div>
-
-                    <div className="text-muted-foreground">Type:</div>
-                    <div className="capitalize">{tx.payment_type.replace('_', ' ')}</div>
-
-                    <div className="text-muted-foreground">
-                      {tx.direction === 'received' ? 'From:' : 'To:'}
+                  <div className="transaction-details">
+                    <div className="flex items-center">
+                      <span className="text-muted-foreground mr-0.5">
+                        {tx.direction === 'received' ? 'From:' : 'To:'}
+                      </span>
+                      <span className="font-medium">{tx.recipient_name}</span>
                     </div>
-                    <div>{tx.recipient_name}</div>
-
-                    {tx.direction === 'paid' && tx.is_third_party && tx.third_party_name && (
-                      <>
-                        <div className="text-muted-foreground">Third Party:</div>
-                        <div>{tx.third_party_name}</div>
-                      </>
-                    )}
+                    <div className="text-muted-foreground">
+                      {new Date(tx.date).toLocaleDateString()}
+                    </div>
                   </div>
 
-                  <div className="flex justify-end space-x-2">
+                  {tx.direction === 'paid' && tx.is_third_party && tx.third_party_name && (
+                    <div className="flex items-center text-xs">
+                      <span className="text-muted-foreground mr-0.5">Third Party:</span>
+                      <span>{tx.third_party_name}</span>
+                    </div>
+                  )}
+
+                  <div className="transaction-actions">
                     <Button
-                      variant="outline"
+                      variant="ghost"
                       size="sm"
-                      className="h-8 px-2"
+                      className="action-button"
                       onClick={() => handleEditTransaction(tx)}
                     >
-                      <Edit className="h-3.5 w-3.5 mr-1" />
+                      <Edit className="h-3 w-3 mr-0.5" />
                       Edit
                     </Button>
                     <Button
-                      variant="outline"
+                      variant="ghost"
                       size="sm"
-                      className="h-8 px-2 border-destructive text-destructive hover:bg-destructive/10"
+                      className="action-button text-destructive hover:bg-destructive/10"
                       onClick={() => handleDeleteClick(tx)}
                     >
-                      <Trash2 className="h-3.5 w-3.5 mr-1" />
+                      <Trash2 className="h-3 w-3 mr-0.5" />
                       Delete
                     </Button>
                   </div>
