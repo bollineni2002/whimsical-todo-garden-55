@@ -35,21 +35,8 @@ import { useAuth } from '@/context/AuthContext';
 import { useIsMobile } from '@/hooks/use-mobile';
 import ForceBuyerSellerSync from '@/components/buyers-sellers/ForceBuyerSellerSync';
 
-interface Buyer {
-  id: string;
-  name: string;
-  email: string;
-  phone: string;
-  date: string;
-}
-
-interface Seller {
-  id: string;
-  name: string;
-  email: string;
-  phone: string;
-  date: string;
-}
+// Use the types from lib/types.ts instead of redefining them
+import { Buyer, Seller } from '@/lib/types';
 
 const Index = () => {
   const {
@@ -73,7 +60,6 @@ const Index = () => {
   const [buyers, setBuyers] = useState<Buyer[]>([]);
   const [sellers, setSellers] = useState<Seller[]>([]);
   const [clientsLoading, setLoading] = useState(false);
-  const [isSyncing, setIsSyncing] = useState(false);
   const [newBuyer, setNewBuyer] = useState({ name: '', email: '', phone: '' });
   const [newSeller, setNewSeller] = useState({ name: '', email: '', phone: '' });
   const [selectedBuyer, setSelectedBuyer] = useState<Buyer | null>(null);
@@ -107,15 +93,81 @@ const Index = () => {
     setStatusFilter(status);
   };
 
-  const loadBusinessName = async () => {
+  const loadBusinessName = () => {
     try {
-      const settings = await localStorage.getItem('businessName');
+      const settings = localStorage.getItem('businessName');
       if (settings) {
         setBusinessName(settings);
       }
     } catch (error) {
       console.error('Failed to load business name:', error);
     }
+  };
+
+  // Helper function to deduplicate buyers
+  const deduplicateBuyers = (buyers: Buyer[]): Buyer[] => {
+    console.log('INDEX: Deduplicating buyers, initial count:', buyers.length);
+
+    // First deduplicate by ID
+    const uniqueById = new Map<string, Buyer>();
+    buyers.forEach(buyer => {
+      uniqueById.set(buyer.id, buyer);
+    });
+
+    // Then check for duplicates by name and contact info
+    const result: Buyer[] = [];
+    const seenKeys = new Set<string>();
+
+    Array.from(uniqueById.values()).forEach(buyer => {
+      // Create a key based on name and contact info
+      const nameKey = buyer.name.toLowerCase().trim();
+      const emailKey = (buyer.email || '').toLowerCase().trim();
+      const phoneKey = (buyer.phone || '').toLowerCase().trim();
+      const key = `${nameKey}-${emailKey}-${phoneKey}`;
+
+      if (!seenKeys.has(key)) {
+        seenKeys.add(key);
+        result.push(buyer);
+      } else {
+        console.log(`INDEX: Found duplicate buyer: ${buyer.name} (${buyer.id})`);
+      }
+    });
+
+    console.log('INDEX: After deduplication, buyer count:', result.length);
+    return result;
+  };
+
+  // Helper function to deduplicate sellers
+  const deduplicateSellers = (sellers: Seller[]): Seller[] => {
+    console.log('INDEX: Deduplicating sellers, initial count:', sellers.length);
+
+    // First deduplicate by ID
+    const uniqueById = new Map<string, Seller>();
+    sellers.forEach(seller => {
+      uniqueById.set(seller.id, seller);
+    });
+
+    // Then check for duplicates by name and contact info
+    const result: Seller[] = [];
+    const seenKeys = new Set<string>();
+
+    Array.from(uniqueById.values()).forEach(seller => {
+      // Create a key based on name and contact info
+      const nameKey = seller.name.toLowerCase().trim();
+      const emailKey = (seller.email || '').toLowerCase().trim();
+      const phoneKey = (seller.phone || '').toLowerCase().trim();
+      const key = `${nameKey}-${emailKey}-${phoneKey}`;
+
+      if (!seenKeys.has(key)) {
+        seenKeys.add(key);
+        result.push(seller);
+      } else {
+        console.log(`INDEX: Found duplicate seller: ${seller.name} (${seller.id})`);
+      }
+    });
+
+    console.log('INDEX: After deduplication, seller count:', result.length);
+    return result;
   };
 
   const loadBuyersAndSellers = async () => {
@@ -128,18 +180,48 @@ const Index = () => {
       console.log('Loading buyers from IndexedDB...');
       const buyersData = await dbService.getBuyersByUser(user.id);
       console.log(`Loaded ${buyersData.length} buyers from IndexedDB`);
-      setBuyers(buyersData);
+
+      // Deduplicate buyers before setting state
+      const uniqueBuyers = deduplicateBuyers(buyersData);
+      setBuyers(uniqueBuyers);
+
+      // If we found duplicates, clean up the database
+      if (uniqueBuyers.length < buyersData.length) {
+        console.log(`INDEX: Found ${buyersData.length - uniqueBuyers.length} duplicate buyers, cleaning up database`);
+        try {
+          // Use the cleanup function to remove duplicates from the database
+          const removedCount = await dbService.cleanupDuplicateBuyers(user.id);
+          console.log(`INDEX: Successfully removed ${removedCount} duplicate buyers from database`);
+        } catch (cleanupError) {
+          console.error('INDEX: Error cleaning up duplicate buyers:', cleanupError);
+        }
+      }
 
       // Load sellers from IndexedDB
       console.log('Loading sellers from IndexedDB...');
       const sellersData = await dbService.getSellersByUser(user.id);
       console.log(`Loaded ${sellersData.length} sellers from IndexedDB`);
-      setSellers(sellersData);
+
+      // Deduplicate sellers before setting state
+      const uniqueSellers = deduplicateSellers(sellersData);
+      setSellers(uniqueSellers);
+
+      // If we found duplicates, clean up the database
+      if (uniqueSellers.length < sellersData.length) {
+        console.log(`INDEX: Found ${sellersData.length - uniqueSellers.length} duplicate sellers, cleaning up database`);
+        try {
+          // Use the cleanup function to remove duplicates from the database
+          const removedCount = await dbService.cleanupDuplicateSellers(user.id);
+          console.log(`INDEX: Successfully removed ${removedCount} duplicate sellers from database`);
+        } catch (cleanupError) {
+          console.error('INDEX: Error cleaning up duplicate sellers:', cleanupError);
+        }
+      }
 
       // Also load from localStorage for backward compatibility
       try {
-        const savedBuyers = await localStorage.getItem('buyers');
-        const savedSellers = await localStorage.getItem('sellers');
+        const savedBuyers = localStorage.getItem('buyers');
+        const savedSellers = localStorage.getItem('sellers');
 
         // If we have buyers in localStorage but not in IndexedDB, migrate them
         if (savedBuyers && buyersData.length === 0) {
@@ -156,7 +238,8 @@ const Index = () => {
 
           // Reload buyers after migration
           const updatedBuyers = await dbService.getBuyersByUser(user.id);
-          setBuyers(updatedBuyers);
+          const uniqueUpdatedBuyers = deduplicateBuyers(updatedBuyers);
+          setBuyers(uniqueUpdatedBuyers);
         }
 
         // If we have sellers in localStorage but not in IndexedDB, migrate them
@@ -174,7 +257,8 @@ const Index = () => {
 
           // Reload sellers after migration
           const updatedSellers = await dbService.getSellersByUser(user.id);
-          setSellers(updatedSellers);
+          const uniqueUpdatedSellers = deduplicateSellers(updatedSellers);
+          setSellers(uniqueUpdatedSellers);
         }
       } catch (localStorageError) {
         console.error('Error migrating from localStorage:', localStorageError);

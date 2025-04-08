@@ -46,6 +46,39 @@ const SellersList: React.FC = () => {
     }
   }, [sellers, searchQuery]);
 
+  // Helper function to deduplicate sellers
+  const deduplicateSellers = (sellers: Seller[]): Seller[] => {
+    console.log('Deduplicating sellers, initial count:', sellers.length);
+
+    // First deduplicate by ID
+    const uniqueById = new Map<string, Seller>();
+    sellers.forEach(seller => {
+      uniqueById.set(seller.id, seller);
+    });
+
+    // Then check for duplicates by name and contact info
+    const result: Seller[] = [];
+    const seenKeys = new Set<string>();
+
+    Array.from(uniqueById.values()).forEach(seller => {
+      // Create a key based on name and contact info
+      const nameKey = seller.name.toLowerCase().trim();
+      const emailKey = (seller.email || '').toLowerCase().trim();
+      const phoneKey = (seller.phone || '').toLowerCase().trim();
+      const key = `${nameKey}-${emailKey}-${phoneKey}`;
+
+      if (!seenKeys.has(key)) {
+        seenKeys.add(key);
+        result.push(seller);
+      } else {
+        console.log(`Found duplicate seller: ${seller.name} (${seller.id})`);
+      }
+    });
+
+    console.log('After deduplication, seller count:', result.length);
+    return result;
+  };
+
   const loadSellers = async () => {
     if (!user?.id) return;
 
@@ -54,7 +87,28 @@ const SellersList: React.FC = () => {
       setLoading(true);
       const data = await dbService.getSellersByUser(user.id);
       console.log('Loaded sellers from local database:', data.length);
-      setSellers(data);
+
+      // Deduplicate sellers before setting state
+      const uniqueSellers = deduplicateSellers(data);
+      setSellers(uniqueSellers);
+
+      // If we found duplicates, clean up the database
+      if (uniqueSellers.length < data.length) {
+        console.log(`Found ${data.length - uniqueSellers.length} duplicate sellers, cleaning up database`);
+        try {
+          // Use the cleanup function to remove duplicates from the database
+          const removedCount = await dbService.cleanupDuplicateSellers(user.id);
+          console.log(`Successfully removed ${removedCount} duplicate sellers from database`);
+          if (removedCount > 0) {
+            toast({
+              title: 'Database Cleanup',
+              description: `Removed ${removedCount} duplicate seller records`,
+            });
+          }
+        } catch (cleanupError) {
+          console.error('Error cleaning up duplicate sellers:', cleanupError);
+        }
+      }
     } catch (error) {
       console.error('Failed to load sellers:', error);
       toast({

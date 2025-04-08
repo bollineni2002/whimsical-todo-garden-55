@@ -999,6 +999,118 @@ export const dbService = {
     }
   },
 
+  // Cleanup duplicate buyers
+  cleanupDuplicateBuyers: async (userId: string): Promise<number> => {
+    try {
+      console.log('Starting cleanup of duplicate buyers for user:', userId);
+
+      // Get all buyers for the user
+      const buyers = await getItemsByIndex<Buyer>('buyers', 'by-user-id', userId);
+      console.log(`Retrieved ${buyers.length} buyers from local database`);
+
+      // First deduplicate by ID
+      const uniqueById = new Map<string, Buyer>();
+      buyers.forEach(buyer => {
+        uniqueById.set(buyer.id, buyer);
+      });
+
+      // Then check for duplicates by name and contact info
+      const uniqueBuyers: Buyer[] = [];
+      const seenKeys = new Set<string>();
+      const duplicatesToRemove: Buyer[] = [];
+
+      Array.from(uniqueById.values()).forEach(buyer => {
+        // Create a key based on name and contact info
+        const nameKey = buyer.name.toLowerCase().trim();
+        const emailKey = (buyer.email || '').toLowerCase().trim();
+        const phoneKey = (buyer.phone || '').toLowerCase().trim();
+        const key = `${nameKey}-${emailKey}-${phoneKey}`;
+
+        if (!seenKeys.has(key)) {
+          seenKeys.add(key);
+          uniqueBuyers.push(buyer);
+        } else {
+          console.log(`Found duplicate buyer: ${buyer.name} (${buyer.id})`);
+          duplicatesToRemove.push(buyer);
+        }
+      });
+
+      // Delete the duplicates
+      let removedCount = 0;
+      for (const buyer of duplicatesToRemove) {
+        try {
+          console.log(`Deleting duplicate buyer: ${buyer.name} (${buyer.id})`);
+          await deleteItem('buyers', buyer.id);
+          removedCount++;
+        } catch (error) {
+          console.error(`Error deleting duplicate buyer ${buyer.id}:`, error);
+        }
+      }
+
+      console.log(`Removed ${removedCount} duplicate buyers`);
+      return removedCount;
+    } catch (error) {
+      console.error('Error cleaning up duplicate buyers:', error);
+      return 0;
+    }
+  },
+
+  // Cleanup duplicate sellers
+  cleanupDuplicateSellers: async (userId: string): Promise<number> => {
+    try {
+      console.log('Starting cleanup of duplicate sellers for user:', userId);
+
+      // Get all sellers for the user
+      const sellers = await getItemsByIndex<Seller>('sellers', 'by-user-id', userId);
+      console.log(`Retrieved ${sellers.length} sellers from local database`);
+
+      // First deduplicate by ID
+      const uniqueById = new Map<string, Seller>();
+      sellers.forEach(seller => {
+        uniqueById.set(seller.id, seller);
+      });
+
+      // Then check for duplicates by name and contact info
+      const uniqueSellers: Seller[] = [];
+      const seenKeys = new Set<string>();
+      const duplicatesToRemove: Seller[] = [];
+
+      Array.from(uniqueById.values()).forEach(seller => {
+        // Create a key based on name and contact info
+        const nameKey = seller.name.toLowerCase().trim();
+        const emailKey = (seller.email || '').toLowerCase().trim();
+        const phoneKey = (seller.phone || '').toLowerCase().trim();
+        const key = `${nameKey}-${emailKey}-${phoneKey}`;
+
+        if (!seenKeys.has(key)) {
+          seenKeys.add(key);
+          uniqueSellers.push(seller);
+        } else {
+          console.log(`Found duplicate seller: ${seller.name} (${seller.id})`);
+          duplicatesToRemove.push(seller);
+        }
+      });
+
+      // Delete the duplicates
+      let removedCount = 0;
+      for (const seller of duplicatesToRemove) {
+        try {
+          console.log(`Deleting duplicate seller: ${seller.name} (${seller.id})`);
+          await deleteItem('sellers', seller.id);
+          removedCount++;
+        } catch (error) {
+          console.error(`Error deleting duplicate seller ${seller.id}:`, error);
+        }
+      }
+
+      console.log(`Removed ${removedCount} duplicate sellers`);
+      return removedCount;
+    } catch (error) {
+      console.error('Error cleaning up duplicate sellers:', error);
+      return 0;
+    }
+  },
+
   // Sync status operations
   updateSyncStatus,
   getSyncStatus,
