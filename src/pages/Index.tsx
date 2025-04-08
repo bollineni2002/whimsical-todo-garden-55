@@ -38,6 +38,9 @@ import ForceBuyerSellerSync from '@/components/buyers-sellers/ForceBuyerSellerSy
 // Use the types from lib/types.ts instead of redefining them
 import { Buyer, Seller } from '@/lib/types';
 
+// Import floating button styles
+import '@/styles/floating-add-button.css';
+
 const Index = () => {
   const {
     filteredTransactions,
@@ -912,14 +915,6 @@ const Index = () => {
                         className="mt-2 sm:mt-0"
                       />
                     </div>
-                    <Dialog open={isBuyerDialogOpen} onOpenChange={setIsBuyerDialogOpen}>
-                      <DialogTrigger asChild>
-                        <Button>
-                          <Plus className="h-4 w-4 mr-2" />
-                          Add New Buyer
-                        </Button>
-                      </DialogTrigger>
-                    </Dialog>
                   </CardHeader>
                   <CardContent>
                     {clientsLoading ? (
@@ -1031,14 +1026,6 @@ const Index = () => {
                         className="mt-2 sm:mt-0"
                       />
                     </div>
-                    <Dialog open={isSellerDialogOpen} onOpenChange={setIsSellerDialogOpen}>
-                      <DialogTrigger asChild>
-                        <Button>
-                          <Plus className="h-4 w-4 mr-2" />
-                          Add New Seller
-                        </Button>
-                      </DialogTrigger>
-                    </Dialog>
                   </CardHeader>
                   <CardContent>
                     {clientsLoading ? (
@@ -1140,6 +1127,34 @@ const Index = () => {
                 </Card>
                 )}
               </div>
+
+              {/* Floating Add Button for Buyers */}
+              {activeClientTab === 'buyers' && (
+                <Dialog open={isBuyerDialogOpen} onOpenChange={setIsBuyerDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button
+                      size="icon"
+                      className="h-12 w-12 rounded-full fixed bottom-24 right-6 shadow-lg z-10"
+                    >
+                      <Plus className="h-5 w-5" />
+                    </Button>
+                  </DialogTrigger>
+                </Dialog>
+              )}
+
+              {/* Floating Add Button for Sellers */}
+              {activeClientTab === 'sellers' && (
+                <Dialog open={isSellerDialogOpen} onOpenChange={setIsSellerDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button
+                      size="icon"
+                      className="h-12 w-12 rounded-full fixed bottom-24 right-6 shadow-lg z-10"
+                    >
+                      <Plus className="h-5 w-5" />
+                    </Button>
+                  </DialogTrigger>
+                </Dialog>
+              )}
             </Tabs>
           </TabsContent>
 

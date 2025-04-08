@@ -457,13 +457,6 @@ const BuyersList: React.FC = () => {
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
-          <Button
-            onClick={() => setIsAddDialogOpen(true)}
-            className="whitespace-nowrap"
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            Add Buyer
-          </Button>
         </div>
       </div>
 
