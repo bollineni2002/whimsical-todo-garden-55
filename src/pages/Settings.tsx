@@ -10,6 +10,7 @@ import ImportExportSettings from '@/components/settings/ImportExportSettings';
 import SupportSection from '@/components/settings/SupportSection';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/hooks/use-toast';
+import { UserRound, Palette, Database, Import } from 'lucide-react';
 
 const Settings = () => {
   const [activeTab, setActiveTab] = useState<string>(() => {
@@ -146,28 +147,32 @@ const Settings = () => {
             onValueChange={setActiveTab}
             className="w-full"
           >
-            <TabsList className="flex border-b rounded-none w-full h-auto p-0 overflow-x-auto scrollbar-hide settings-tabs">
+            <TabsList className="flex border-b rounded-none w-full h-auto p-0 overflow-x-auto scrollbar-hide settings-tabs" data-force-show-text="true">
               <TabsTrigger
                 value="profile"
                 className="data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:font-medium rounded-none py-2 text-sm whitespace-nowrap settings-tab"
+                icon={<UserRound className="h-4 w-4 mb-1" />}
               >
                 Profile
               </TabsTrigger>
               <TabsTrigger
                 value="appearance"
                 className="data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:font-medium rounded-none py-2 text-sm whitespace-nowrap settings-tab"
+                icon={<Palette className="h-4 w-4 mb-1" />}
               >
                 Appearance
               </TabsTrigger>
               <TabsTrigger
                 value="data-management"
                 className="data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:font-medium rounded-none py-2 text-sm whitespace-nowrap settings-tab"
+                icon={<Database className="h-4 w-4 mb-1" />}
               >
                 Data Management
               </TabsTrigger>
               <TabsTrigger
                 value="import-export"
                 className="data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:font-medium rounded-none py-2 text-sm whitespace-nowrap settings-tab"
+                icon={<Import className="h-4 w-4 mb-1" />}
               >
                 Import/Export
               </TabsTrigger>
