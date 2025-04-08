@@ -141,8 +141,8 @@
     -webkit-overflow-scrolling: touch;
   }
 
-  /* Force text to be visible in settings tabs */
-  .settings-tabs .sr-only {
+  /* Only override sr-only for active tabs */
+  .settings-tabs [data-state="active"] .sr-only {
     position: static !important;
     width: auto !important;
     height: auto !important;
@@ -305,15 +305,31 @@
     /* Ensure icons and text are properly aligned */
     .settings-tab span:first-of-type {
       margin-right: 0 !important;
+    }
+
+    /* For active tabs, show icon above text */
+    .settings-tab[data-state="active"] span:first-of-type {
       margin-bottom: 0.25rem;
     }
 
-    .settings-tab span:last-of-type {
-      display: block !important;
-      font-size: 0.7rem;
+    /* For inactive tabs, only show icon */
+    .settings-tab[data-state="inactive"] span:last-of-type {
+      /* Keep sr-only styles for inactive tabs */
+      position: absolute !important;
+      width: 1px !important;
+      height: 1px !important;
+      padding: 0 !important;
+      margin: -1px !important;
+      overflow: hidden !important;
+      clip: rect(0, 0, 0, 0) !important;
+      white-space: nowrap !important;
+      border-width: 0 !important;
     }
 
-    .settings-tab[data-state="active"] span:last-child {
+    /* For active tabs, show text */
+    .settings-tab[data-state="active"] span:last-of-type {
+      display: block !important;
+      font-size: 0.7rem;
       font-weight: 500;
     }
 

@@ -151,28 +151,28 @@ const Settings = () => {
               <TabsTrigger
                 value="profile"
                 className="data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:font-medium rounded-none py-2 text-sm whitespace-nowrap settings-tab"
-                icon={<UserRound className="h-4 w-4 mb-1" />}
+                icon={<UserRound className="h-5 w-5" />}
               >
                 Profile
               </TabsTrigger>
               <TabsTrigger
                 value="appearance"
                 className="data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:font-medium rounded-none py-2 text-sm whitespace-nowrap settings-tab"
-                icon={<Palette className="h-4 w-4 mb-1" />}
+                icon={<Palette className="h-5 w-5" />}
               >
                 Appearance
               </TabsTrigger>
               <TabsTrigger
                 value="data-management"
                 className="data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:font-medium rounded-none py-2 text-sm whitespace-nowrap settings-tab"
-                icon={<Database className="h-4 w-4 mb-1" />}
+                icon={<Database className="h-5 w-5" />}
               >
                 Data Management
               </TabsTrigger>
               <TabsTrigger
                 value="import-export"
                 className="data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:font-medium rounded-none py-2 text-sm whitespace-nowrap settings-tab"
-                icon={<Import className="h-4 w-4 mb-1" />}
+                icon={<Import className="h-5 w-5" />}
               >
                 Import/Export
               </TabsTrigger>
