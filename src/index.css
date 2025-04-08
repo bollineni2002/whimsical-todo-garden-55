@@ -135,15 +135,18 @@
 
   /* Settings tabs styles */
   .settings-tabs {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    display: flex;
     width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
   }
 
   .settings-tab {
     text-align: center;
     font-size: 0.875rem;
-    padding: 0.5rem 0.25rem;
+    padding: 0.5rem 0.5rem;
+    flex: 1 0 auto;
+    min-width: max-content;
   }
 
   /* Enhanced mobile styles */
@@ -250,12 +253,34 @@
     .settings-tabs {
       overflow-x: auto;
       -webkit-overflow-scrolling: touch;
+      justify-content: flex-start;
+      gap: 0.25rem;
+      position: relative;
+      padding-bottom: 2px;
+      /* Add subtle gradient to indicate scrollability */
+      mask-image: linear-gradient(to right, transparent, black 5%, black 95%, transparent);
     }
 
     .settings-tab {
       font-size: 0.75rem;
-      padding: 0.5rem 0.125rem;
+      padding: 0.5rem 0.75rem;
       white-space: nowrap;
+      min-width: auto;
+      flex: 0 0 auto;
+      position: relative;
+      margin: 0 0.125rem;
+    }
+
+    /* Add a more prominent active indicator */
+    .settings-tab[data-state="active"]::after {
+      content: '';
+      position: absolute;
+      bottom: -1px;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background-color: var(--primary);
+      border-radius: 1px;
     }
   }
 }

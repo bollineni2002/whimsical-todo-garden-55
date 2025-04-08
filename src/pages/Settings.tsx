@@ -146,28 +146,28 @@ const Settings = () => {
             onValueChange={setActiveTab}
             className="w-full"
           >
-            <TabsList className="grid grid-cols-4 border-b rounded-none w-full h-auto p-0 overflow-x-auto scrollbar-hide settings-tabs">
+            <TabsList className="flex border-b rounded-none w-full h-auto p-0 overflow-x-auto scrollbar-hide settings-tabs">
               <TabsTrigger
                 value="profile"
-                className="data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none py-2 text-sm whitespace-nowrap settings-tab"
+                className="data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:font-medium rounded-none py-2 text-sm whitespace-nowrap settings-tab"
               >
                 Profile
               </TabsTrigger>
               <TabsTrigger
                 value="appearance"
-                className="data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none py-2 text-sm whitespace-nowrap settings-tab"
+                className="data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:font-medium rounded-none py-2 text-sm whitespace-nowrap settings-tab"
               >
                 Appearance
               </TabsTrigger>
               <TabsTrigger
                 value="data-management"
-                className="data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none py-2 text-sm whitespace-nowrap settings-tab"
+                className="data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:font-medium rounded-none py-2 text-sm whitespace-nowrap settings-tab"
               >
                 Data Management
               </TabsTrigger>
               <TabsTrigger
                 value="import-export"
-                className="data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none py-2 text-sm whitespace-nowrap settings-tab"
+                className="data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:font-medium rounded-none py-2 text-sm whitespace-nowrap settings-tab"
               >
                 Import/Export
               </TabsTrigger>

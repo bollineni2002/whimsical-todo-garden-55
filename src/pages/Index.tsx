@@ -821,10 +821,6 @@ const Index = () => {
                 {activeClientTab === 'buyers' && (
                 <Card>
                   <CardHeader className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                    <div>
-                      <CardTitle>Buyers Management</CardTitle>
-                      <CardDescription>Add and manage your buyers in one place</CardDescription>
-                    </div>
                     <ForceBuyerSellerSync
                       type="buyers"
                       onSyncComplete={loadBuyersAndSellers}
@@ -940,10 +936,6 @@ const Index = () => {
                 {activeClientTab === 'sellers' && (
                 <Card>
                   <CardHeader className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                    <div>
-                      <CardTitle>Sellers Management</CardTitle>
-                      <CardDescription>Add and manage your sellers in one place</CardDescription>
-                    </div>
                     <ForceBuyerSellerSync
                       type="sellers"
                       onSyncComplete={loadBuyersAndSellers}
