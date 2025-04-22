@@ -217,7 +217,7 @@ const App = () => {
           <TooltipProvider>
             <Toaster />
             <Sonner />
-            <BrowserRouter basename="/whimsical-todo-garden-55">
+            <BrowserRouter basename="/Trade-Book-Ledge">
             <AnimatePresence mode="wait">
               <Routes>
               <Route path="/auth" element={<Auth />} />
