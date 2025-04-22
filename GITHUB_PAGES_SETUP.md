@@ -2,7 +2,7 @@
 
 After pushing the changes to your GitHub repository, follow these steps to enable GitHub Pages:
 
-1. Go to your GitHub repository at https://github.com/bollineni2002/whimsical-todo-garden-55
+1. Go to your GitHub repository at https://github.com/bollineni2002/Trade-Book-Ledge
 2. Click on "Settings" tab
 3. In the left sidebar, click on "Pages"
 4. Under "Build and deployment" section:
@@ -11,7 +11,7 @@ After pushing the changes to your GitHub repository, follow these steps to enabl
 
 The deployment process will start automatically after you push the changes to the main branch. Once the GitHub Actions workflow completes successfully, your site will be available at:
 
-https://bollineni2002.github.io/whimsical-todo-garden-55/
+https://bollineni2002.github.io/Trade-Book-Ledge/
 
 ## Troubleshooting
 
