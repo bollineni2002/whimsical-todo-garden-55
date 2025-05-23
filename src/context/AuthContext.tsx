@@ -34,7 +34,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       try {
         // First, set up the auth state change listener
         const { data: { subscription } } = supabase.auth.onAuthStateChange(
-          async (_event, newSession) => {
+          async (_event: string, newSession: Session | null) => {
             setSession(newSession);
             setUser(newSession?.user || null);
           }
@@ -105,26 +105,33 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const demoUser = {
           id: 'demo-user-id',
           email: 'admin@gmail.com',
+          app_metadata: {},
           user_metadata: {
             full_name: 'Demo Admin',
             phone: '+1234567890',
             business_name: 'Demo Business',
-          }
-        };
+          },
+          aud: 'authenticated',
+          created_at: new Date().toISOString(),
+          role: 'authenticated',
+          updated_at: new Date().toISOString()
+        } as unknown as User;
 
         // Set the user in state
-        setUser(demoUser as User);
+        setUser(demoUser);
 
         // Create a demo session
         const demoSession = {
           access_token: 'demo-access-token',
           refresh_token: 'demo-refresh-token',
           expires_in: 3600,
+          expires_at: Math.floor(Date.now() / 1000) + 3600,
+          token_type: 'bearer',
           user: demoUser,
-        };
+        } as unknown as Session;
 
         // Set the session in state
-        setSession(demoSession as Session);
+        setSession(demoSession);
 
         try {
           // Ensure user profile exists for demo user
@@ -380,8 +387,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const signInWithPhone = async (phone: string) => {
+  const signInWithPhone = async (phoneNumber: string) => {
     try {
+      // Using phoneNumber in a real implementation
+      console.log(`Sending OTP to ${phoneNumber}`);
       setIsLoading(true);
 
       // This is a placeholder as Supabase currently doesn't support OTP directly
@@ -450,8 +459,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const resendOTP = async (phone: string) => {
+  const resendOTP = async (phoneNumber: string) => {
     try {
+      // Using phoneNumber in a real implementation
+      console.log(`Resending OTP to ${phoneNumber}`);
       setIsLoading(true);
 
       // Mock resending OTP
