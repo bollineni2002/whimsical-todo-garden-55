@@ -96,6 +96,61 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signIn = async (email: string, password: string) => {
     try {
       setIsLoading(true);
+
+      // Check for demo login credentials
+      if (email === 'admin@gmail.com' && password === '123456') {
+        console.log('Using demo login credentials');
+
+        // Create a demo user with admin privileges
+        const demoUser = {
+          id: 'demo-user-id',
+          email: 'admin@gmail.com',
+          user_metadata: {
+            full_name: 'Demo Admin',
+            phone: '+1234567890',
+            business_name: 'Demo Business',
+          }
+        };
+
+        // Set the user in state
+        setUser(demoUser as User);
+
+        // Create a demo session
+        const demoSession = {
+          access_token: 'demo-access-token',
+          refresh_token: 'demo-refresh-token',
+          expires_in: 3600,
+          user: demoUser,
+        };
+
+        // Set the session in state
+        setSession(demoSession as Session);
+
+        try {
+          // Ensure user profile exists for demo user
+          await ensureUserProfile(
+            demoUser.id,
+            demoUser.email,
+            demoUser.user_metadata.full_name,
+            demoUser.user_metadata.phone,
+            demoUser.user_metadata.business_name
+          );
+
+          // Initialize database with minimal sync
+          await initializeDatabase(demoUser.id, true);
+        } catch (dbError) {
+          console.error('Error initializing database for demo user:', dbError);
+        }
+
+        toast({
+          title: "Demo Login Successful!",
+          description: "You are now logged in with demo credentials.",
+        });
+
+        return;
+      }
+
+      // Regular authentication flow for non-demo users
       const { data, error } = await supabase.auth.signInWithPassword({ email, password });
 
       if (error) {

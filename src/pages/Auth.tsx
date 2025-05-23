@@ -28,11 +28,11 @@ const Auth = () => {
   const { user, signIn, signUp, signInWithPhone } = useAuth();
   const { t } = useLanguage();
   const { toast } = useToast();
-  
+
   // State for form fields
   const [activeTab, setActiveTab] = useState<string>("signin");
   // Sign-in state
-  const [signInIdentifier, setSignInIdentifier] = useState(""); 
+  const [signInIdentifier, setSignInIdentifier] = useState("");
   const [signInIdentifierType, setSignInIdentifierType] = useState<"email" | "phone" | null>(null);
   // Sign-up state
   const [signUpEmail, setSignUpEmail] = useState("");
@@ -43,7 +43,7 @@ const Auth = () => {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [name, setName] = useState("");
   const [loading, setLoading] = useState(false);
-  
+
   // Determine sign-in identifier type whenever it changes
   useEffect(() => {
     if (isValidEmail(signInIdentifier)) {
@@ -54,7 +54,7 @@ const Auth = () => {
       setSignInIdentifierType(null);
     }
   }, [signInIdentifier]);
-  
+
   // Reset fields when switching tabs
   useEffect(() => {
     // Reset common fields
@@ -62,7 +62,7 @@ const Auth = () => {
     setConfirmPassword("");
     setShowPassword(false);
     setLoading(false);
-    
+
     // Reset specific fields based on the new tab
     if (activeTab === 'signin') {
       setName("");
@@ -73,23 +73,23 @@ const Auth = () => {
       setSignInIdentifierType(null);
     }
   }, [activeTab]);
-  
+
   // Redirect if already logged in
   useEffect(() => {
     if (user) {
       navigate("/");
     }
   }, [user, navigate]);
-  
+
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    
+
     try {
       if (!signInIdentifier) {
         throw new Error("Please enter an email or phone number");
       }
-      
+
       if (signInIdentifierType === "email") {
         if (!password) {
           throw new Error("Please enter your password");
@@ -114,11 +114,11 @@ const Auth = () => {
       setLoading(false);
     }
   };
-  
+
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    
+
     try {
       // Validation
       if (!name) throw new Error("Please enter your name");
@@ -129,10 +129,10 @@ const Auth = () => {
       if (!password) throw new Error("Please enter a password");
       if (password.length < 6) throw new Error("Password must be at least 6 characters");
       if (password !== confirmPassword) throw new Error("Passwords do not match");
-      
+
       // Call signUp context function with email, password, name, and phone
       await signUp(signUpEmail, password, name, signUpPhoneNumber);
-      
+
       // Reset sign-up fields and switch to sign-in tab on success
       setName("");
       setSignUpEmail("");
@@ -140,12 +140,12 @@ const Auth = () => {
       setPassword("");
       setConfirmPassword("");
       setActiveTab("signin");
-      
+
       toast({
         title: "Account Created",
         description: "Your account has been created successfully. Please check your email for verification and then sign in.",
       });
-      
+
     } catch (error: any) {
       toast({
         title: "Sign Up Failed",
@@ -156,7 +156,7 @@ const Auth = () => {
       setLoading(false);
     }
   };
-  
+
   const handleForgotPassword = () => {
     // Use signInIdentifier for forgot password check
     if (!signInIdentifier || !isValidEmail(signInIdentifier)) {
@@ -167,16 +167,16 @@ const Auth = () => {
       });
       return;
     }
-    
+
     navigate("/reset-password", { state: { email: signInIdentifier } });
   };
-  
+
   return (
     <div className="min-h-screen bg-background flex flex-col">
       <AuthHeader businessName="TransactLy" />
-      
+
       <div className="flex-1 flex items-center justify-center p-4">
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3 }}
@@ -188,19 +188,19 @@ const Auth = () => {
                 {activeTab === "signin" ? t('sign_in') : t('sign_up')}
               </CardTitle>
               <CardDescription className="text-center">
-                {activeTab === "signin" 
+                {activeTab === "signin"
                   ? "Enter your email/phone to sign in to your account"
                   : "Create a new account to get started"}
               </CardDescription>
             </CardHeader>
-            
+
             <CardContent>
               <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                 <TabsList className="grid w-full grid-cols-2 mb-6">
                   <TabsTrigger value="signin">{t('sign_in')}</TabsTrigger>
                   <TabsTrigger value="signup">{t('sign_up')}</TabsTrigger>
                 </TabsList>
-                
+
                 <TabsContent value="signin">
                   <form onSubmit={handleSignIn} className="space-y-4">
                     <div className="space-y-2">
@@ -227,16 +227,16 @@ const Auth = () => {
                         </div>
                       </div>
                     </div>
-                    
+
                     {/* Show password field only if identifier is an email */}
                     {signInIdentifierType === "email" && (
                       <div className="space-y-2">
                         <div className="flex items-center justify-between">
                           <Label htmlFor="signin-password">{t('password')}</Label>
-                          <Button 
-                            type="button" 
-                            variant="link" 
-                            className="px-0 text-xs" 
+                          <Button
+                            type="button"
+                            variant="link"
+                            className="px-0 text-xs"
                             onClick={handleForgotPassword}
                           >
                             {t('forgot_password')}
@@ -263,7 +263,7 @@ const Auth = () => {
                         </div>
                       </div>
                     )}
-                    
+
                     <Button type="submit" className="w-full" disabled={loading}>
                       {loading ? (
                         <span className="flex items-center">
@@ -279,13 +279,13 @@ const Auth = () => {
                     </Button>
                   </form>
                 </TabsContent>
-                
+
                 {/* === Sign Up Form === */}
                 <TabsContent value="signup">
                   <form onSubmit={handleSignUp} className="space-y-4">
                     {/* Name Field */}
                     <div className="space-y-2">
-                      <Label htmlFor="signup-name">{t('name')}</Label> 
+                      <Label htmlFor="signup-name">{t('name')}</Label>
                       <Input
                         id="signup-name" // Changed ID
                         placeholder="Enter your full name"
@@ -294,7 +294,7 @@ const Auth = () => {
                         required
                       />
                     </div>
-                    
+
                     {/* Email Field */}
                     <div className="space-y-2">
                       <Label htmlFor="signup-email">Email</Label>
@@ -328,7 +328,7 @@ const Auth = () => {
                         <Phone className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={16} />
                       </div>
                     </div>
-                    
+
                     {/* Password Fields (always shown for sign-up) */}
                     <div className="space-y-2">
                       <Label htmlFor="signup-password">{t('password')}</Label>
@@ -353,7 +353,7 @@ const Auth = () => {
                         </Button>
                       </div>
                     </div>
-                    
+
                     <div className="space-y-2">
                       <Label htmlFor="confirm-password">{t('confirm_password')}</Label>
                       <Input
@@ -365,7 +365,7 @@ const Auth = () => {
                         required
                       />
                     </div>
-                    
+
                     <Button type="submit" className="w-full" disabled={loading}>
                       {loading ? (
                         <span className="flex items-center">
@@ -382,15 +382,44 @@ const Auth = () => {
                 </TabsContent>
               </Tabs>
             </CardContent>
-            
+
             <CardFooter className="flex flex-col space-y-4 mt-4">
+              {/* Demo Login Section */}
+              {activeTab === "signin" && (
+                <div className="w-full border border-dashed border-primary/50 rounded-md p-3 mb-2 bg-primary/5">
+                  <h3 className="text-sm font-medium text-center mb-2">Demo Login Credentials</h3>
+                  <div className="grid grid-cols-2 gap-2 text-xs mb-2">
+                    <div className="flex items-center">
+                      <span className="font-semibold mr-1">Email:</span>
+                      <code className="bg-background px-1 py-0.5 rounded">admin@gmail.com</code>
+                    </div>
+                    <div className="flex items-center">
+                      <span className="font-semibold mr-1">Password:</span>
+                      <code className="bg-background px-1 py-0.5 rounded">123456</code>
+                    </div>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="w-full text-xs"
+                    onClick={() => {
+                      setSignInIdentifier("admin@gmail.com");
+                      setPassword("123456");
+                    }}
+                  >
+                    Use Demo Credentials
+                  </Button>
+                </div>
+              )}
+
               <div className="text-sm text-center text-muted-foreground w-full">
                 {activeTab === "signin" ? (
                   <span>
                     {t('dont_have_account')}{' '}
-                    <Button 
-                      variant="link" 
-                      className="p-0" 
+                    <Button
+                      variant="link"
+                      className="p-0"
                       onClick={() => setActiveTab("signup")}
                     >
                       {t('sign_up')}
@@ -399,9 +428,9 @@ const Auth = () => {
                 ) : (
                   <span>
                     {t('already_have_account')}{' '}
-                    <Button 
-                      variant="link" 
-                      className="p-0" 
+                    <Button
+                      variant="link"
+                      className="p-0"
                       onClick={() => setActiveTab("signin")}
                     >
                       {t('sign_in')}
